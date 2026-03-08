@@ -4,8 +4,10 @@ pn_variational.py — Peierls–Nabarro variational calculation for α and G
 =========================================================================
 
 Reproduces the calculation in:
-  M. A. Cox, "The fine-structure constant and Newton's constant from
-  Peierls–Nabarro tunnelling in an FCC Cosserat lattice" (PRL, 2026).
+  M. A. Cox, "The Cosserat Supersolid",
+  University of the Witwatersrand (2026).
+  https://doi.org/10.5281/zenodo.18636501
+  Chapter 5: The fine structure constant from the Peierls–Nabarro barrier.
 
 Physics overview
 ----------------
@@ -30,7 +32,7 @@ Sections
   1. FCC Born–Huang homogenisation → Cosserat moduli
   2. Anti-plane Cosserat kernel in k-space (exact: Si, Ci functions)
   3. PN equilibrium: solve for core width w(N²)
-  4. Self-consistent perturbation series for α⁻¹ (Eq. 2 of paper)
+  4. Self-consistent perturbation series for α⁻¹ (monograph Eq. 5.12)
   5. Convergence analysis
   6. Skyrmion numbers (gauge-mode correction)
   7. N² variational scan & sensitivity
@@ -252,7 +254,7 @@ def find_w(N2, mu=1.0, ell=1.0, ell_c=0.5, d_over_ell=D_OVER_ELL):
 #  SECTION 4 — Self-consistent perturbation series for α⁻¹
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-#  Eq. (2) of the paper:
+#  Monograph Eq. (5.12):
 #
 #      α⁻¹ = α₀⁻¹ − 2 − α − α/[π(1−α)] − 6α³/π²
 #
@@ -349,7 +351,7 @@ def main():
 
     print(sep)
     print("  Peierls-Nabarro variational calculation for alpha and G")
-    print("  PRL: Cox (2026)")
+    print("  M. A. Cox, The Cosserat Supersolid (2026), Ch. 5")
     print(sep)
 
     mu, ell, ell_c = 1.0, 1.0, 0.5

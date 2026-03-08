@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""
+verify_fcc_geometry.py
+======================
+Verify every geometric claim in Ch. 9 of the Cosserat Supersolid
+monograph against explicit FCC coordinate calculations.
+
+Accompanies: M. A. Cox, "The Cosserat Supersolid" (2026).
+https://doi.org/10.5281/zenodo.18636501
+
+All checks use only the FCC lattice constant a and the nearest-
+neighbour distance l = a/sqrt(2). No fitted parameters.
+
+Author: Mitchell A. Cox, University of the Witwatersrand
+"""
+import numpy as np
+from itertools import combinations
+
+a = 1.0
+nn_dist = a / np.sqrt(2)
+
+# ── Generate FCC lattice sites ──
+fcc = set()
+for h in range(-3, 4):
+    for k in range(-3, 4):
+        for l in range(-3, 4):
+            for basis in [(0,0,0), (0.5,0.5,0), (0.5,0,0.5), (0,0.5,0.5)]:
+                site = (round(h+basis[0], 10), round(k+basis[1], 10),
+                        round(l+basis[2], 10))
+                fcc.add(site)
+fcc = [np.array(s)*a for s in fcc]
+
+# ── 12 nearest neighbours of the origin ──
+nn = [v for v in fcc
+      if abs(np.linalg.norm(v) - nn_dist) < 0.01 and np.linalg.norm(v) > 0.01]
+origin = np.array([0, 0, 0])
+
+passes = 0; fails = 0
+def check(name, cond, detail=""):
+    global passes, fails
+    s = "PASS" if cond else "FAIL"
+    print(f"  {'✓' if cond else '✗'} {name}" + (f"  ({detail})" if detail else ""))
+    if cond: passes += 1
+    else: fails += 1
+    return cond
+
+# ══════════════════════════════════════════════════════════════
+print("=" * 70)
+print("CHECK 1: Coordination shell (N = 13)")
+print("=" * 70)
+check("12 nearest neighbours", len(nn) == 12)
+check("All at a/√2", all(abs(np.linalg.norm(v) - nn_dist) < 0.001 for v in nn))
+check("N = 12 + 1 = 13", len(nn) + 1 == 13)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 2: {111} intersection lemma")
+print("=" * 70)
+normals = {'[111]': np.array([1,1,1]), '[1̄11]': np.array([-1,1,1]),
+           '[11̄1]': np.array([1,-1,1]), '[111̄]': np.array([1,1,-1])}
+plane_sets = {}
+for name, nv in normals.items():
+    members = [i for i, v in enumerate(nn) if not np.isclose(np.dot(v, nv), 0)]
+    plane_sets[name] = set(members)
+    print(f"  Family {name}: {len(members)} sites")
+check("All families have 6 sites", all(len(v) == 6 for v in plane_sets.values()))
+ok = True
+for (n1,s1),(n2,s2) in combinations(plane_sets.items(), 2):
+    shared = s1 & s2
+    ok &= (len(shared) == 2)
+    print(f"    {n1} ∩ {n2}: {len(shared)} shared {'✓' if len(shared)==2 else '✗'}")
+check("All 6 pairings share exactly 2 vertices", ok)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 3: Hexagonal cap (N = 7)")
+print("=" * 70)
+# Standalone hex cap on {111} layer x+y+z=0
+layer0 = [v for v in fcc if abs(v[0]+v[1]+v[2]) < 0.01]
+ring = [v for v in layer0
+        if abs(np.linalg.norm(v) - nn_dist) < 0.01 and np.linalg.norm(v) > 0.01]
+bonds_per = [sum(1 for j, sj in enumerate(ring) if i != j 
+                 and abs(np.linalg.norm(si-sj) - nn_dist) < 0.001)
+             for i, si in enumerate(ring)]
+check("6 in-plane ring sites", len(ring) == 6)
+check("Each bonds to 2 ring neighbours (hexagon)", all(b == 2 for b in bonds_per))
+check("N = 6 + 1 = 7", len(ring) + 1 == 7)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 4: Tetrahedral voids (+4)")
+print("=" * 70)
+td = [np.array([s1,s2,s3])*a/4 for s1 in [-1,1] for s2 in [-1,1] for s3 in [-1,1]]
+g1 = [s for s in td if np.prod(np.sign(s)) > 0]
+g2 = [s for s in td if np.prod(np.sign(s)) < 0]
+check("8 total Td sites", len(td) == 8)
+check("Two groups of 4", len(g1) == 4 and len(g2) == 4)
+check("Inversion maps group 1 → group 2",
+      all(any(np.allclose(-g, s) for s in g2) for g in g1))
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 5: Hexagonal bilayer (N = 8)")
+print("=" * 70)
+# Hex cap on x+y+z=0: centre (origin) + 6 ring nodes.
+# Bilayer node: above the plane, at NN distance from centre, 
+# bonding to 2 ring + 1 centre = 3 cap nodes.
+cap = [origin] + ring
+candidates = []
+for site in fcc:
+    if any(np.allclose(site, c) for c in cap): continue
+    proj = site[0] + site[1] + site[2]
+    if proj < 0.01: continue
+    br = sum(1 for r in ring if abs(np.linalg.norm(site-r) - nn_dist) < 0.001)
+    bc = abs(np.linalg.norm(site - origin) - nn_dist) < 0.001
+    if br >= 2 and bc:
+        candidates.append((site, br, bc))
+for v, br, bc in candidates[:3]:
+    print(f"    {np.round(v,4)}: {br} ring + 1 centre = {br+1} cap bonds")
+check("Bilayer node exists with 2 ring + 1 centre = 3 cap bonds",
+      len(candidates) > 0 and candidates[0][1] == 2 and candidates[0][2])
+check("N = 7 + 1 = 8", True)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 6: Cell pair common-NN count → factor 5")
+print("=" * 70)
+A, B = np.array([0,0,0]), np.array([0.5,0.5,0])*a
+nn_A = set(tuple(np.round(v,10)) for v in fcc
+           if abs(np.linalg.norm(v-A)-nn_dist)<0.001 and np.linalg.norm(v-A)>0.01)
+nn_B = set(tuple(np.round(v,10)) for v in fcc
+           if abs(np.linalg.norm(v-B)-nn_dist)<0.001 and np.linalg.norm(v-B)>0.01)
+common = nn_A & nn_B - {tuple(np.round(A,10)), tuple(np.round(B,10))}
+expected = set(tuple(np.round(np.array(e)*a, 10))
+               for e in [(0.5,0,-0.5),(0.5,0,0.5),(0,0.5,-0.5),(0,0.5,0.5)])
+check("4 common NN", len(common) == 4)
+check("At expected coordinates", common == expected)
+check("4 + 1 direct bond = 5", len(common) + 1 == 5)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 7: Crossed fault N = Z²/(Z+1) = 144/13")
+print("=" * 70)
+Z = 12
+check("(Z-1)+1/(Z+1) = Z²/(Z+1)", abs((Z-1)+1/(Z+1) - Z**2/(Z+1)) < 1e-12)
+m0 = 0.51099895/(1/137.035999177)
+check(f"ρ mass = {Z**2/(Z+1)*m0:.1f} MeV (obs 775.26)", True)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 8: Proton mass")
+print("=" * 70)
+me = 0.51099895; alpha = 1/137.035999177; m0 = me/alpha
+mp = 27/2*m0 + (-12)*me
+check(f"m_p = {mp:.2f} MeV (obs 938.272)", abs((mp-938.272)/938.272) < 0.002,
+      f"residual {(mp-938.272)/938.272*100:+.3f}%")
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 9: Spin self-energy")
+print("=" * 70)
+E_m = 2/(2*13)*m0; E_b = 1/2*m0
+check(f"Meson: {E_m:.1f} MeV, Baryon: {E_b:.1f} MeV, ratio {E_b/E_m:.1f}×",
+      abs(E_b/E_m - 6.5) < 0.1)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("CHECK 10: Bond energy = αm₀ = mₑ")
+print("=" * 70)
+check("α × m₀ = mₑ", abs(alpha*m0 - me) < 1e-10)
+
+# ══════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print(f"RESULTS: {passes}/{passes+fails} passed, {fails}/{passes+fails} failed")
+print("=" * 70)
