@@ -156,11 +156,7 @@ This script exists because honesty matters more than a good scorecard.
 
 ---
 
-## AI acknowledgement
-
-Large language models (Claude Opus and Gemini) were used as iterative discussion partners throughout the development of both the monograph and this code: to stress-test physical arguments, identify logical vulnerabilities, check mathematical consistency, and improve clarity. All responsibility for the scientific content, physical reasoning, derivations, and conclusions is the author's.
-
-## Licence
+## Code Licence
 
 MIT
 
