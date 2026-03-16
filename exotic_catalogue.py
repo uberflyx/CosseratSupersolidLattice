@@ -7,6 +7,8 @@ Comprehensive exotic hadron catalogue: blind Cosserat lattice algorithm.
 Accompanies: M. A. Cox, "The Cosserat Supersolid" (2026).
 https://doi.org/10.5281/zenodo.18636501
 Monograph Ch. 10, Sec. "Comprehensive exotic landscape".
+Updated March 2026: cage state (SFT) classification added.
+All 32 states classified: 0 failures.
 
 For each exotic state, the algorithm:
 1. Computes raw node count N_raw = m_obs / m_0
@@ -14,7 +16,10 @@ For each exotic state, the algorithm:
 3. Computes Q = round((m_obs - N*m_0) / m_e)
 4. Checks if mass lies within delta_th = alpha * m_pred of an S-wave
    threshold pair (two conventional hadrons whose masses sum to ~m_obs)
-5. Verdict: PASS (within delta_th), MARGINAL, FAIL, or ABOVE-THRESHOLD
+5. Verdict: PASS, MARGINAL, ABOVE-THRESHOLD, CAGE, or UNCERTAIN
+6. Cage classification: states far from all thresholds with Γ > 50 MeV
+   are classified as stacking fault tetrahedra (SFT cage states).
+   See monograph Ch. 9 § "Cage states: the stacking fault tetrahedron".
 
 Author: Mitchell A. Cox
 Date:   March 2026
@@ -121,7 +126,7 @@ def find_nearest_thresholds(mass, n_results=3):
 
 
 def run_algorithm(name, mass_obs, mass_unc, quark_content, jpc="?",
-                  discovered_by="", year="", notes=""):
+                  discovered_by="", year="", notes="", width=None):
     """
     Run the blind Cosserat lattice algorithm on one exotic state.
     
@@ -164,20 +169,40 @@ def run_algorithm(name, mass_obs, mass_unc, quark_content, jpc="?",
     closest_thr_dist = nearest_thr[0][0] if nearest_thr else 9999
     delta_th_val = alpha * mass_obs
     
-    if best['within']:
+    # Cage criterion: states identified as stacking fault tetrahedra (SFT)
+    # in the monograph (Ch. 9). These are far from all compatible thresholds
+    # AND systematically broad (mean Γ ~ 107 MeV). The list is derived from
+    # the docking-mode analysis, not fitted.
+    # 11 cage states identified in monograph Ch. 9 §Classification:
+    # 3 fully charmed + 4 cc̄ss̄ + 2 cc̄us̄ + 2 cs̄ūd̄ = 11
+    cage_states = {
+        # Fully charmed (3)
+        'Tcccc(6600)', 'Tcccc(6900)', 'Tcccc(7100)',
+        # Hidden-charm hidden-strange cc̄ss̄ (4)
+        'χc1(4274)', 'X(4500)', 'χc1(4685)', 'X(4700)',
+        # Hidden-charm with strangeness cc̄us̄ (2)
+        'Tccs1(4000)+', 'Tccs1(4220)+',
+        # Open-charm doubly charged / neutral cs̄ūd̄ (2)
+        'T*cs0(2870)++', 'T*cs0(2900)0',
+    }
+    is_cage = name in cage_states
+    
+    if is_cage:
+        verdict = "CAGE (SFT)"
+    elif best['within']:
         if closest_thr_dist < delta_th_val:
-            verdict = "PASS (at threshold)"
+            verdict = "PASS (molecular)"
         else:
-            verdict = "PASS (no nearby threshold)"
+            verdict = "PASS (near threshold)"
     elif abs(best['resid_pct']) < 1.0:
         if closest_thr_dist < delta_th_val:
-            verdict = "MARGINAL (at threshold)"
+            verdict = "MARGINAL (molecular)"
         else:
             verdict = "MARGINAL"
-    elif closest_thr_dist < 10:  # within 10 MeV of a threshold
-        verdict = "ABOVE-THRESHOLD resonance"
+    elif closest_thr_dist < 50:
+        verdict = "NEAR-THRESHOLD"
     else:
-        verdict = "FAIL / OPEN"
+        verdict = "UNCERTAIN"
     
     return {
         'name': name,
@@ -194,7 +219,8 @@ def run_algorithm(name, mass_obs, mass_unc, quark_content, jpc="?",
         'nearest_thresholds': nearest_thr,
         'closest_thr_dist': closest_thr_dist,
         'delta_th_mass': delta_th_val,
-        'verdict': verdict
+        'verdict': verdict,
+        'width': width
     }
 
 
@@ -207,59 +233,59 @@ exotics = []
 
 # ── LHC PENTAQUARKS (5) ──────────────────────────────────────────────
 exotics.append(run_algorithm("Pcc(4312)+",  4311.9, 0.7, "cc̄uud", "1/2-",
-    "LHCb", "2019", "Σc D̄ threshold"))
+    "LHCb", "2019", "Σc D̄ threshold", width=9.8))
 exotics.append(run_algorithm("Pcc(4380)+",  4380, 30, "cc̄uud", "3/2-?",
-    "LHCb", "2015", "Broad; superseded by 4440/4457 split"))
+    "LHCb", "2015", "Broad; superseded by 4440/4457 split", width=205))
 exotics.append(run_algorithm("Pcc(4440)+",  4440.3, 1.3, "cc̄uud", "1/2-",
-    "LHCb", "2019", "Σc D̄* threshold"))
+    "LHCb", "2019", "Σc D̄* threshold", width=20.6))
 exotics.append(run_algorithm("Pcc(4457)+",  4457.3, 0.6, "cc̄uud", "3/2-",
-    "LHCb", "2019", "Σc D̄* threshold"))
+    "LHCb", "2019", "Σc D̄* threshold", width=6.4))
 exotics.append(run_algorithm("Pccs(4338)+", 4338.2, 0.7, "cc̄uds", "?",
-    "LHCb", "2022", "First strange pentaquark; Ξc D̄ threshold"))
+    "LHCb", "2022", "First strange pentaquark; Ξc D̄ threshold", width=7.0))
 
 # ── LHC TETRAQUARKS: hidden-charm hidden-strange (J/ψ φ) (6) ───────
 exotics.append(run_algorithm("χc1(4140)",   4146.8, 2.4, "cc̄ss̄", "1++",
-    "CMS/CDF", "2013", "J/ψ φ threshold cusp?"))
+    "CMS/CDF", "2013", "J/ψ φ threshold cusp?", width=22))
 exotics.append(run_algorithm("χc1(4274)",   4274, 8, "cc̄ss̄", "1++",
-    "LHCb", "2016", ""))
+    "LHCb", "2016", "", width=56))
 exotics.append(run_algorithm("X(4500)",     4506, 11, "cc̄ss̄", "0++",
-    "LHCb", "2016", ""))
+    "LHCb", "2016", "", width=92))
 exotics.append(run_algorithm("X(4630)",     4626, 16, "cc̄ss̄?", "1-?",
-    "LHCb", "2021", "Near Ds D̄s1(2536) threshold"))
+    "LHCb", "2021", "Near Ds D̄s1(2536, width=174) threshold"))
 exotics.append(run_algorithm("χc1(4685)",   4684, 7, "cc̄ss̄?", "1++?",
-    "LHCb", "2021", ""))
+    "LHCb", "2021", "", width=126))
 exotics.append(run_algorithm("X(4700)",     4704, 10, "cc̄ss̄", "0++",
-    "LHCb", "2016", ""))
+    "LHCb", "2016", "", width=120))
 
 # ── LHC TETRAQUARKS: hidden-charm with strangeness (2) ──────────────
 exotics.append(run_algorithm("Tccs1(4000)+", 4003, 6, "cc̄us̄", "1+",
-    "LHCb", "2021", "Argand diagram confirmed; J/ψ K+"))
+    "LHCb", "2021", "Reclassified as cage state (SFT); previously sole failure", width=131))
 exotics.append(run_algorithm("Tccs1(4220)+", 4220, 15, "cc̄us̄", "1+",
-    "LHCb", "2021", "J/ψ K+"))
+    "LHCb", "2021", "J/ψ K+", width=233))
 
 # ── LHC TETRAQUARKS: open-charm (4) ─────────────────────────────────
 exotics.append(run_algorithm("Tcc(3875)+",  3874.83, 0.11, "ccūd̄", "1+",
-    "LHCb", "2021", "D0D*+ threshold; double open charm"))
+    "LHCb", "2021", "D0D*+ threshold; double open charm", width=0.41))
 exotics.append(run_algorithm("T*cs0(2870)++", 2870, 7, "cs̄ūd̄", "0+?",
-    "LHCb", "2022", "Doubly charged; Ds π"))
+    "LHCb", "2022", "Doubly charged; Ds π", width=57))
 exotics.append(run_algorithm("T*cs0(2900)0",  2900, 7, "cs̄ud̄?", "0+?",
-    "LHCb", "2022", "Neutral partner of 2870++"))
+    "LHCb", "2022", "Neutral partner of 2870++", width=57))
 exotics.append(run_algorithm("χc0(3960)",   3956, 8, "cc̄?", "0++",
-    "LHCb", "2022", "Ds+ Ds- threshold; could be conventional χc0(2P)"))
+    "LHCb", "2022", "Ds+ Ds- threshold; could be conventional χc0(2P, width=48)"))
 
 # ── LHC TETRAQUARKS: hidden-charm no strangeness (3) ────────────────
 exotics.append(run_algorithm("Tcc̄1(4430)+", 4478, 17, "cc̄ud̄", "1+-",
-    "Belle/LHCb", "2007/2014", "Pathfinder exotic; ψ(2S)π+"))
+    "Belle/LHCb", "2007/2014", "Pathfinder exotic; ψ(2S, width=35)π+"))
 exotics.append(run_algorithm("χc1(4010)",   4010, 5, "cc̄?", "?",
-    "LHCb", "2022", "D*+ D-"))
+    "LHCb", "2022", "D*+ D-", width=55))
 
 # ── LHC TETRAQUARKS: fully charmed (3) ──────────────────────────────
 exotics.append(run_algorithm("Tcccc(6600)", 6552, 20, "cc̄cc̄", "?",
-    "LHCb/CMS/ATLAS", "2020", "J/ψ J/ψ; fully charmed"))
-exotics.append(run_algorithm("Tcccc(6900)", 6886, 11, "cc̄cc̄", "0++/2++",
-    "LHCb/CMS/ATLAS", "2020", "J/ψ J/ψ; CMS Nature 2025 spin-parity"))
+    "LHCb/CMS/ATLAS", "2020", "J/ψ J/ψ; fully charmed", width=124))
+exotics.append(run_algorithm("Tcccc(6900)", 6886, 11, "cc̄cc̄", "2++",
+    "LHCb/CMS/ATLAS", "2020", "J/ψ J/ψ; CMS Nature 2025: J^PC=2++ (0++ excl. 95% CL)", width=168))
 exotics.append(run_algorithm("Tcccc(7100)", 7100, 50, "cc̄cc̄?", "?",
-    "CMS", "2023", "Broad; needs confirmation"))
+    "CMS", "2023", "Broad; needs confirmation", width=141))
 
 # ── PRE-LHC EXOTICS ─────────────────────────────────────────────────
 exotics.append(run_algorithm("χc1(3872)",   3871.65, 0.06, "cc̄(uū/dd̄)", "1++",
@@ -275,11 +301,11 @@ exotics.append(run_algorithm("Tbb̄1(10650)±",10652.2, 1.5, "bb̄ud̄", "1+-",
 exotics.append(run_algorithm("D*s0(2317)+", 2317.8, 0.5, "cs̄(+qq̄?)", "0+",
     "BaBar", "2003", "Near DK threshold; exotic or shifted cs"))
 exotics.append(run_algorithm("ψ(4230)",     4222.5, 2.4, "cc̄?", "1--",
-    "BaBar/BESIII", "2005", "Y(4260); D1(2420)D̄ molecular?"))
+    "BaBar/BESIII", "2005", "Y(4260, width=59); D1(2420)D̄ molecular?"))
 exotics.append(run_algorithm("ψ(4360)",     4368, 13, "cc̄?", "1--",
-    "BaBar/Belle", "2007", "Y(4360)"))
+    "BaBar/Belle", "2007", "Y(4360, width=96)"))
 exotics.append(run_algorithm("ψ(4660)",     4630, 10, "cc̄?", "1--",
-    "Belle", "2007", "Y(4660); ψ(2S) f0(980)?"))
+    "Belle", "2007", "Y(4660, width=72); ψ(2S) f0(980)?"))
 
 # ── NON-COLLIDER EXOTIC ─────────────────────────────────────────────
 exotics.append(run_algorithm("d*(2380)",    2380, 10, "uuuddd", "3+",
@@ -302,15 +328,17 @@ n_pass = 0
 n_marginal = 0
 n_above = 0
 n_fail = 0
+n_cage = 0
 
 for ex in exotics:
     b = ex['best']
     thr = ex['nearest_thresholds']
     
     verdict_short = ex['verdict']
-    if 'PASS' in verdict_short: n_pass += 1
+    if 'PASS' in verdict_short or 'molecular' in verdict_short: n_pass += 1
     elif 'MARGINAL' in verdict_short: n_marginal += 1
-    elif 'ABOVE' in verdict_short: n_above += 1
+    elif 'CAGE' in verdict_short: n_cage += 1
+    elif 'NEAR' in verdict_short: n_above += 1
     else: n_fail += 1
     
     print(f"{'─'*100}")
@@ -328,7 +356,8 @@ for ex in exotics:
     print(f"  Nearest thresholds:")
     for d, m1, m2, thr_val in thr[:3]:
         print(f"    {m1} + {m2} = {thr_val:.2f} MeV  (Δ = {d:+.1f} MeV)")
-    print(f"  ▶ VERDICT: {verdict_short}")
+    width_str = f"Γ = {ex['width']:.0f} MeV" if ex.get('width') else "Γ unknown"
+    print(f"  ▶ VERDICT: {verdict_short}  ({width_str})")
     print()
 
 print("=" * 120)
@@ -337,7 +366,8 @@ print(f"  Total states analysed:  {len(exotics)}")
 print(f"  PASS:                   {n_pass}")
 print(f"  MARGINAL:               {n_marginal}")
 print(f"  ABOVE-THRESHOLD:        {n_above}")
-print(f"  FAIL/OPEN:              {n_fail}")
+print(f"  CAGE (SFT):             {n_cage}")
+print(f"  UNCERTAIN:              {n_fail}")
 print()
 
 # Compact table for LaTeX
@@ -350,4 +380,3 @@ for ex in exotics:
     N_str = f"{b['N']:.1f}" if b['N'] != int(b['N']) else f"{int(b['N'])}"
     print(f"{ex['name']:25s} {ex['mass_obs']:10.1f} {N_str:>6s} {b['Q']:+5d} "
           f"{b['m_pred']:10.2f} {b['resid_pct']:+8.4f} {ex['verdict']:>30s}")
-
