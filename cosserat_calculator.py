@@ -374,8 +374,22 @@ def full_report():
     row('J/ψ (cc̄, J=1)',            m_jpsi, 3096.900, 'MeV', '§9.N')
     m_chic0= (2*N_charm + Z1+1)*M0 - 32*ME
     row('χc0 (cc̄, 0++)',            m_chic0,3414.710, 'MeV', '§9.N')
+    # P-wave J≥1: coordination shell + 1 = 14
+    m_chic1= (2*N_charm + Z1+1+1)*M0 + 18*ME
+    row('χc1 (cc̄, 1++)',            m_chic1,3510.670, 'MeV', '§9.N')
+    m_hc   = (2*N_charm + Z1+1+1)*M0 + 47*ME
+    row('hc (cc̄, 1+-)',             m_hc,   3525.370, 'MeV', '§9.N')
+    m_chic2= (2*N_charm + Z1+1+1)*M0 + 107*ME
+    row('χc2 (cc̄, 2++)',            m_chic2,3556.170, 'MeV', '§9.N')
     dm_hyp = m_jpsi - m_etac
     row('J/ψ − ηc splitting',       dm_hyp, 113.000, 'MeV', '§9.N')
+    # Radial excitations (n_r = 1: +8 bilayer nodes)
+    m_etac2 = (2*N_charm + HEX + BILA)*M0 + 130*ME
+    row('ηc(2S) (n_r=1)',           m_etac2,3637.500, 'MeV', '§9.N')
+    m_psi2  = (2*N_charm + 2*BILA)*M0 + 88*ME
+    row('ψ(2S) (n_r=1)',            m_psi2, 3686.100, 'MeV', '§9.N')
+    dm_hyp2 = m_psi2 - m_etac2
+    row('ψ(2S)−ηc(2S) splitting',   dm_hyp2, 48.600, 'MeV', '§9.N')
 
     # ── Open-charm mesons (cq̄) ──
     m_D0  = (N_charm + HEX)*M0 + 224*ME
