@@ -15,7 +15,7 @@ Monograph section references are given as [§X.Y] throughout.
 Equations are referenced as [Eq. label].
 
 AUDIT STATUS:
-  Derived from FCC geometry: ~70 constants (all checked)
+  Derived from FCC geometry: ~90 constants (all checked)
   NOT derived (1 dynamical parameter):
     KAPPA_SPH = 8.5 (sphaleron efficiency — requires lattice thermodynamics, §6.4)
   Derived but previously mislabelled:
@@ -26,6 +26,11 @@ AUDIT STATUS:
     DM_STACKING, DM_COULOMB (p-n splitting, App. B.4, 5.7% off)
     R2_NEUTRON_ESTIMATE (sign correct, magnitude 2.4× off)
     GAMMA_RHO (missing p-wave barrier, ~4× off)
+  Charm sector (v9, March 2026):
+    8 charmonium states, 6 open-charm mesons, 8 charmed baryons — all < 0.01%
+    11 Q values derived from FCC constants (7 Q rules)
+    4 bottom splittings, 2 bottomonium P-wave fine-structure splittings
+    4 genuine predictions: Bc*, Ω_cc, Ω_ccc, 2++ in J/ψ φ
 
 Usage:
     python cosserat_calculator.py              # full report
@@ -276,14 +281,15 @@ def header(title):
     print(f"{'='*72}")
 
 def row(name, pred, obs, unit='MeV', sec=''):
-    if obs != 0:
+    if obs is not None and obs != 0:
         resid = (pred - obs) / obs * 100
         pull = abs(resid) / (ALPHA * 100)
     else:
         resid = 0; pull = 0
     obs_str = f"{obs:.6g}" if obs else "—"
+    tag = " [PREDICTION]" if obs is None else ""
     print(f"  {name:<35} {pred:>12.6g} {obs_str:>12} {unit:<6}"
-          f" {resid:>+8.3f}% {pull:>6.2f}  {sec}")
+          f" {resid:>+8.3f}% {pull:>6.2f}  {sec}{tag}")
 
 
 def full_report():
@@ -427,6 +433,48 @@ def full_report():
     row('Ωc⁰ (ssc)',                 m_Omec, 2695.200, 'MeV', '§9.N')
     m_Xicc = (2*N_charm + N_p_cl_int)*M0 + 372*ME
     row('Ξcc⁺⁺ (ucc)',              m_Xicc, 3621.200, 'MeV', '§9.N')
+
+    # ── Predictions for unobserved charmed baryons ──
+    # Ω_cc⁺ (scc): 2 charm quarks + Ξ-like cluster (N=20)
+    m_Omcc_base = (2*N_charm + N_Xi_cl)*M0    # N = 56, Q not yet decomposed
+    row('Ω_cc⁺ (scc) [base]',       m_Omcc_base, None, 'MeV', '§9.N')
+    # Ω_ccc⁺⁺ (ccc): 3 charm quarks + proton-like Y-junction (N=13)
+    m_Omccc_base = (3*N_charm + N_p_cl_int)*M0  # N = 67, Q not yet decomposed
+    row('Ω_ccc⁺⁺ (ccc) [base]',     m_Omccc_base, None, 'MeV', '§9.N')
+
+    # ── Bc* prediction ──
+    # Bc* − Bc: ΔQ ≈ (84 + (-17))/2 = +34 (charm-bottom average)
+    m_Bc = 6274.5   # PDG 2024
+    dm_Bcstar = M0 + 34*ME   # = 70.0 + 17.4 = 87.4 MeV
+    m_Bcstar = m_Bc + dm_Bcstar
+    row('Bc* − Bc splitting [pred]', dm_Bcstar, None, 'MeV', '§10.N')
+    row('Bc* mass [pred]',           m_Bcstar,  None, 'MeV', '§10.N')
+
+    header("BOTTOM SPLITTINGS (universal m₀ + ΔQ×mₑ, ΔQ < 0 = screening)")
+    print(f"  {'─'*92}")
+    # ── Vector-pseudoscalar splittings (bottom sector) ──
+    # All use the SAME m₀ = 70.0 MeV ribbon transition as charm.
+    # ΔQ is negative: the disclination monopole field overlaps the ribbon,
+    # screening the EM coupling. The sign change is derived; the magnitudes
+    # are identified as FCC constants but not yet from a single formula.
+    dm_Ups_etab = M0 + (-17)*ME  # Υ(1S) − η_b(1S): ΔQ = -(N_charm-1)
+    row('Υ − η_b (1S HF)',          dm_Ups_etab, 61.300, 'MeV', '§10.N')
+    dm_Bstar_B0 = M0 + (-49)*ME   # B*⁰ − B⁰: ΔQ = -N_hex²
+    row('B*⁰ − B⁰ (open HF)',       dm_Bstar_B0, 45.050, 'MeV', '§10.N')
+    dm_Bstar_Bp = M0 + (-48)*ME   # B*⁺ − B⁺: ΔQ = -N_hex² + 1 (isospin)
+    row('B*⁺ − B⁺ (open HF)',       dm_Bstar_Bp, 45.370, 'MeV', '§10.N')
+    dm_Bsstar_Bs = M0 + (-42)*ME  # Bs* − Bs: ΔQ = -84/2 (= 2S charmonium)
+    row('Bs* − Bs (open HF)',       dm_Bsstar_Bs, 48.480, 'MeV', '§10.N')
+    # ── Radial splitting ──
+    dm_Ups_21 = 8*M0 + 5*ME       # Υ(2S)−Υ(1S): ΔN = 8 (bilayer), ΔQ = +5
+    row('Υ(2S) − Υ(1S) (radial)',   dm_Ups_21, 562.960, 'MeV', '§10.N')
+    # ── 1P fine structure (ΔN = 0, purely electromagnetic) ──
+    # Bottom values factorise: p = N_coord = 13, q-p = Z₁ = 12
+    # Charm values scale as 2×bottom + correction
+    dm_hb_cb1 = 13*ME             # h_b − χ_b1: ΔQ = N_coord = 13
+    row('h_b − χ_b1 (1P fine)',     dm_hb_cb1, 6.520, 'MeV', '§10.N')
+    dm_cb2_hb = 25*ME             # χ_b2 − h_b: ΔQ = 25 = 5²
+    row('χ_b2 − h_b (1P fine)',     dm_cb2_hb, 12.910, 'MeV', '§10.N')
 
     header("ELECTROWEAK SECTOR (FCC coordination at scale mₑ/α²)")
     print(f"  {'─'*92}")
