@@ -5,17 +5,6 @@ theta_ch_ab_initio_v2.py — Ab initio derivation of θ_ch = α²/(2π)
 Companion to: "The Cosserat Supersolid" monograph (M. A. Cox, 2026).
 Repository: https://github.com/uberflyx/CosseratSupersolidLattice
 
-SUPERSEDES theta_ch_ab_initio.py:
-  - Routes A & B retained (with fixes)
-  - NEW Route C: Ab initio derivation from PN kernel channel decomposition
-  - CORRECTS the Step 4 algebra in the monograph (Sec. theta_derivation)
-
-The key result: the STATIC cross-coupling ε_(ij)κ_(ij) = 0 for the
-anti-plane screw (index structure proof). The chirality comes from the
-TUNNELLING dynamics: the Dyson-resummed rotational self-energy generates
-a cross-channel feedback whose constitutive identification gives
-θ_ch = α²/(2π) = (1/2)α²N².
-
 See monograph Sec. 4.7 for the full derivation.
 """
 
