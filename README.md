@@ -4,7 +4,7 @@
 
 Companion code for [*The Cosserat Supersolid*](https://doi.org/10.5281/zenodo.18636501)
 
-Full monograph: \`https://doi.org/10.5281/zenodo.18636501\`
+Full monograph: [\`https://doi.org/10.5281/zenodo.18636501\`](https://doi.org/10.5281/zenodo.18636501)
 
 ---
 
