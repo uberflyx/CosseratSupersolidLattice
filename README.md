@@ -4,7 +4,7 @@
 
 Companion code for [*The Cosserat Supersolid*](https://doi.org/10.5281/zenodo.18636501)
 
-Full monograph: [\`https://doi.org/10.5281/zenodo.18636501\`](https://doi.org/10.5281/zenodo.18636501)
+Full monograph: [https://doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)
 
 ---
 
@@ -26,7 +26,7 @@ The monograph is a work in progress but fairly complete. It has many falsifiable
 
 Whether the leading-order agreement is evidence for the hypothesis or an elaborate coincidence is for the reader to judge. The purpose of the monograph is to present the derivations in sufficient detail that the question can be answered.
 
-Please go read it: \`https://doi.org/10.5281/zenodo.18636501\`
+Please go read it: [https://doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)
 
 ---
 
