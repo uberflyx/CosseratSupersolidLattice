@@ -51,11 +51,14 @@ This script
 
 References
 ----------
-    [1] Cox, M. A. (2025). "Why a femtometre spacetime lattice need not
-        violate Lorentz invariance." Submitted to Found. Phys.
+    [1] Cox, M. A. (2025). "The Cosserat Supersolid: Deriving the
+        Constants of Nature from Vacuum Lattice Mechanics."
+        doi:10.5281/zenodo.18636501.
     [2] Bekenstein, J. D. (1973). Phys. Rev. D 7, 2333.
     [3] Hawking, S. W. (1975). Commun. Math. Phys. 43, 199.
     [4] Unruh, W. G. (1976). Phys. Rev. D 14, 870.
+    [5] Mohr, P. J. et al. (2025). "CODATA recommended values of the
+        fundamental physical constants: 2022." Rev. Mod. Phys. 97, 025002.
 
 Author:  Mitchell A. Cox (Wits University)
 Date:    March 2026
@@ -66,26 +69,35 @@ import numpy as np
 from dataclasses import dataclass
 
 # ============================================================
-# CODATA 2018 fundamental constants (NIST)
+# CODATA 2022 fundamental constants
+# Source: Mohr et al., Rev. Mod. Phys. 97, 025002 (2025)
+#         https://physics.nist.gov/cuu/pdf/wallet_2022.pdf
 # ============================================================
-G      = 6.67430e-11       # gravitational constant          [m³ kg⁻¹ s⁻²]
-hbar   = 1.054571817e-34   # reduced Planck constant         [J s]
-c      = 2.99792458e8      # speed of light in vacuum        [m s⁻¹]
-k_B    = 1.380649e-23      # Boltzmann constant              [J K⁻¹]
-M_sun  = 1.98892e30        # solar mass                      [kg]
-alpha  = 7.2973525693e-3   # fine-structure constant          [dimensionless]
-m_e    = 9.1093837015e-31  # electron mass                   [kg]
+# --- Exact (SI 2019 definitions) ---
+c      = 299_792_458              # speed of light in vacuum        [m s⁻¹]  (exact)
+hbar   = 1.054_571_817_646_156e-34  # reduced Planck constant       [J s]    (exact)
+k_B    = 1.380_649e-23            # Boltzmann constant              [J K⁻¹]  (exact)
+
+# --- Measured (CODATA 2022) ---
+G      = 6.674_30e-11             # gravitational constant          [m³ kg⁻¹ s⁻²]  (15)
+alpha  = 7.297_352_5643e-3        # fine-structure constant          [dimensionless]  (11)
+m_e    = 9.109_383_7139e-31       # electron mass                   [kg]             (28)
+
+# --- Astronomical ---
+# IAU 2015 nominal solar mass parameter: GM☉ = 1.327_124_4 × 10²⁰ m³ s⁻²
+# M☉ = GM☉ / G
+M_sun  = 1.327_124_4e20 / G      # solar mass                      [kg]
 
 # Derived constants
-ell_P_CODATA = np.sqrt(G * hbar / c**3)  # Planck length    [m]
+ell_P_CODATA = np.sqrt(G * hbar / c**3)  # Planck length            [m]
 
 # Lattice constants (Cosserat supersolid framework)
-m_0    = m_e / alpha       # node mass = m_e / α             [kg]
-r_e    = alpha * hbar / (m_e * c)  # classical electron radius = lattice spacing [m]
-                           # r_e = α ℏ/(m_e c) = e²/(4πε₀ m_e c²) ≈ 2.82 fm
-ell    = r_e               # lattice spacing (our length scale)
-alpha_G = G * m_0**2 / (hbar * c)  # gravitational fine-structure constant
-                                    # at the node mass scale
+m_0    = m_e / alpha              # node mass = m_e / α             [kg]
+r_e    = alpha * hbar / (m_e * c) # classical electron radius       [m]
+                                  # = lattice spacing ℓ ≈ 2.82 fm
+ell    = r_e                      # lattice spacing (our length scale)
+alpha_G = G * m_0**2 / (hbar * c) # gravitational fine-structure constant
+                                  # at the node mass scale
 
 
 # ============================================================
@@ -177,6 +189,7 @@ def main():
     print("=" * 78)
     print("BEKENSTEIN-HAWKING ENTROPY: ADIABATIC ACCRETION VERIFICATION")
     print("Cosserat supersolid vacuum framework — Cox (2026)")
+    print("Constants: CODATA 2022 (Rev. Mod. Phys. 97, 025002)")
     print("=" * 78)
 
     # ── Lattice cross-check ──────────────────────────────────────
@@ -189,7 +202,11 @@ def main():
     print(f"  ℓ_P (CODATA)                   = {ell_P_CODATA:.6e} m")
     print(f"  ℓ_P (lattice) = √α_G × ℓ      = {ell_P_lattice:.6e} m")
     print(f"  ℓ_P ratio (lattice/CODATA)     = {ell_P_lattice/ell_P_CODATA:.12f}")
-    sig_figs = -int(np.log10(abs(1 - ell_P_lattice / ell_P_CODATA)))
+    residual = abs(1 - ell_P_lattice / ell_P_CODATA)
+    if residual == 0:
+        sig_figs = 16  # machine precision (float64)
+    else:
+        sig_figs = -int(np.log10(residual))
     print(f"  Agreement to {sig_figs} significant figures.")
 
     # ── Physical origin of 1/4 ───────────────────────────────────
