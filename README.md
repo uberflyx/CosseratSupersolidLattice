@@ -1,5 +1,34 @@
 # Cosserat Supersolid Lattice
 
+## Repository structure
+
+```
+cosserat_calculator.py          # Core mass & coupling calculator (imported by all)
+├── foundations/                 # Ch. 3–6: PN barrier, α derivation, symmetry channels
+│   ├── pn_variational.py       #   PN tunnelling amplitude (Ch. 5)
+│   ├── theta_ch_ab_initio_v2.py#   Chirality parameter θ_ch (Ch. 6)
+│   ├── oh_irrep_overlaps.py    #   O_h irrep overlaps (Ch. 4)
+│   ├── cosserat_transfer_matrix.py # Transfer matrix eigenvalues (Ch. 4)
+│   ├── cosserat_dw.py          #   Debye-Waller factor (Ch. 3)
+│   └── gamma4_scp.py           #   Quartic anharmonic correction (Ch. 11)
+├── hadrons/                    # Ch. 9–10: mass formula, exotics, excited baryons
+│   ├── verify_fcc_geometry.py  #   FCC coordinate checks (Ch. 9)
+│   ├── excited_baryons.py      #   N(1440), N(1535), Λ(1670) masses (Ch. 12)
+│   ├── exotic_catalogue.py     #   Exotic hadron classification
+│   ├── exotic_filling_fraction.py
+│   └── three_mechanisms.py     #   Vacuum energy mechanisms (Ch. 13)
+├── decays/                     # Ch. 12: decay rates and lifetimes
+│   ├── cosserat_decay_engine.py#   Full decay rate calculator
+│   └── test_decay_engine.py    #   Regression tests
+├── neutrinos/                  # Ch. 8: neutrino sector
+│   ├── neutrino_predictions.py #   ν mass and mixing predictions
+│   └── neutrino_error_budget.py#   Error propagation
+└── gravity/                    # Ch. 15–16: black holes, gravity
+    ├── bh_entropy_derivation.py#   Bekenstein-Hawking entropy
+    └── bh_statistical_mechanics.py # BH statistical mechanics
+```
+
+
 **Mitchell A. Cox, University of the Witwatersrand**
 
 Companion code for [*The Cosserat Supersolid*](https://doi.org/10.5281/zenodo.18636501)
