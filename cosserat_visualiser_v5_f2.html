@@ -1,0 +1,2797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosserat Supersolid — Strain + Coulomb Field Viewer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{overflow:hidden;background:#fff;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1A1A1A;}
+canvas{display:block;}
+.vl{position:absolute;text-align:center;font-weight:bold;font-size:1.1rem;color:#1A1A1A;transform:translateX(-50%);z-index:10;pointer-events:none;}
+.bar{text-decoration:overline;}
+#l111{bottom:calc(50% + 8px);left:25%;}
+#l121{bottom:calc(50% + 8px);left:75%;}
+#l101{bottom:8px;left:25%;}
+#lper{bottom:8px;left:75%;}
+#pz{position:absolute;bottom:0;right:0;width:50vw;height:50vh;z-index:5;cursor:grab;}
+#pz:active{cursor:grabbing;}
+.ct{position:absolute;top:12px;z-index:20;background:#1A1A1A;color:#fff;border:none;border-radius:5px;padding:7px 14px;font-size:0.75rem;font-family:inherit;cursor:pointer;opacity:0.8;}
+.ct:hover{opacity:1;}
+#ps{left:12px;appearance:auto;-webkit-appearance:menulist;}
+#fs{left:280px;appearance:auto;-webkit-appearance:menulist;}
+#wbox{left:490px;}
+#xb{right:12px;}
+#togbox{right:160px;top:12px;display:flex;gap:8px;}
+#cbc{position:absolute;top:50px;right:50px;z-index:20;pointer-events:none;display:flex;flex-direction:column;align-items:center;}
+#cb{border:1px solid #ccc;border-radius:2px;}
+.cl{font-size:0.6rem;color:#555;margin:1px 0;}
+</style>
+</head>
+<body>
+
+<div id="l111" class="vl">[111]</div>
+<div id="l121" class="vl">[1<span class="bar">2</span>1]</div>
+<div id="l101" class="vl">[10<span class="bar">1</span>]</div>
+<div id="lper" class="vl">Perspective</div>
+
+<select id="ps" class="ct">
+    <optgroup label="Leptons (single dislocation)">
+        <option value="electron">e⁻ — screw (monopolar, charged)</option>
+        <option value="nuelectron">νₑ — edge (quadrupolar, neutral)</option>
+    </optgroup>
+    <optgroup label="Baryons (N=13, cuboctahedron)">
+        <option value="proton">Proton uud (Q=+1)</option>
+        <option value="neutron">Neutron udd (Q=0)</option>
+        <option value="delta">Δ⁺⁺ uuu (N=17, Q=+2)</option>
+    </optgroup>
+    <optgroup label="Strange baryons — octet (hex-cap extensions)">
+        <option value="lambda">Λ uds (N=16, S=−1, I=0)</option>
+        <option value="sigma_plus">Σ⁺ uus (N=17, S=−1)</option>
+        <option value="sigma_zero">Σ⁰ uds (N=17, S=−1)</option>
+        <option value="sigma_minus">Σ⁻ dds (N=17, S=−1)</option>
+        <option value="xi_zero">Ξ⁰ uss (N=19, S=−2)</option>
+        <option value="xi_minus">Ξ⁻ dss (N=19, S=−2)</option>
+        <option value="omega_minus">Ω⁻ sss (N=24, S=−3)</option>
+    </optgroup>
+    <optgroup label="Pseudoscalar mesons (J=0)">
+        <option value="pion">π⁺ ud̄ — cell pair (N=2)</option>
+        <option value="pion0">π⁰ (uū−dd̄)/√2 — cell pair (N=2)</option>
+        <option value="kaon">K⁺ us̄ — hex cap (N=7)</option>
+        <option value="kaon0">K⁰ ds̄ — hex cap (N=7)</option>
+        <option value="eta">η — hex bilayer (N=8)</option>
+    </optgroup>
+    <optgroup label="Vector mesons (J=1)">
+        <option value="rho">ρ⁺ ud̄ — crossed fault (N=144/13)</option>
+        <option value="omega">ω uū+dd̄ — crossed fault (N=144/13)</option>
+        <option value="phi">φ ss̄ — full shell, GMO (N=29/2)</option>
+        <option value="kstar">K*⁺ us̄ — full shell (N=13)</option>
+    </optgroup>
+    <optgroup label="Dibaryon (B=2)">
+        <option value="dstar">d*(2380) ΔΔ — shared core (N=34)</option>
+    </optgroup>
+    <optgroup label="Phonon spectrum (vacuum modes)">
+        <option value="f2">f₂(1270) — optical microrotation (N=345/19)</option>
+    </optgroup>
+</select>
+
+<select id="fs" class="ct">
+    <option value="strain" selected>Strain ε (signed)</option>
+    <option value="strainenergy">Strain energy ε²ᵢⱼ (tensor)</option>
+    <option value="displacement">Energy × phase (screw topology)</option>
+    <option value="cosserat">Cosserat U (strain + curvature)</option>
+    <option value="coulomb">Coulomb φ</option>
+    <option value="coulomb2">Coulomb φ²</option>
+    <option value="spheres">Spheres only</option>
+</select>
+
+<div id="wbox" class="ct" style="display:flex;align-items:center;gap:5px;cursor:default;">
+    <span style="font-size:0.65rem;">w/ℓ</span>
+    <input type="range" id="ws" min="0.10" max="0.783" step="0.001" value="0.783" style="width:100px;">
+    <span id="wv" style="font-size:0.7rem;min-width:36px;">0.783</span>
+</div>
+
+<button id="xb" class="ct">Export 600 DPI</button>
+
+<div id="togbox" class="ct" style="cursor:default;">
+    <label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:0.65rem;">
+        <input type="checkbox" id="armToggle"> Arms
+    </label>
+    <label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:0.65rem;">
+        <input type="checkbox" id="posOnly"> + only
+    </label>
+    <label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:0.65rem;">
+        <input type="checkbox" id="rpToggle"> Rₚ
+    </label>
+    <label style="display:flex;align-items:center;gap:2px;cursor:pointer;font-size:0.65rem;">
+        <input type="checkbox" id="wireToggle" checked> Cage
+    </label>
+</div>
+
+<div id="cbc">
+    <span class="cl" id="cbt">+</span>
+    <canvas id="cb" width="24" height="180"></canvas>
+    <span class="cl" id="cbb">−</span>
+</div>
+
+<div id="pz"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ================================================================
+   CONSTANTS & GLOBALS
+   ================================================================ */
+var scene,renderer,controls;
+var overlayScene, overlayCam;
+var scaleRing;
+var c111,c121,c101,cP;
+var fS=8.0;
+var volMesh;
+var wU,mU,stU;
+var currentCageGroup = null;
+var currentNodeMeshes = [];
+var currentPartKey = 'proton';
+var armLines;
+var rpCircle;
+var lineUnisB, lineUnisF;
+var needsStaticUpdate=true;
+var cageVisible=true;
+
+var cv=1/Math.sqrt(2);
+var cS=1+1/Math.sqrt(2);
+var ax111=new THREE.Vector3(1,1,1).normalize();
+var qUp=new THREE.Quaternion().setFromUnitVectors(ax111,new THREE.Vector3(0,1,0));
+
+/* 12 cuboctahedral vertices (FCC nearest neighbours) */
+var OFS=[[cv,cv,0],[-cv,cv,0],[cv,-cv,0],[-cv,-cv,0],[cv,0,cv],[-cv,0,cv],[cv,0,-cv],[-cv,0,-cv],[0,cv,cv],[0,-cv,cv],[0,cv,-cv],[0,-cv,-cv]].map(function(a){return new THREE.Vector3(a[0],a[1],a[2]);});
+
+/* Cuboctahedron face indices */
+var TRI=[0,8,4,1,5,8,3,9,5,2,4,9,0,6,10,1,10,7,3,7,11,2,11,6];
+var QUA=[0,1,8,0,10,1,2,9,3,2,3,11,0,4,2,0,2,6,1,3,5,1,7,3,4,8,5,4,5,9,6,7,10,6,11,7];
+
+/* Baryon quark arm directions (Y-junction on cuboctahedron) */
+var arm0=new THREE.Vector3(1,-1,0).normalize().applyQuaternion(qUp);
+var arm1=new THREE.Vector3(-1,0,1).normalize().applyQuaternion(qUp);
+var arm2=new THREE.Vector3(0,1,-1).normalize().applyQuaternion(qUp);
+
+/* Burgers vectors for edge dislocations: b̂ = [111]×d̂, normalized.
+   These lie in the (111) plane, perpendicular to the arm direction.
+   n̂ = d̂ × b̂ = [111]/√3 for all arms. */
+var burg0=new THREE.Vector3(1,1,-2).normalize().applyQuaternion(qUp);
+var burg1=new THREE.Vector3(1,-2,1).normalize().applyQuaternion(qUp);
+var burg2=new THREE.Vector3(-2,1,1).normalize().applyQuaternion(qUp);
+
+/* Hex cap ring: the 6 midplane vertices of the cuboctahedron,
+   ordered as a cycle.  These are the vertices with zero projection
+   onto [111], forming a regular hexagon on the {111} plane. */
+var HEX_RING_IDX = [1, 5, 9, 2, 6, 10];  // cyclic order
+
+/* Hex cap vertex positions (in original FCC frame) */
+var HEX_RING = HEX_RING_IDX.map(function(i){ return OFS[i].clone(); });
+
+/* Second {111} plane hex ring: midplane of (11̄1).
+   Cyclic order verified by NN distance = 1.0 for consecutive pairs. */
+var HEX_RING2_IDX = [1, 7, 11, 2, 4, 8];
+var HEX_RING2 = HEX_RING2_IDX.map(function(i){ return OFS[i].clone(); });
+
+/* Meson quark directions: on the {111} plane, diametrically opposite */
+var mesonArm0 = new THREE.Vector3(1,-1,0).normalize().applyQuaternion(qUp);
+var mesonArm1 = new THREE.Vector3(-1,1,0).normalize().applyQuaternion(qUp);
+
+/* Bilayer extra node: B-site from the adjacent close-packed layer.
+   This is OFS[0] = (1/√2, 1/√2, 0), which sits above the {111}
+   midplane at projection √(2/3) ≈ 0.82 along [111].
+   It is bonded to the centre and to ring nodes OFS[6] and OFS[10]. */
+var bilayerNode = OFS[0].clone();
+
+var STRAIN_R=1.8, COULOMB_R=2.5;
+var LIVE_STEPS=100, EXPORT_STEPS=400;
+
+/* Tetrahedral void positions inside the cuboctahedron.
+   FCC has 8 T-sites at (±h,±h,±h) where h = 1/(2√2).
+   They split into two T_d subsets related by inversion. */
+var Th = 0.5/Math.sqrt(2);
+var T_D1 = [
+    new THREE.Vector3(+Th,+Th,+Th), new THREE.Vector3(+Th,-Th,-Th),
+    new THREE.Vector3(-Th,+Th,-Th), new THREE.Vector3(-Th,-Th,+Th)
+];
+var T_D2 = [
+    new THREE.Vector3(-Th,-Th,-Th), new THREE.Vector3(-Th,+Th,+Th),
+    new THREE.Vector3(+Th,-Th,+Th), new THREE.Vector3(+Th,+Th,-Th)
+];
+
+/* ================================================================
+   HEX-CAP EXTENSION NODES (beyond the cuboctahedron)
+   When a strange quark extends as a hex cap along one Y-junction arm,
+   3 new FCC lattice sites beyond the 1st coordination shell are activated.
+   These are NNs of the arm-tip vertex that lie outside the cuboctahedron.
+   
+   Each arm has 3 extension nodes + 1 optional bilayer node (for Σ).
+   Arm0 → OFS[2]=(cv,-cv,0), Arm1 → OFS[5]=(-cv,0,cv), Arm2 → OFS[10]=(0,cv,-cv).
+   ================================================================ */
+var sv = Math.sqrt(2);  /* = 2*cv */
+
+/* Extension along arm0 (toward OFS[2]): 3 NNs of OFS[2] outside cuboctahedron */
+var EXT0 = [
+    new THREE.Vector3(sv, 0, 0),        /* 2nd shell */
+    new THREE.Vector3(0, -sv, 0),       /* 2nd shell */
+    new THREE.Vector3(sv, -sv, 0)       /* 3rd shell, tip */
+];
+/* Bilayer node for arm0: NN of OFS[2], above the {111} midplane */
+var EXT0_BIL = new THREE.Vector3(sv, -cv, cv);
+
+/* Extension along arm1 (toward OFS[5]): 3 NNs of OFS[5] outside cuboctahedron */
+var EXT1 = [
+    new THREE.Vector3(0, 0, sv),        /* 2nd shell */
+    new THREE.Vector3(-sv, 0, 0),       /* 2nd shell */
+    new THREE.Vector3(-sv, 0, sv)       /* 3rd shell, tip */
+];
+var EXT1_BIL = new THREE.Vector3(-cv, cv, sv);
+
+/* Extension along arm2 (toward OFS[10]): 3 NNs of OFS[10] outside cuboctahedron */
+var EXT2 = [
+    new THREE.Vector3(0, sv, 0),        /* 2nd shell */
+    new THREE.Vector3(0, 0, -sv),       /* 2nd shell */
+    new THREE.Vector3(0, sv, -sv)       /* 3rd shell, tip */
+];
+var EXT2_BIL = new THREE.Vector3(cv, sv, -cv);
+
+/* ================================================================
+   NEXT-NEAREST NEIGHBOUR POSITIONS (Born stability cluster)
+   The 6 NNN sites at distance √2 from the origin, along the cube
+   axes.  Together with the 12 NN (cuboctahedral) sites and the
+   central node, these form the 19-node Born stability cluster
+   that determines Newton's constant and the f₂(1270) mass.
+   ================================================================ */
+var NNN = [
+    new THREE.Vector3(sv, 0, 0),     /* [100] */
+    new THREE.Vector3(-sv, 0, 0),    /* [−100] */
+    new THREE.Vector3(0, sv, 0),     /* [010] */
+    new THREE.Vector3(0, -sv, 0),    /* [0−10] */
+    new THREE.Vector3(0, 0, sv),     /* [001] */
+    new THREE.Vector3(0, 0, -sv)     /* [00−1] */
+];
+
+/* ================================================================
+   PARTICLE DEFINITIONS
+   ================================================================ */
+var particles = {
+    /* --- Leptons: single line defects --- */
+    electron: {
+        label: "Electron e⁻",
+        N: 0, Q: -1,
+        nQ: 1,
+        sp: [1, 1, 0],
+        ch: [-1, 0, 0],
+        cage: "none",
+        qDist: 0.8,
+        coreType: 0,  /* screw: monopolar, couples to photon → charged */
+        strainR: 2.2,
+        info: "Single screw dislocation<br>b ∥ ξ (Burgers ∥ line)<br>Monopolar strain cos θ<br>Couples to photon → charged"
+    },
+    nuelectron: {
+        label: "Electron neutrino νₑ",
+        N: 0, Q: 0,
+        nQ: 1,
+        sp: [1, 1, 0],
+        ch: [0, 0, 0],
+        cage: "none",
+        qDist: 0.8,
+        coreType: 1,  /* edge: quadrupolar, orthogonal to photon → neutral */
+        strainR: 2.2,
+        info: "Single edge dislocation<br>b ⊥ ξ (Burgers ⊥ line)<br>Quadrupolar strain cos 2θ<br>Orthogonal to photon → neutral"
+    },
+    /* --- Baryons --- */
+    proton: {
+        label: "Proton uud",
+        N: 13, Q: -12,
+        nQ: 3,
+        sp: [1, 1, -1],
+        ch: [2/3, 2/3, -1/3],
+        cage: "cuboctahedron",
+        qDist: 0.8,
+        coreType: 0,  /* 0=screw (HCP polytype, monopolar, charged) */
+        info: "N=13 (cuboctahedron)<br>Q=−12 (12 satisfied bonds)<br>HCP screw core → charged<br>m = 13m₀ − 12mₑ + m₀/26<br>= 938.8 MeV"
+    },
+    neutron: {
+        label: "Neutron udd",
+        N: 13, Q: -4,
+        nQ: 3,
+        sp: [1, -1, 1],
+        ch: [2/3, -1/3, -1/3],
+        cage: "cuboctahedron",
+        qDist: 0.8,
+        coreType: 1,  /* 1=edge (FCC polytype, quadrupolar, neutral) */
+        info: "N=13 (cuboctahedron)<br>Q=−4 (−12+8 isospin)<br>FCC edge core → neutral<br>m = 13m₀ − 4mₑ + m₀/26<br>= 939.9 MeV"
+    },
+    delta: {
+        label: "Δ⁺⁺ uuu",
+        N: 17, Q: 15,
+        nQ: 3,
+        sp: [1, 1, 1],
+        ch: [2/3, 2/3, 2/3],
+        cage: "cuboctahedron",
+        qDist: 0.8,
+        info: "N=17 (shell + 4 voids)<br>Q=+15 (−12+27 void faces)<br>m = 17m₀ + 15mₑ<br>= 1198 MeV"
+    },
+    /* --- Strange baryons (S = −1, −2, −3) --- */
+    lambda: {
+        label: "Λ uds (I=0, S=−1)",
+        N: 16, Q: -9,
+        nQ: 3,
+        sp: [1, 1, -1],
+        ch: [2/3, -1/3, -1/3],
+        cage: "lambda",
+        qDist: 0.8,
+        strangeArms: [0],  /* arm0 carries the strange extension */
+        strainR: 2.6,
+        info: "N=16 (shell + 3 hex-cap nodes)<br>Q=−9 (−N²c stacking)<br>1 strange arm extends as hex cap<br>Antisymmetric I=0 → compact<br>m = 16m₀ − 9mₑ = 1115.8 MeV"
+    },
+    sigma_plus: {
+        label: "Σ⁺ uus (I=1, S=−1)",
+        N: 17, Q: -2,
+        nQ: 3,
+        sp: [1, 1, -1],
+        ch: [2/3, 2/3, -1/3],
+        cage: "sigma",
+        qDist: 0.8,
+        strangeArms: [0],
+        strainR: 2.6,
+        info: "N=17 (shell + 4 hex-cap nodes)<br>Q=−2<br>Symmetric I=1 → wider cluster<br>Extra bilayer node from {111}<br>m = 17m₀ − 2mₑ = 1189.4 MeV"
+    },
+    sigma_zero: {
+        label: "Σ⁰ uds (I=1, S=−1)",
+        N: 17, Q: 4,
+        nQ: 3,
+        sp: [1, -1, -1],
+        ch: [2/3, -1/3, -1/3],
+        cage: "sigma",
+        qDist: 0.8,
+        strangeArms: [0],
+        strainR: 2.6,
+        info: "N=17 (same cluster as Σ⁺)<br>Q=+4 (isospin step +6mₑ)<br>m = 17m₀ + 4mₑ = 1192.5 MeV"
+    },
+    sigma_minus: {
+        label: "Σ⁻ dds (I=1, S=−1)",
+        N: 17, Q: 14,
+        nQ: 3,
+        sp: [-1, -1, -1],
+        ch: [-1/3, -1/3, -1/3],
+        cage: "sigma",
+        qDist: 0.8,
+        strangeArms: [0],
+        strainR: 2.6,
+        info: "N=17 (same cluster as Σ⁺)<br>Q=+14 (second isospin step)<br>m = 17m₀ + 14mₑ = 1197.6 MeV"
+    },
+    xi_zero: {
+        label: "Ξ⁰ uss (S=−2)",
+        N: 19, Q: -31,
+        nQ: 3,
+        sp: [1, -1, -1],
+        ch: [2/3, -1/3, -1/3],
+        cage: "xi",
+        qDist: 0.8,
+        strangeArms: [0, 1],  /* 2 strange arms */
+        strainR: 2.8,
+        info: "N=19 (shell + 6 hex-cap nodes)<br>Q=−31 (−N³c − 4 planes)<br>2 strange arms extend as hex caps<br>m = 19m₀ − 31mₑ = 1314.6 MeV"
+    },
+    xi_minus: {
+        label: "Ξ⁻ dss (S=−2)",
+        N: 19, Q: -17,
+        nQ: 3,
+        sp: [-1, -1, -1],
+        ch: [-1/3, -1/3, -1/3],
+        cage: "xi",
+        qDist: 0.8,
+        strangeArms: [0, 1],
+        strainR: 2.8,
+        info: "N=19 (same cluster as Ξ⁰)<br>Q=−17 (isospin step +14mₑ)<br>m = 19m₀ − 17mₑ = 1321.8 MeV"
+    },
+    omega_minus: {
+        label: "Ω⁻ sss (S=−3)",
+        N: 24, Q: -16,
+        nQ: 3,
+        sp: [-1, -1, -1],
+        ch: [-1/3, -1/3, -1/3],
+        cage: "omega_baryon",
+        qDist: 0.8,
+        strangeArms: [0, 1, 2],  /* all 3 arms strange */
+        strainR: 3.0,
+        info: "N=24 = 3×8 (triple bilayer)<br>Q=−16 (−Z − 4 planes)<br>All 3 arms strange → topological<br>phase transition to 3 interlocking<br>hex bilayers<br>m = 24m₀ − 16mₑ = 1672.4 MeV"
+    },
+    /* --- Pseudoscalar mesons (J=0) --- */
+    pion: {
+        label: "π⁺ ud̄",
+        N: 2, Q: -1,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [2/3, 1/3, 0],
+        cage: "cellpair",
+        qDist: 0.5,
+        info: "N=2 (cell pair)<br>Q=−1 (1 bond)<br>m = 2m₀ − mₑ<br>= 139.5 MeV"
+    },
+    pion0: {
+        label: "π⁰ (uū−dd̄)/√2",
+        N: 2, Q: -10,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [1/3, -1/3, 0],
+        cage: "cellpair",
+        qDist: 0.5,
+        info: "N=2 (same cell pair as π±)<br>Q=−10 (S₀=N²c, K=2N²c)<br>Isospin-0: Δm = N²c mₑ = 4.60 MeV<br>m = 2m₀ − 10mₑ = 135.0 MeV"
+    },
+    kaon: {
+        label: "K⁺ us̄",
+        N: 7, Q: 7,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [2/3, 1/3, 0],
+        cage: "hexcap",
+        qDist: 0.6,
+        strainR: 2.6,  /* wider than pion: hex cap extends to cS ≈ 1.71 */
+        info: "N=7 (hex cap on {111})<br>Q=+7 (7 oscillating nodes)<br>m = 7(m₀ + mₑ) = 493.8 MeV"
+    },
+    kaon0: {
+        label: "K⁰ ds̄",
+        N: 7, Q: 15,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [-1/3, 1/3, 0],
+        cage: "hexcap",
+        qDist: 0.6,
+        strainR: 2.6,
+        info: "N=7 (same hex cap as K±)<br>Q=+15 = 7 + 5(md−mu) + 3(Nc)<br>m = 7m₀ + 15mₑ = 497.8 MeV"
+    },
+    eta: {
+        label: "η (uū+dd̄+ss̄)",
+        N: 8, Q: -24,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [1/3, -1/3, 0],
+        cage: "hexbilayer",
+        qDist: 0.6,
+        strainR: 2.6,  /* same footprint as kaon hex cap */
+        info: "N=8 (hex bilayer = cap + 1)<br>Q=−24 (colour channels)<br>m = 8m₀ − 24mₑ = 547.9 MeV"
+    },
+    /* --- Dibaryon (B=2) --- */
+    dstar: {
+        label: "d*(2380) ΔΔ",
+        N: 34, Q: 3,
+        nQ: 3,
+        sp: [1, 1, 1],
+        ch: [2/3, 2/3, 2/3],
+        cage: "dibaryon",
+        qDist: 0.8,
+        strainR: 3.2,
+        info: "N=34 (2×17 − 1 shared + winding)<br>Q=+3<br>Two Δ shells sharing 1 core node<br>+ 27 void-surface bonds<br>Binding = m₀+27mₑ = 83.8 MeV<br>m = 34m₀+3mₑ = 2382 MeV"
+    },
+    /* --- Vector mesons (J=1) --- */
+    rho: {
+        label: "ρ⁺ ud̄",
+        N: "144/13", Q: 0,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [2/3, 1/3, 0],
+        cage: "crossedfault",
+        qDist: 0.8,
+        strainR: 2.8,  /* two intersecting fault planes span full shell */
+        info: "N=144/13 (crossed fault)<br>Q=0 (isovector cancels)<br>Two {111} planes intersect within<br>cuboctahedron: 11 faulted + 2 ejectible<br>m = (144/13)m₀ = 775.7 MeV"
+    },
+    omega: {
+        label: "ω (uū+dd̄)",
+        N: "144/13", Q: 12,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [1/3, -1/3, 0],
+        cage: "crossedfault",
+        qDist: 0.8,
+        strainR: 2.8,
+        info: "N=144/13 (crossed fault)<br>Q=+12 (isoscalar coherent)<br>Same crossed fault as ρ<br>Symmetric I=0 → +12mₑ<br>m = (144/13)m₀ + 12mₑ = 781.8 MeV"
+    },
+    phi: {
+        label: "φ ss̄",
+        N: "29/2", Q: 8,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [-1/3, 1/3, 0],
+        cage: "cuboctahedron",
+        qDist: 0.8,
+        strainR: 2.6,
+        info: "N=29/2 (GMO + spin delocalisation)<br>Q=+8<br>ss̄ pins fault to {111} → full shell<br>2N_GMO − N_ρ − 11/26 = 29/2<br>m = (29/2)m₀ + 8mₑ = 1019.5 MeV"
+    },
+    kstar: {
+        label: "K*⁺ us̄",
+        N: 13, Q: -36,
+        nQ: 2,
+        sp: [1, -1, 0],
+        ch: [2/3, 1/3, 0],
+        cage: "cuboctahedron",
+        qDist: 0.8,
+        strainR: 2.6,  /* full shell */
+        info: "N=13 (full shell, strangeness-pinned)<br>Q=−36 (4 planes × N²c)<br>Hex cap pins fault to one {111} plane<br>→ all 13 nodes participate<br>m = 13m₀ − 36mₑ = 891.9 MeV"
+    },
+    /* --- Massive spin-2: optical microrotation mode (phonon spectrum) --- */
+    f2: {
+        label: "f₂(1270) tensor meson",
+        N: "345/19", Q: 2,
+        nQ: 0,
+        sp: [0, 0, 0],
+        ch: [0, 0, 0],
+        cage: "born",
+        qDist: 0,
+        strainR: 2.8,
+        coreType: 2,  /* 2 = microrotation (quadrupolar curvature) */
+        info: "N=345/19 (Born cluster optical mode)<br>Q=+2 (2 spin-2 polarisations)<br>Optical microrotation: neighbours<br>rock in antiphase (κ<sub>ij</sub> = ∂<sub>j</sub>φ<sub>i</sub>)<br>NLO: m = (345/19)m₀(1+α/π) + 2mₑ<br>= 1275.5 MeV (obs: 1275.5 ± 0.8)"
+    }
+};
+
+/* ================================================================
+   SHADERS
+   ================================================================ */
+var vS=`
+varying vec3 vWP;
+void main(){
+    vec4 wp=modelMatrix*vec4(position,1.0);
+    vWP=wp.xyz;
+    gl_Position=projectionMatrix*viewMatrix*wp;
+}`;
+
+var fS_code=`
+precision highp float;
+varying vec3 vWP;
+uniform vec3 uCP;
+uniform vec3 uSegO[8];   /* segment origins */
+uniform vec3 uSegD[8];   /* segment directions (normalised) */
+uniform vec3 uSegB[8];   /* Burgers vectors (edge mode) */
+uniform float uSegS[8];  /* spin weights */
+uniform float uNSeg;     /* number of active segments */
+uniform vec3 uCh;        /* charge fractions (Coulomb mode) */
+uniform vec3 uQ0,uQ1,uQ2; /* quark positions (Coulomb mode) */
+uniform float uW2,uR,uMode,uSteps;
+uniform float uFieldScale;
+uniform float uPosOnly;    /* 1.0 = hide negative strain */
+uniform float uCoreType;   /* 0.0 = screw, 1.0 = edge */
+
+/* Node-based strain field uniforms */
+uniform vec3 uNP[32];   /* node positions (world space) */
+uniform float uNS[32];  /* node signs (+1 or -1)        */
+uniform float uNC;       /* active node count            */
+uniform float uFT;       /* field type: 0=arm, 1=node   */
+
+vec2 hSp(vec3 ro,vec3 rd,float r){
+    float b=dot(ro,rd);float c=dot(ro,ro)-r*r;
+    float h=b*b-c;if(h<0.0)return vec2(1.0,-1.0);
+    h=sqrt(h);return vec2(-b-h,-b+h);
+}
+
+/* PN-regularised screw dislocation strain magnitude along arm d.
+   |ε| = r_perp / (r²_perp + w²) — zero on the line, toroidal peak at w.
+   Semi-infinite: the partial dislocation radiates OUTWARD from the
+   Y-junction vertex.  The strain ramps up smoothly over one core
+   width w from the vertex (al=0), which is physically correct for
+   a partial dislocation establishing itself out of the junction. */
+float aF(vec3 p,vec3 d,float w2){
+    float al=dot(p,d);
+    float r2=max(0.0, dot(p,p) - al*al);
+    float rp=sqrt(r2);
+    float w=sqrt(w2);
+    float mk=smoothstep(-w, w, al);
+    return mk*rp/(r2+w2);
+}
+
+/* PN-regularised EDGE dislocation strain magnitude along arm d.
+   b̂ is the Burgers vector (⊥ d, in the slip plane).
+   n̂ = d × b̂ (normal to slip plane = [111]).
+   Local coords: x = p_perp · b̂, y = p_perp · n̂
+   Strain components (incompressible, Hirth & Lothe Ch.3):
+     ε_bb = -x²y/(r²+w²)²
+     ε_nn = +x²y/(r²+w²)²
+     ε_bn = x(x²-y²)/(2(r²+w²)²)
+   Returns Frobenius norm = √(2ε_bb² + 2ε_bn²).
+   Zero along n̂ ([111]), maximum along b̂ → quadrupolar. */
+/* PN-regularised EDGE dislocation SIGNED strain proxy along arm d.
+   The edge displacement is +ℓ/2 above the slip plane, −ℓ/2 below.
+   The strain ε_bb = −x²y/(r²+w²)² flips sign with y (the component
+   along n̂ = d×b = [111]).  We return sign(−y) × |ε| so that mode 0
+   shows one bean orange (positive shear) and one blue (negative). */
+float aF_edge(vec3 p, vec3 d, vec3 b, float w2){
+    float al=dot(p,d);
+    vec3 pp=p-al*d;
+    float x=dot(pp,b);
+    vec3 n=cross(d,b);
+    float y=dot(pp,n);
+    float r2=x*x+y*y;
+    float w=sqrt(w2);
+    float mk=smoothstep(-w,w,al);
+    float denom=(r2+w2)*(r2+w2);
+    float ebb=-x*x*y/denom;
+    float ebn=x*(x*x-y*y)/(2.0*denom);
+    float mag=sqrt(2.0*ebb*ebb + 2.0*ebn*ebn);
+    float sgn=(y>0.0)?-1.0:1.0;
+    return mk*sgn*mag;
+}
+
+/* Isotropic Lorentzian around a node position (meson mode) */
+float nF(vec3 p,vec3 np,float w2){
+    vec3 dp=p-np;
+    return 1.0/(1.0+dot(dp,dp)/w2);
+}
+
+/* Spin-2 optical microrotation curvature: Y₂⁰(θ) × radial envelope.
+   The f₂(1270) is the optical mode where shell nodes rock in antiphase
+   with the central pivot.  The observable is the curvature κ_{ij} = ∂_j φ_i,
+   whose spin-2 angular pattern is the d_{z²} spherical harmonic.
+   axis = quadrupole axis (crystal [001] rotated into viewing frame).
+   Returns: signed curvature field (positive = prolate, negative = oblate). */
+float microrot(vec3 p, vec3 axis){
+    float r2 = dot(p, p);
+    if(r2 < 0.001) return 0.0;
+    float z = dot(p, axis);
+    float y20 = 3.0 * z * z / r2 - 1.0;  /* Y₂⁰ ∝ 3cos²θ − 1 */
+    /* Radial: (r/σ)² exp(−(r/σ)²), peaks at r = σ.
+       σ² = 2.0 puts the peak at r = √2 ≈ 1.41 (vis. units),
+       between the central pivot and the NN shell at cS ≈ 1.71.
+       The r² factor ensures the curvature vanishes at the pivot
+       (uniform rotation has zero curvature). */
+    float sigma2 = 2.0;
+    float radial = (r2 / sigma2) * exp(-r2 / sigma2);
+    return y20 * radial;
+}
+
+float cPt(vec3 p,vec3 qp,float q){
+    return q/(length(p-qp)+0.12);
+}
+
+vec3 jet(float t){
+    t=clamp(t,0.0,1.0);
+    return clamp(vec3(1.5)-abs(4.0*vec3(t)-vec3(3.0,2.0,1.0)),0.0,1.0);
+}
+
+/* Hot colourmap: black → red → yellow over [0,1]. No stretch/compress. */
+vec3 hot(float t){
+    t=clamp(t, 0.0, 1.0);
+    return vec3(
+        clamp(2.0*t, 0.0, 1.0),
+        clamp(2.0*t - 1.0, 0.0, 1.0),
+        0.0
+    );
+}
+
+/* ── Cosserat constants (N²=1/π, from pn_variational.py) ── */
+const float KAPPA   = 1.751938;         /* micropolar modulus */
+const float GAMMA_C = 1.0;             /* curvature modulus γ = μℓ² */
+const float MU_BAR  = 1.875969;        /* μ + κ/2 */
+const float MU_TOT  = 2.751938;        /* μ + κ */
+const float ELL_ROT = 0.534227;        /* √(γ/2κ) — rotational screening length */
+const float COUP    = 0.466942;        /* κ/(2μ̄) — microrotation coupling */
+
+/* Padé [1/3] approximation: f(ξ) = ξ K₁(ξ)
+   Screening factor for the microrotation field.
+   f(0) = 1 (full screening), f(∞) = 0 (no screening).
+   Max error < 1.3% over ξ ∈ [0, 8]. */
+float besselScreen(float xi){
+    float x2 = xi*xi;
+    float num = 1.0 - 0.1405*xi;
+    float den = 1.0 + 0.0969*xi + 0.2819*x2 + 0.0362*xi*x2;
+    return clamp(num/den, 0.0, 1.0);
+}
+
+/* Derivative: -f'(ξ) = ξ K₀(ξ), computed from the Padé analytically */
+float besselScreenDeriv(float xi){
+    float x2 = xi*xi;
+    float N = 1.0 - 0.1405*xi;
+    float D = 1.0 + 0.0969*xi + 0.2819*x2 + 0.0362*xi*x2;
+    float dN = -0.1405;
+    float dD = 0.0969 + 0.5638*xi + 0.1085*x2;
+    /* f'(ξ) = (dN×D - N×dD) / D², and -f'(ξ) = ξK₀(ξ) */
+    return clamp(-(dN*D - N*dD)/(D*D), 0.0, 2.0);
+}
+
+/* Screw dislocation displacement along arm d̂.
+   u_z = (b/2π) × atan2(perp₂, perp₁)
+   Returns the helical phase angle in [-0.5, +0.5].
+   This is the "spiral staircase" — the topological winding. */
+float screwPhase(vec3 p, vec3 d){
+    vec3 ref = abs(d.z) < 0.9 ? vec3(0.0,0.0,1.0) : vec3(1.0,0.0,0.0);
+    vec3 e1 = normalize(cross(d, ref));
+    vec3 e2 = cross(d, e1);
+    float u = dot(p, e1);
+    float v = dot(p, e2);
+    return atan(v, u) / 6.2831853;
+}
+
+/* ── Shared tensor accumulator for screw/edge arms ── */
+vec3 _tDiag, _tOff;
+/* Stacking-fault ribbon: constant strain energy in a planar slab.
+   The ribbon lies in the (111) plane (y=0 after qUp) between two
+   quark positions projected onto the separation axis.
+   p = sample point, o1/o2 = quark origins, sep = separation direction,
+   w2 = core width squared.
+   Returns a smooth slab value: Lorentzian in y × box in x. */
+uniform vec3 uRibSep;    /* ribbon separation direction (normalised) */
+uniform float uRibHalf;  /* half-separation distance */
+uniform float uRibOn;    /* 1.0 = show ribbon, 0.0 = no ribbon */
+
+float ribbon(vec3 p, float w2){
+    if(uRibOn < 0.5) return 0.0;
+    /* Distance from the (111) midplane = y component */
+    float y = p.y;
+    /* Position along separation axis */
+    float x = dot(p, uRibSep);
+    /* Lorentzian profile perpendicular to the plane */
+    float slabProfile = 1.0 / (1.0 + y*y/w2);
+    /* Smooth box: inside the ribbon between -half and +half */
+    float w = sqrt(w2);
+    float inRibbon = smoothstep(-uRibHalf-w, -uRibHalf, x)
+                   * (1.0 - smoothstep(uRibHalf, uRibHalf+w, x));
+    return 0.3 * slabProfile * inRibbon;
+}
+
+void addArmTensor(vec3 p, vec3 d, vec3 b, float sp, float w2, float ct){
+    float al = dot(p,d);
+    float w = sqrt(w2);
+    float mk = smoothstep(-w, w, al);
+    if(ct < 0.5){
+        /* Screw: ε_ij = sp×(d_i c_j + d_j c_i)/(r²+w²) */
+        vec3 c = cross(d, p);
+        float r2 = max(0.0, dot(p,p)-al*al);
+        float s = sp * mk / (r2 + w2);
+        _tDiag += s * vec3(2.0*d.x*c.x, 2.0*d.y*c.y, 2.0*d.z*c.z);
+        _tOff  += s * vec3(d.x*c.y+d.y*c.x, d.x*c.z+d.z*c.x, d.y*c.z+d.z*c.y);
+    } else {
+        /* Edge: quadrupolar strain in (b̂, n̂) plane */
+        vec3 pp = p - al*d;
+        float x = dot(pp, b);
+        vec3 n = cross(d, b);
+        float y = dot(pp, n);
+        float r2 = x*x + y*y;
+        float dn = (r2+w2)*(r2+w2);
+        float ebb = -x*x*y/dn;
+        float enn =  x*x*y/dn;
+        float ebn = x*(x*x-y*y)/(2.0*dn);
+        float s = sp * mk;
+        _tDiag += s*(ebb*vec3(b.x*b.x,b.y*b.y,b.z*b.z)
+                   + enn*vec3(n.x*n.x,n.y*n.y,n.z*n.z)
+                   + 2.0*ebn*vec3(b.x*n.x,b.y*n.y,b.z*n.z));
+        _tOff  += s*(ebb*vec3(b.x*b.y,b.x*b.z,b.y*b.z)
+                   + enn*vec3(n.x*n.y,n.x*n.z,n.y*n.z)
+                   + ebn*vec3(b.x*n.y+b.y*n.x,b.x*n.z+b.z*n.x,b.y*n.z+b.z*n.y));
+    }
+}
+
+void main(){
+    vec3 rd=normalize(vWP-uCP);
+    vec2 tH=hSp(uCP,rd,uR);
+    if(tH.x>tH.y)discard;
+    tH.x=max(tH.x,0.0);
+    float dt=(tH.y-tH.x)/uSteps;
+
+    float dither=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);
+    float t=tH.x+dither*dt;
+    vec3 p=uCP+t*rd;
+    vec3 rStep=rd*dt;
+
+    vec3 accC=vec3(0.0);
+    float accA=0.0;
+
+    if(uMode<0.5){
+        /* ── Mode 0: Strain field ε (signed, linear) ── */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float edgeFade=1.0-smoothstep(uR*0.55,uR,dist);
+            float field=0.0;
+
+            if(uFT<0.5){
+                /* ── Generic segment loop ── */
+                for(int si=0;si<8;si++){
+                    if(float(si)>=uNSeg)break;
+                    vec3 pp=p-uSegO[si];
+                    if(uCoreType<0.5){
+                        field+=uSegS[si]*aF(pp,uSegD[si],uW2);
+                    }else{
+                        field+=uSegS[si]*aF_edge(pp,uSegD[si],uSegB[si],uW2);
+                    }
+                }
+                field=field/max(uNSeg,1.0);
+                /* Add stacking-fault ribbon contribution */
+                field += ribbon(p, uW2);
+            }else if(uFT<1.5){
+                for(int j=0;j<32;j++){
+                    if(float(j)>=uNC)break;
+                    field+=uNS[j]*nF(p,uNP[j],uW2);
+                }
+                field=field/max(uNC,1.0);
+            }else{
+                field=microrot(p, uRibSep);
+            }
+
+            float norm=field*edgeFade*uFieldScale;
+            /* posOnly: suppress negative strain (blue) regions */
+            if(uPosOnly > 0.5 && norm < 0.0) norm = 0.0;
+            float density=smoothstep(0.15,0.55,abs(norm));
+            vec3 col=jet(clamp(norm*1.0+0.5,0.0,1.0));
+            float sA=density*dt*40.0;
+            accC+=(1.0-accA)*sA*col;
+            accA+=(1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }else if(uMode<1.5){
+        /* ── Mode 1: Coulomb φ ── */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float bFade=1.0-smoothstep(uR*0.92,uR,dist);
+            float phi=cPt(p,uQ0,uCh.x)+cPt(p,uQ1,uCh.y)+cPt(p,uQ2,uCh.z);
+            float k=3.0;
+            float logPhi=sign(phi)*log(1.0+abs(phi)*k)/log(1.0+6.0*k);
+            vec3 col=jet(clamp(logPhi*2.4+0.5,0.0,1.0));
+            float dens=smoothstep(0.01,0.5,abs(logPhi)*bFade)*bFade;
+            float sA=dens*dt*12.0;
+            accC+=(1.0-accA)*sA*col;
+            accA+=(1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }else if(uMode<2.5){
+        /* ── Mode 2: Coulomb φ² ── */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float bFade=1.0-smoothstep(uR*0.92,uR,dist);
+            float phi=cPt(p,uQ0,uCh.x)+cPt(p,uQ1,uCh.y)+cPt(p,uQ2,uCh.z);
+            float fN=(phi*abs(phi))/8.0;
+            vec3 col=jet(clamp(fN*1.6+0.5,0.0,1.0));
+            float dens=smoothstep(0.01,0.6,abs(fN)*bFade)*bFade;
+            float sA=dens*dt*10.0;
+            accC+=(1.0-accA)*sA*col;
+            accA+=(1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }else if(uMode<3.5){
+        /* ── Mode 3: Strain energy density U = ε_ij ε_ij ──
+           For baryons (arm mode): compute the full symmetric strain
+           tensor from 3 screw dislocation arms, superpose, contract.
+           For a screw along d̂: ε_ij = sp×(d_i c_j + d_j c_i)/(r²_⊥+w²)
+           where c = d̂ × p.  This is the PHYSICAL strain energy density.
+           For mesons (node mode): field², same as before. */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float edgeFade=1.0-smoothstep(uR*0.55,uR,dist);
+            float energy=0.0;
+
+            if(uFT<0.5){
+                _tDiag=vec3(0.0); _tOff=vec3(0.0);
+                for(int si=0;si<8;si++){
+                    if(float(si)>=uNSeg)break;
+                    addArmTensor(p-uSegO[si],uSegD[si],uSegB[si],uSegS[si],uW2,uCoreType);
+                }
+                energy = (dot(_tDiag,_tDiag) + 2.0*dot(_tOff,_tOff)) * edgeFade * edgeFade;
+                float rib = ribbon(p, uW2);
+                energy += rib*rib * edgeFade * edgeFade;
+            }else if(uFT<1.5){
+                float field=0.0;
+                for(int j=0;j<32;j++){
+                    if(float(j)>=uNC)break;
+                    field+=uNS[j]*nF(p,uNP[j],uW2);
+                }
+                field=field/max(uNC,1.0);
+                energy=field*field*edgeFade*edgeFade;
+            }else{
+                float field=microrot(p, uRibSep);
+                energy=field*field*edgeFade*edgeFade;
+            }
+
+            float eNorm = energy * uFieldScale * uFieldScale;
+            float density=smoothstep(0.01,0.15,eNorm);
+            vec3 col=hot(clamp(eNorm*4.0,0.0,1.0));
+            float sA=density*dt*40.0;
+            accC+=(1.0-accA)*sA*col;
+            accA+=(1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }else if(uMode<4.5){
+        /* ── Mode 4: Full Cosserat energy density ──
+           U_total = U_strain(Cosserat-corrected) + U_curvature
+           The Cosserat microrotation φ screens the classical strain
+           near the core (r < ℓ_rot = 0.534ℓ), producing the two-zone
+           structure: curvature-dominated core + strain-dominated shell.
+
+           For each arm k:
+             Classical strain: ε_cl = sp_k × (d̂_k × p) / (r²_⊥ + w²)
+             Screening: f(ξ) = ξ K₁(ξ), ξ = r_⊥/ℓ_rot
+             Cosserat correction: h = 1 − COUP×(1−f)
+             Cosserat strain tensor: ε_Coss = h × ε_classical
+             Curvature contribution from dφ/dr.
+
+           Tensors superposed for all 3 arms, then contracted. */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float edgeFade=1.0-smoothstep(uR*0.55,uR,dist);
+            float energy=0.0;
+
+            if(uFT<0.5){
+                vec3 diag = vec3(0.0);
+                vec3 offdiag = vec3(0.0);
+                float curvEnergy = 0.0;
+                float ww = sqrt(uW2);
+
+                for(int si=0;si<8;si++){
+                    if(float(si)>=uNSeg)break;
+                    vec3 pp = p - uSegO[si];
+                    vec3 dd = uSegD[si];
+                    float sp = uSegS[si];
+                    float al = dot(pp,dd);
+                    float mk = smoothstep(-ww,ww,al);
+                    float rpsq = max(0.0, dot(pp,pp)-al*al);
+                    float rpv = sqrt(rpsq);
+                    float den = rpsq + uW2;
+
+                    if(uCoreType<0.5){
+                        /* Screw + Cosserat screening */
+                        float xi = rpv / ELL_ROT;
+                        float fs = besselScreen(xi);
+                        float h = 1.0 - COUP*(1.0-fs);
+                        float s = sp * h * mk / den;
+                        vec3 c = cross(dd, pp);
+                        diag    += s * vec3(2.0*dd.x*c.x, 2.0*dd.y*c.y, 2.0*dd.z*c.z);
+                        offdiag += s * vec3(dd.x*c.y+dd.y*c.x, dd.x*c.z+dd.z*c.x, dd.y*c.z+dd.z*c.y);
+                        float epsCl = rpv / den;
+                        float fD = besselScreenDeriv(xi) / ELL_ROT;
+                        curvEnergy += mk*mk * sp*sp * epsCl*epsCl * COUP*COUP * fD*fD;
+                    }else{
+                        /* Edge: plain tensor (no Cosserat correction for edge yet) */
+                        addArmTensor(pp,dd,uSegB[si],sp,uW2,1.0);
+                    }
+                }
+                if(uCoreType>0.5){
+                    diag = _tDiag; offdiag = _tOff;
+                }
+                float strainE = dot(diag,diag) + 2.0*dot(offdiag,offdiag);
+                energy = (MU_TOT * strainE + GAMMA_C * curvEnergy) * edgeFade * edgeFade;
+            }else if(uFT<1.5){
+                /* Node mode: same as mode 3 (no Cosserat correction) */
+                float field=0.0;
+                for(int j=0;j<32;j++){
+                    if(float(j)>=uNC)break;
+                    field+=uNS[j]*nF(p,uNP[j],uW2);
+                }
+                field=field/max(uNC,1.0);
+                energy=field*field*edgeFade*edgeFade;
+            }else{
+                float field=microrot(p, uRibSep);
+                energy=field*field*edgeFade*edgeFade;
+            }
+
+            float eNorm = energy * uFieldScale * uFieldScale;
+            float density=smoothstep(0.01,0.15,eNorm);
+            vec3 col=hot(clamp(eNorm*4.0,0.0,1.0));
+            float sA=density*dt*40.0;
+            accC+=(1.0-accA)*sA*col;
+            accA+=(1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }else if(uMode<5.5){
+        /* ── Mode 5: Displacement field u (helical screw phase) ──
+           u_z = Σ sp_k × (b/2π) × atan2(perp₂, perp₁)
+           Shows the strain energy density (brightness) coloured by
+           the helical displacement phase (hue) of the dominant arm.
+           You see WHERE the energy is (hot = high) and WHICH way
+           the screw winds (colour wheel around each arm axis). */
+        for(int i=0;i<400;i++){
+            if(float(i)>=uSteps)break;
+            float dist=length(p);
+            float edgeFade=1.0-smoothstep(uR*0.55,uR,dist);
+
+            float phase = 0.0;
+            float energy = 0.0;
+
+            if(uFT<0.5){
+                /* ── Energy density via tensor helper ── */
+                _tDiag=vec3(0.0); _tOff=vec3(0.0);
+                for(int si=0;si<8;si++){
+                    if(float(si)>=uNSeg)break;
+                    addArmTensor(p-uSegO[si],uSegD[si],uSegB[si],uSegS[si],uW2,uCoreType);
+                }
+                energy = (dot(_tDiag,_tDiag) + 2.0*dot(_tOff,_tOff)) * edgeFade * edgeFade;
+                float rib = ribbon(p, uW2);
+                energy += rib*rib * edgeFade * edgeFade;
+
+                /* ── Dominant segment phase ── */
+                float bestW = 0.0;
+                int bestIdx = 0;
+                for(int si=0;si<8;si++){
+                    if(float(si)>=uNSeg)break;
+                    vec3 pp=p-uSegO[si];
+                    float wt;
+                    if(uCoreType<0.5){
+                        float al=dot(pp,uSegD[si]);
+                        float rpsq=max(0.0,dot(pp,pp)-al*al);
+                        wt=sqrt(rpsq)/(rpsq+uW2);
+                    }else{
+                        wt=abs(aF_edge(pp,uSegD[si],uSegB[si],uW2));
+                    }
+                    if(wt>bestW){bestW=wt;bestIdx=si;}
+                }
+                phase=uSegS[bestIdx]*screwPhase(p-uSegO[bestIdx],uSegD[bestIdx]);
+            }else if(uFT<1.5){
+                float field=0.0;
+                for(int j=0;j<32;j++){
+                    if(float(j)>=uNC)break;
+                    field+=uNS[j]*nF(p,uNP[j],uW2);
+                }
+                field=field/max(uNC,1.0);
+                energy=field*field*edgeFade*edgeFade;
+                phase=field;
+            }else{
+                float field=microrot(p, uRibSep);
+                energy=field*field*edgeFade*edgeFade;
+                phase=field;
+            }
+
+            /* HSV-style: hue from phase, value from energy */
+            float eNorm = energy * uFieldScale * uFieldScale;
+            float density = smoothstep(0.01, 0.15, eNorm);
+            float brightness = clamp(eNorm * 4.0, 0.0, 1.0);
+            vec3 hueCol = jet(fract(phase + 0.5));
+            vec3 col = hueCol * brightness;
+            float sA = density * dt * 40.0;
+            accC += (1.0-accA)*sA*col;
+            accA += (1.0-accA)*sA;
+            if(accA>0.97)break;
+            p+=rStep;
+        }
+    }
+    gl_FragColor=vec4(accC,accA);
+}
+`;
+
+/* Wireframe shaders with depth-aware front/back clipping */
+var lineVS = `
+varying vec3 vWP;
+void main(){
+    vec4 wp=modelMatrix*vec4(position,1.0);
+    vWP=wp.xyz;
+    gl_Position=projectionMatrix*viewMatrix*wp;
+}`;
+var lineFS = `
+uniform vec3 uColor;
+uniform vec3 uCP;
+uniform float uClipDir;
+varying vec3 vWP;
+void main(){
+    float d=dot(vWP,uCP-vWP);
+    if(d*uClipDir < -0.1) discard;
+    gl_FragColor=vec4(uColor,1.0);
+}`;
+
+/* ================================================================
+   CAGE GEOMETRY BUILDERS
+   ================================================================ */
+
+function buildCuboctahedronGeometry(scale) {
+    return buildCuboctahedronGeometryOffset(scale, new THREE.Vector3(0,0,0));
+}
+
+function buildCuboctahedronGeometryOffset(scale, offset) {
+    scale = scale || cS;
+    var vts = new Float32Array(36);
+    for(var i=0;i<12;i++){
+        vts[i*3]  =(OFS[i].x + offset.x)*scale;
+        vts[i*3+1]=(OFS[i].y + offset.y)*scale;
+        vts[i*3+2]=(OFS[i].z + offset.z)*scale;
+    }
+    var idx=[];
+    for(var j=0;j<TRI.length;j++) idx.push(TRI[j]);
+    for(var j=0;j<QUA.length;j++) idx.push(QUA[j]);
+    var cG=new THREE.BufferGeometry();
+    cG.setAttribute('position',new THREE.BufferAttribute(vts,3));
+    cG.setIndex(idx); cG.computeVertexNormals();
+    cG.addGroup(0,24,0); cG.addGroup(24,36,1);
+    return cG;
+}
+
+function buildHexCapGeometry(scale) {
+    return buildHexCapFromRing(HEX_RING, scale);
+}
+
+function buildHexCapFromRing(ring, scale) {
+    /* 7 vertices: index 0 = centre, indices 1-6 = ring */
+    scale = scale || cS;
+    var vts = new Float32Array(21); // 7 × 3
+    vts[0]=0; vts[1]=0; vts[2]=0; // centre
+    for(var i=0;i<6;i++){
+        var v = ring[i];
+        vts[(i+1)*3]   = v.x * scale;
+        vts[(i+1)*3+1] = v.y * scale;
+        vts[(i+1)*3+2] = v.z * scale;
+    }
+    /* 6 triangular faces: (0, i+1, next+1) */
+    var idx = [];
+    for(var i=0;i<6;i++){
+        idx.push(0, i+1, ((i+1)%6)+1);
+    }
+    var cG = new THREE.BufferGeometry();
+    cG.setAttribute('position', new THREE.BufferAttribute(vts,3));
+    cG.setIndex(idx); cG.computeVertexNormals();
+    cG.addGroup(0, idx.length, 0);
+    return cG;
+}
+
+function buildHexBilayerGeometry(scale) {
+    /* 8 vertices: centre + 6 hex ring + 1 bilayer node above */
+    scale = scale || cS;
+    var vts = new Float32Array(24); // 8 × 3
+    vts[0]=0; vts[1]=0; vts[2]=0;
+    for(var i=0;i<6;i++){
+        var v = HEX_RING[i];
+        vts[(i+1)*3]   = v.x * scale;
+        vts[(i+1)*3+1] = v.y * scale;
+        vts[(i+1)*3+2] = v.z * scale;
+    }
+    /* Bilayer node: above centre, along [111] direction */
+    var bn = bilayerNode.clone().multiplyScalar(scale);
+    vts[21] = bn.x; vts[22] = bn.y; vts[23] = bn.z;
+
+    /* Faces: 6 hex triangles + 3 side triangles connecting to bilayer node */
+    var idx = [];
+    for(var i=0;i<6;i++){
+        idx.push(0, i+1, ((i+1)%6)+1);
+    }
+    /* Connect bilayer node (vertex 7 = OFS[0]) to its 3 nearest neighbours:
+       vertex 0 (centre), vertex 5 (HEX_RING[4]=OFS[6]), vertex 6 (HEX_RING[5]=OFS[10]).
+       These are the actual FCC bonds at distance ℓ from OFS[0]. */
+    idx.push(7, 0, 5);
+    idx.push(7, 0, 6);
+    idx.push(7, 5, 6);
+
+    var cG = new THREE.BufferGeometry();
+    cG.setAttribute('position', new THREE.BufferAttribute(vts,3));
+    cG.setIndex(idx); cG.computeVertexNormals();
+    cG.addGroup(0, idx.length, 0);
+    return cG;
+}
+
+function buildCellPairGeometry(scale) {
+    /* The cell pair is two adjacent FCC nodes along one ⟨110⟩ direction.
+       We use the OFS[2] direction = (1/√2, −1/√2, 0), which corresponds
+       to the mesonArm0 axis (1,−1,0)/√2 in the local frame.
+       Separation = 1.0 (one nearest-neighbour distance in OFS units).
+       With sphere radius 0.5, the two nodes touch. */
+    var dir = OFS[2].clone().normalize();  /* = (1/√2, −1/√2, 0) */
+    var halfSep = 0.5;  /* nodes at ±0.5 → separation = 1.0 = ℓ */
+    var vts = new Float32Array(6);
+    vts[0] = -dir.x * halfSep; vts[1] = -dir.y * halfSep; vts[2] = -dir.z * halfSep;
+    vts[3] =  dir.x * halfSep; vts[4] =  dir.y * halfSep; vts[5] =  dir.z * halfSep;
+    /* Single degenerate triangle for EdgesGeometry to produce the bond line */
+    var idx = [0, 1, 0];
+    var cG = new THREE.BufferGeometry();
+    cG.setAttribute('position', new THREE.BufferAttribute(vts,3));
+    cG.setIndex(idx);
+    cG.addGroup(0, 3, 0);
+    return cG;
+}
+
+/* ================================================================
+   BUILD CAGE GROUP (wireframe + faces + nodes)
+   ================================================================ */
+function buildCageGroup(cageType) {
+    var grp = new THREE.Group();
+    grp.quaternion.copy(qUp);
+
+    var nodeMeshes = [];
+    var sG = new THREE.SphereGeometry(1.0, 24, 24);
+    var dummyUnis = {
+        uCP: {value: new THREE.Vector3()},
+        uClipDir: {value: 1.0}
+    };
+
+    if(cageType === 'none') {
+        /* Leptons: no cage, just the strain field */
+        grp.userData = { nodeMeshes: [], lineUnisB: dummyUnis, lineUnisF: dummyUnis };
+        return grp;
+    }
+
+    if(cageType === 'cellpair') {
+        /* ── Cell pair: just a bond line + 2 touching spheres ── */
+        var dir = OFS[2].clone().normalize();
+        var halfSep = 0.5;
+        var p0 = dir.clone().multiplyScalar(-halfSep);
+        var p1 = dir.clone().multiplyScalar( halfSep);
+
+        var lineGeo = new THREE.BufferGeometry();
+        lineGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+            p0.x,p0.y,p0.z, p1.x,p1.y,p1.z
+        ], 3));
+        var lineMat = new THREE.LineBasicMaterial({color:0x1A1A1A});
+        var bondLine = new THREE.Line(lineGeo, lineMat);
+        bondLine.renderOrder = 2;
+        grp.add(bondLine);
+
+        var n0 = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0xE84040, roughness:0.3, metalness:0.08}));
+        n0.position.copy(p0); n0.scale.set(0.5,0.5,0.5); n0.visible = false;
+        nodeMeshes.push(n0); grp.add(n0);
+
+        var n1 = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0x3B82D6, roughness:0.3, metalness:0.08}));
+        n1.position.copy(p1); n1.scale.set(0.5,0.5,0.5); n1.visible = false;
+        nodeMeshes.push(n1); grp.add(n1);
+
+        grp.userData = {
+            lineUnisB: dummyUnis,
+            lineUnisF: dummyUnis,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    if(cageType === 'hexbilayer') {
+        /* ── Hex bilayer: flat hex-cap disk + bilayer node with bond lines ──
+           The monograph (Sec. 8.2) says N=8 = 7+1: the hex cap plus one
+           B-site node from the adjacent close-packed layer.  We draw:
+           - The flat hex cap (6 triangular faces) as the polyhedral cage
+           - The bilayer node (OFS[0]) as a separate sphere
+           - 3 bond lines from OFS[0] to its nearest neighbours:
+             centre, HEX_RING[4]=OFS[6], HEX_RING[5]=OFS[10]           */
+        var cG = buildHexCapGeometry();
+
+        /* Wireframe for the flat hex disk */
+        var lmB = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        var linesBack = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmB);
+        linesBack.renderOrder = 1;
+
+        var lmF = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        var linesFront = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmF);
+        linesFront.renderOrder = 3;
+
+        var facesBack = new THREE.Mesh(cG, new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide}));
+        facesBack.renderOrder = 1;
+        var facesFront = new THREE.Mesh(cG, new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide}));
+        facesFront.renderOrder = 3;
+
+        grp.add(facesBack); grp.add(facesFront);
+        grp.add(linesBack); grp.add(linesFront);
+
+        /* Bond lines from bilayer node to its 3 NN */
+        var bnWorld = bilayerNode.clone().multiplyScalar(cS);
+        var nn0 = new THREE.Vector3(0,0,0);            /* centre */
+        var nn1 = HEX_RING[4].clone().multiplyScalar(cS); /* OFS[6] */
+        var nn2 = HEX_RING[5].clone().multiplyScalar(cS); /* OFS[10] */
+        var bondVerts = [
+            bnWorld.x,bnWorld.y,bnWorld.z, nn0.x,nn0.y,nn0.z,
+            bnWorld.x,bnWorld.y,bnWorld.z, nn1.x,nn1.y,nn1.z,
+            bnWorld.x,bnWorld.y,bnWorld.z, nn2.x,nn2.y,nn2.z
+        ];
+        var bondGeo = new THREE.BufferGeometry();
+        bondGeo.setAttribute('position', new THREE.Float32BufferAttribute(bondVerts, 3));
+        var bondLines = new THREE.LineSegments(bondGeo, new THREE.LineBasicMaterial({color:0x7B5EA7, linewidth:1}));
+        bondLines.renderOrder = 2;
+        grp.add(bondLines);
+
+        /* Node spheres: centre + 6 ring + bilayer */
+        var nc = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0x3BB54A, roughness:0.3, metalness:0.08}));
+        nc.scale.set(0.5,0.5,0.5); nc.visible = false;
+        nodeMeshes.push(nc); grp.add(nc);
+        for(var i=0;i<6;i++){
+            var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0xE8A040, roughness:0.3, metalness:0.08}));
+            nd.position.copy(HEX_RING[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+        var nb = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0x7B5EA7, roughness:0.3, metalness:0.08}));
+        nb.position.copy(bilayerNode).multiplyScalar(cS); nb.scale.set(0.5,0.5,0.5); nb.visible = false;
+        nodeMeshes.push(nb); grp.add(nb);
+
+        grp.userData = {
+            lineUnisB: lmB.uniforms,
+            lineUnisF: lmF.uniforms,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    if(cageType === 'dibaryon') {
+        /* ── d*(2380): two Δ cuboctahedra offset by one NN distance ──
+           Δ₁ centred at origin. Δ₂ centred at OFS[0] = (cv,cv,0).
+           Both wireframes built in grp's local frame (pre-offset vertices). */
+
+        var offset = OFS[0].clone();
+        var cG1 = buildCuboctahedronGeometry();
+        var cG2 = buildCuboctahedronGeometryOffset(cS, offset);
+
+        /* Δ₁ wireframe + faces (warm) */
+        var lmB1 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x994433)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG1), lmB1));
+        var lmF1 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x994433)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG1), lmF1));
+        grp.add(new THREE.Mesh(cG1, [
+            new THREE.MeshPhysicalMaterial({color:0xEEAA88, transparent:true, opacity:0.08, depthWrite:false, side:THREE.DoubleSide}),
+            new THREE.MeshPhysicalMaterial({color:0xCC8866, transparent:true, opacity:0.08, depthWrite:false, side:THREE.DoubleSide})
+        ]));
+
+        /* Δ₂ wireframe + faces (cool) — already in grp's frame */
+        var lmB2 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x334499)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG2), lmB2));
+        var lmF2 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x334499)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG2), lmF2));
+        grp.add(new THREE.Mesh(cG2, [
+            new THREE.MeshPhysicalMaterial({color:0x88AAEE, transparent:true, opacity:0.08, depthWrite:false, side:THREE.DoubleSide}),
+            new THREE.MeshPhysicalMaterial({color:0x6688CC, transparent:true, opacity:0.08, depthWrite:false, side:THREE.DoubleSide})
+        ]));
+
+        /* ── Node spheres ──
+           Shared: origin, OFS[0], OFS[4], OFS[6], OFS[8], OFS[10] → gold
+           Δ₁-only: OFS[1,2,3,5,7,9,11] → warm
+           Δ₂-only: 7 new surface nodes → cool
+           Voids: 4 per Δ in matching colour */
+        var SHARED_IDX = [0, 4, 6, 8, 10];
+        var goldMat = new THREE.MeshStandardMaterial({color:0xFFCC33, roughness:0.2, metalness:0.15});
+        var warmMat = new THREE.MeshStandardMaterial({color:0xE86030, roughness:0.3, metalness:0.08});
+        var coolMat = new THREE.MeshStandardMaterial({color:0x4060E0, roughness:0.3, metalness:0.08});
+
+        /* Δ₁ centre → gold (shared) */
+        var nc1 = new THREE.Mesh(sG, goldMat.clone());
+        nc1.scale.set(0.5,0.5,0.5); nc1.visible = false;
+        nodeMeshes.push(nc1); grp.add(nc1);
+
+        /* Δ₁ surface: shared gold, rest warm */
+        for(var i=0;i<12;i++){
+            var isShared = (SHARED_IDX.indexOf(i) >= 0);
+            var nd = new THREE.Mesh(sG, (isShared ? goldMat : warmMat).clone());
+            nd.position.copy(OFS[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        /* Δ₂ new surface nodes → cool */
+        var shell2new = [
+            [cv*2, cv*2, 0], [0, cv*2, 0], [cv*2, 0, 0],
+            [cv*2, cv, cv], [cv*2, cv, -cv],
+            [cv, cv*2, cv], [cv, cv*2, -cv]
+        ];
+        for(var i=0;i<shell2new.length;i++){
+            var nd = new THREE.Mesh(sG, coolMat.clone());
+            nd.position.set(shell2new[i][0]*cS, shell2new[i][1]*cS, shell2new[i][2]*cS);
+            nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        /* Δ₁ voids → warm */
+        for(var i=0;i<4;i++){
+            var nd = new THREE.Mesh(sG, warmMat.clone());
+            nd.position.copy(T_D1[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+        /* Δ₂ voids → cool */
+        for(var i=0;i<4;i++){
+            var vp = T_D1[i].clone().add(offset);
+            var nd = new THREE.Mesh(sG, coolMat.clone());
+            nd.position.copy(vp).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        grp.userData = {
+            lineUnisB: lmB1.uniforms,
+            lineUnisF: lmF1.uniforms,
+            lineUnisB2: lmB2.uniforms,
+            lineUnisF2: lmF2.uniforms,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    if(cageType === 'crossedfault') {
+        /* ── Crossed fault: TWO intersecting {111} hex-cap planes ──
+           Plane 1 = (111):  ring [1,5,9,2,6,10]   (HEX_RING)
+           Plane 2 = (11̄1): ring [1,7,11,2,4,8]   (HEX_RING2)
+           Shared vertices: OFS[1], OFS[2] (the intersection line)
+           Unfaulted:       OFS[0], OFS[3] (ejectible cell pair)   */
+
+        /* Build both hex-cap geometries */
+        var cG1 = buildHexCapFromRing(HEX_RING);
+        var cG2 = buildHexCapFromRing(HEX_RING2);
+
+        /* Plane 1 wireframe + faces (warm colour) */
+        var lmB1 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0xC04030)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG1), lmB1));
+        var lmF1 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0xC04030)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG1), lmF1));
+        grp.add(new THREE.Mesh(cG1, new THREE.MeshPhysicalMaterial({color:0xE88060, transparent:true, opacity:0.12, depthWrite:false, side:THREE.DoubleSide})));
+
+        /* Plane 2 wireframe + faces (cool colour) */
+        var lmB2 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x3060C0)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG2), lmB2));
+        var lmF2 = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x3060C0)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG2), lmF2));
+        grp.add(new THREE.Mesh(cG2, new THREE.MeshPhysicalMaterial({color:0x6080E8, transparent:true, opacity:0.12, depthWrite:false, side:THREE.DoubleSide})));
+
+        /* Bond line between unfaulted pair (ejectible cell pair) */
+        var uf0 = OFS[0], uf1 = OFS[3];
+        var ufGeo = new THREE.BufferGeometry();
+        ufGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+            uf0.x*cS,uf0.y*cS,uf0.z*cS, uf1.x*cS,uf1.y*cS,uf1.z*cS
+        ], 3));
+        grp.add(new THREE.LineSegments(ufGeo, new THREE.LineBasicMaterial({color:0x44BB44})));
+
+        /* Node spheres */
+        var UNFAULTED_CF = [0, 3];
+        var SHARED_CF = [1, 2];  /* on both planes */
+        var PLANE1_ONLY = [5, 6, 9, 10];
+        var PLANE2_ONLY = [4, 7, 8, 11];
+
+        /* Centre (on both planes) */
+        var nc = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0xFFCC33, roughness:0.3, metalness:0.08}));
+        nc.scale.set(0.5,0.5,0.5); nc.visible = false;
+        nodeMeshes.push(nc); grp.add(nc);
+
+        for(var i=0;i<12;i++){
+            var col;
+            if(UNFAULTED_CF.indexOf(i) >= 0)      { col = 0x44BB44; } /* green: ejectible pair */
+            else if(SHARED_CF.indexOf(i) >= 0)     { col = 0xFFCC33; } /* gold: intersection line */
+            else if(PLANE1_ONLY.indexOf(i) >= 0)   { col = 0xE86050; } /* warm: plane 1 only */
+            else                                    { col = 0x5070E0; } /* cool: plane 2 only */
+            var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:col, roughness:0.3, metalness:0.08}));
+            nd.position.copy(OFS[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        grp.userData = {
+            lineUnisB: lmB1.uniforms,
+            lineUnisF: lmF1.uniforms,
+            lineUnisB2: lmB2.uniforms,
+            lineUnisF2: lmF2.uniforms,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    /* ================================================================
+       STRANGE BARYON CAGES: cuboctahedron + hex-cap extension nodes
+       Lambda (N=16): 13 shell + 3 extension on arm0
+       Sigma  (N=17): 13 shell + 3 extension + 1 bilayer on arm0
+       Xi     (N=19): 13 shell + 3 ext arm0 + 3 ext arm1
+       Omega  (N=24): 12 shell vertices + 3×(3 ext + 1 bil) = 24 (no centre)
+       ================================================================ */
+    if(cageType === 'lambda' || cageType === 'sigma' || cageType === 'xi' || cageType === 'omega_baryon') {
+
+        /* ── Build cuboctahedron as the base wireframe ── */
+        var cG = buildCuboctahedronGeometry();
+        var lmB = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmB));
+        var lmF = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmF));
+        grp.add(new THREE.Mesh(cG, [
+            new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.10, depthWrite:false, side:THREE.BackSide}),
+            new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.10, depthWrite:false, side:THREE.BackSide})
+        ]));
+        grp.add(new THREE.Mesh(cG, [
+            new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.10, depthWrite:false, side:THREE.FrontSide}),
+            new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.10, depthWrite:false, side:THREE.FrontSide})
+        ]));
+
+        /* ── Determine which arms carry strange extensions ── */
+        var EXTS = [EXT0, EXT1, EXT2];
+        var BILS = [EXT0_BIL, EXT1_BIL, EXT2_BIL];
+        var TIP_OFS = [2, 5, 10]; /* OFS index of the arm-tip vertex */
+        var extCols = [0xE8A040, 0x40A0E8, 0x40E880]; /* warm, cool, green per arm */
+
+        var strangeArms = [];
+        var hasBilayer = false;
+        if(cageType === 'lambda')       { strangeArms = [0]; }
+        else if(cageType === 'sigma')   { strangeArms = [0]; hasBilayer = true; }
+        else if(cageType === 'xi')      { strangeArms = [0, 1]; }
+        else if(cageType === 'omega_baryon') { strangeArms = [0, 1, 2]; hasBilayer = true; }
+
+        /* ── Extension nodes + bond lines ── */
+        for(var sa=0; sa<strangeArms.length; sa++){
+            var ai = strangeArms[sa];
+            var exts = EXTS[ai];
+            var tipIdx = TIP_OFS[ai];
+            var tipPos = OFS[tipIdx].clone().multiplyScalar(cS);
+            var col = extCols[ai];
+
+            /* Build hex-cap wireframe on the {111} plane through the extension */
+            var extVerts = [];
+            for(var ei=0; ei<3; ei++){
+                var ep = exts[ei].clone().multiplyScalar(cS);
+                extVerts.push(ep);
+                /* Bond line: extension node → arm-tip vertex */
+                var bGeo = new THREE.BufferGeometry();
+                bGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+                    ep.x,ep.y,ep.z, tipPos.x,tipPos.y,tipPos.z
+                ], 3));
+                grp.add(new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({color:col})));
+            }
+            /* Connect extension nodes to each other */
+            for(var ei=0; ei<3; ei++){
+                var ej = (ei+1)%3;
+                var bGeo2 = new THREE.BufferGeometry();
+                bGeo2.setAttribute('position', new THREE.Float32BufferAttribute([
+                    extVerts[ei].x,extVerts[ei].y,extVerts[ei].z,
+                    extVerts[ej].x,extVerts[ej].y,extVerts[ej].z
+                ], 3));
+                grp.add(new THREE.LineSegments(bGeo2, new THREE.LineBasicMaterial({color:col, transparent:true, opacity:0.5})));
+            }
+
+            /* Extension node spheres */
+            for(var ei=0; ei<3; ei++){
+                var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:col, roughness:0.25, metalness:0.12}));
+                nd.position.copy(exts[ei]).multiplyScalar(cS);
+                nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+                nodeMeshes.push(nd); grp.add(nd);
+            }
+
+            /* Bilayer node (Sigma, Omega) */
+            if(hasBilayer){
+                var bilPos = BILS[ai].clone().multiplyScalar(cS);
+                var bGeo3 = new THREE.BufferGeometry();
+                bGeo3.setAttribute('position', new THREE.Float32BufferAttribute([
+                    bilPos.x,bilPos.y,bilPos.z, tipPos.x,tipPos.y,tipPos.z
+                ], 3));
+                grp.add(new THREE.LineSegments(bGeo3, new THREE.LineBasicMaterial({color:0x9B59B6})));
+
+                var nb = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0x9B59B6, roughness:0.25, metalness:0.12}));
+                nb.position.copy(BILS[ai]).multiplyScalar(cS);
+                nb.scale.set(0.5,0.5,0.5); nb.visible = false;
+                nodeMeshes.push(nb); grp.add(nb);
+            }
+        }
+
+        /* ── Shell node spheres (cuboctahedron) ── */
+        function nodeColorStrange(pos) {
+            var d = pos.dot(ax111);
+            return new THREE.MeshStandardMaterial({
+                color: d > 0.1 ? 0xE84040 : d < -0.1 ? 0x3B82D6 : 0x3BB54A,
+                roughness:0.3, metalness:0.08
+            });
+        }
+        /* Centre node (not present for Omega) */
+        if(cageType !== 'omega_baryon'){
+            var n0 = new THREE.Mesh(sG, nodeColorStrange(new THREE.Vector3()));
+            n0.scale.set(0.5,0.5,0.5); n0.visible = false;
+            nodeMeshes.push(n0); grp.add(n0);
+        }
+        for(var i=0;i<12;i++){
+            var nd = new THREE.Mesh(sG, nodeColorStrange(OFS[i]));
+            nd.position.copy(OFS[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        grp.userData = {
+            lineUnisB: lmB.uniforms,
+            lineUnisF: lmF.uniforms,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    /* ================================================================
+       BORN STABILITY CLUSTER CAGE (19 nodes: 1 + 12 NN + 6 NNN)
+       For the f₂(1270) tensor meson — the optical microrotation mode.
+       Cuboctahedron (NN shell) + 6 NNN nodes at square-face centres.
+       ================================================================ */
+    if(cageType === 'born') {
+        /* ── Cuboctahedron wireframe (inner shell) ── */
+        var cG = buildCuboctahedronGeometry();
+
+        /* Wireframe back */
+        var lmB = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:-1.0} },
+            transparent:true, depthWrite:false
+        });
+        var linesBack = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmB);
+        linesBack.renderOrder = 1;
+
+        /* Wireframe front */
+        var lmF = new THREE.ShaderMaterial({
+            vertexShader: lineVS, fragmentShader: lineFS,
+            uniforms: { uColor:{value:new THREE.Color(0x1A1A1A)}, uCP:{value:new THREE.Vector3()}, uClipDir:{value:1.0} },
+            transparent:true, depthWrite:false
+        });
+        var linesFront = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmF);
+        linesFront.renderOrder = 3;
+
+        /* Translucent faces — separate back/front with proper renderOrder */
+        var singleMat = (cG.groups.length <= 1);
+        var fBmat = singleMat
+            ? new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide})
+            : [new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide}),
+               new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide})];
+        var facesBack = new THREE.Mesh(cG, fBmat);
+        facesBack.renderOrder = 1;
+
+        var fFmat = singleMat
+            ? new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide})
+            : [new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide}),
+               new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide})];
+        var facesFront = new THREE.Mesh(cG, fFmat);
+        facesFront.renderOrder = 3;
+
+        grp.add(facesBack); grp.add(facesFront);
+        grp.add(linesBack); grp.add(linesFront);
+
+        /* ── NNN bond lines (each NNN node connects to 4 NN nodes) ── */
+        /* NNN[0]=(sv,0,0) → OFS[0,2,4,6]; NNN[1]=(-sv,0,0) → OFS[1,3,5,7]; etc.
+           Each NNN node is equidistant from 4 cuboctahedral vertices that form
+           the square face it centres. */
+        var NNN_to_NN = [
+            [0, 2, 4, 6],    /* +x: (cv,cv,0),(cv,-cv,0),(cv,0,cv),(cv,0,-cv) */
+            [1, 3, 5, 7],    /* -x */
+            [0, 1, 8, 10],   /* +y: (cv,cv,0),(-cv,cv,0),(0,cv,cv),(0,cv,-cv) */
+            [2, 3, 9, 11],   /* -y */
+            [4, 5, 8, 9],    /* +z: (cv,0,cv),(-cv,0,cv),(0,cv,cv),(0,-cv,cv) */
+            [6, 7, 10, 11]   /* -z */
+        ];
+        var nnnCol = 0x9B59B6;  /* purple for NNN shell */
+        for(var ni=0; ni<6; ni++){
+            var nPos = NNN[ni].clone().multiplyScalar(cS);
+            for(var bi=0; bi<4; bi++){
+                var nnPos = OFS[NNN_to_NN[ni][bi]].clone().multiplyScalar(cS);
+                var bGeo = new THREE.BufferGeometry();
+                bGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+                    nPos.x, nPos.y, nPos.z, nnPos.x, nnPos.y, nnPos.z
+                ], 3));
+                var bondLine = new THREE.LineSegments(bGeo, new THREE.LineBasicMaterial({color:0x333333, transparent:true, opacity:0.6}));
+                bondLine.renderOrder = 2;
+                grp.add(bondLine);
+            }
+        }
+
+        /* ── Node spheres ── */
+        /* Centre node (pivot): gold */
+        var n0 = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0xFFCC33, roughness:0.3, metalness:0.12}));
+        n0.scale.set(0.55,0.55,0.55); n0.visible = false;
+        nodeMeshes.push(n0); grp.add(n0);
+
+        /* 12 NN nodes: colour by Y₂⁰ sign along [001] */
+        for(var i=0;i<12;i++){
+            var zComp = OFS[i].z;
+            var col = (Math.abs(zComp) > 0.01) ? 0xE8A040 : 0x5070E0;  /* orange: off-equatorial (+), blue: equatorial (−) */
+            var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:col, roughness:0.3, metalness:0.08}));
+            nd.position.copy(OFS[i]).multiplyScalar(cS); nd.scale.set(0.45,0.45,0.45); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        /* 6 NNN nodes: purple */
+        for(var i=0;i<6;i++){
+            var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:nnnCol, roughness:0.25, metalness:0.12}));
+            nd.position.copy(NNN[i]).multiplyScalar(cS); nd.scale.set(0.45,0.45,0.45); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+
+        grp.userData = {
+            lineUnisB: lmB.uniforms,
+            lineUnisF: lmF.uniforms,
+            nodeMeshes: nodeMeshes
+        };
+        return grp;
+    }
+
+    /* ── All other cages: polyhedron with wireframe + faces ── */
+    var cG;
+    if(cageType === 'cuboctahedron') cG = buildCuboctahedronGeometry();
+    else if(cageType === 'hexcap')   cG = buildHexCapGeometry();
+    else cG = buildCuboctahedronGeometry();
+
+    /* Wireframe back */
+    var lmB = new THREE.ShaderMaterial({
+        vertexShader: lineVS, fragmentShader: lineFS,
+        uniforms: {
+            uColor: {value: new THREE.Color(0x1A1A1A)},
+            uCP: {value: new THREE.Vector3()},
+            uClipDir: {value: -1.0}
+        },
+        transparent: true, depthWrite: false
+    });
+    var linesBack = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmB);
+    linesBack.renderOrder = 1;
+
+    /* Wireframe front */
+    var lmF = new THREE.ShaderMaterial({
+        vertexShader: lineVS, fragmentShader: lineFS,
+        uniforms: {
+            uColor: {value: new THREE.Color(0x1A1A1A)},
+            uCP: {value: new THREE.Vector3()},
+            uClipDir: {value: 1.0}
+        },
+        transparent: true, depthWrite: false
+    });
+    var linesFront = new THREE.LineSegments(new THREE.EdgesGeometry(cG), lmF);
+    linesFront.renderOrder = 3;
+
+    /* Translucent faces */
+    var singleMat = (cG.groups.length <= 1);
+    var fBmat = singleMat
+        ? new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide})
+        : [new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide}),
+           new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.15, depthWrite:false, side:THREE.BackSide})];
+    var facesBack = new THREE.Mesh(cG, fBmat);
+    facesBack.renderOrder = 1;
+
+    var fFmat = singleMat
+        ? new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide})
+        : [new THREE.MeshPhysicalMaterial({color:0xcccccc, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide}),
+           new THREE.MeshPhysicalMaterial({color:0x999999, transparent:true, opacity:0.15, depthWrite:false, side:THREE.FrontSide})];
+    var facesFront = new THREE.Mesh(cG, fFmat);
+    facesFront.renderOrder = 3;
+
+    grp.add(facesBack); grp.add(facesFront);
+    grp.add(linesBack); grp.add(linesFront);
+
+    /* Node spheres */
+    function nodeColor(pos) {
+        var d = pos.dot(ax111);
+        return new THREE.MeshStandardMaterial({
+            color: d > 0.1 ? 0xE84040 : d < -0.1 ? 0x3B82D6 : 0x3BB54A,
+            roughness:0.3, metalness:0.08
+        });
+    }
+
+    if(cageType === 'cuboctahedron') {
+        var n0 = new THREE.Mesh(sG, nodeColor(new THREE.Vector3()));
+        n0.scale.set(0.5,0.5,0.5); n0.visible = false;
+        nodeMeshes.push(n0); grp.add(n0);
+        for(var i=0;i<12;i++){
+            var nd = new THREE.Mesh(sG, nodeColor(OFS[i]));
+            nd.position.copy(OFS[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+    } else if(cageType === 'hexcap') {
+        var n0 = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0x3BB54A, roughness:0.3, metalness:0.08}));
+        n0.scale.set(0.5,0.5,0.5); n0.visible = false;
+        nodeMeshes.push(n0); grp.add(n0);
+        for(var i=0;i<6;i++){
+            var nd = new THREE.Mesh(sG, new THREE.MeshStandardMaterial({color:0xE8A040, roughness:0.3, metalness:0.08}));
+            nd.position.copy(HEX_RING[i]).multiplyScalar(cS); nd.scale.set(0.5,0.5,0.5); nd.visible = false;
+            nodeMeshes.push(nd); grp.add(nd);
+        }
+    }
+
+    grp.userData = {
+        lineUnisB: lmB.uniforms,
+        lineUnisF: lmF.uniforms,
+        nodeMeshes: nodeMeshes
+    };
+    return grp;
+}
+
+/* ================================================================
+   QUARK POSITION HELPERS
+   ================================================================ */
+function getQuarkPositions(partKey) {
+    var p = particles[partKey];
+    if(p.nQ === 3) {
+        /* Baryons: Y-junction, three arms 120° apart */
+        var d = p.qDist;
+        return [
+            arm0.clone().multiplyScalar(d),
+            arm1.clone().multiplyScalar(d),
+            arm2.clone().multiplyScalar(d)
+        ];
+    }
+    /* Mesons: quark and antiquark on opposite ends of the
+       stacking-fault ribbon.  The meson axis is along mesonArm0,
+       which is the (1,−1,0)/√2 direction rotated into world coords. */
+    if(partKey === 'pion') {
+        /* Cell pair: quarks AT the two node positions, ±0.5 along axis */
+        return [
+            mesonArm0.clone().multiplyScalar(0.5),
+            mesonArm1.clone().multiplyScalar(0.5),
+            new THREE.Vector3(0,0,0)
+        ];
+    }
+    if(partKey === 'kaon' || partKey === 'kaon0') {
+        /* Hex cap: partials at ring edges (±cS along sep axis) */
+        return [
+            mesonArm0.clone().multiplyScalar(cS),
+            mesonArm1.clone().multiplyScalar(cS),
+            new THREE.Vector3(0,0,0)
+        ];
+    }
+    if(partKey === 'eta' || partKey === 'kstar' || partKey === 'phi') {
+        /* Full shell or hex bilayer: partials at shell boundary */
+        return [
+            mesonArm0.clone().multiplyScalar(cS),
+            mesonArm1.clone().multiplyScalar(cS),
+            new THREE.Vector3(0,0,0)
+        ];
+    }
+    /* Fallback */
+    var d = p.qDist;
+    return [
+        mesonArm0.clone().multiplyScalar(d),
+        mesonArm1.clone().multiplyScalar(d),
+        new THREE.Vector3(0,0,0)
+    ];
+}
+
+/* ================================================================
+   GENERIC SEGMENT BUILDER
+   Every particle = a list of dislocation segments.
+   Each segment: { origin: Vector3, dir: Vector3, burg: Vector3, sp: float }
+   ================================================================ */
+function getSegments(partKey) {
+    var p = particles[partKey];
+    var segs = [];
+    var yhat = new THREE.Vector3(0,1,0); /* [111] after qUp */
+
+    function burgFrom(d) {
+        /* Burgers vector for edge: b̂ = ŷ × d̂ */
+        return new THREE.Vector3().crossVectors(yhat, d).normalize();
+    }
+
+    if(p.nQ === 0) {
+        /* Phonon modes (e.g. f₂): no dislocation segments, field is node-based */
+        return segs;
+    }
+
+    if(p.nQ === 1) {
+        /* Leptons: single infinite line = 2 semi-infinite segments back-to-back */
+        var d = arm0.clone();
+        var dn = arm0.clone().negate();
+        segs.push({ origin: new THREE.Vector3(0,0,0), dir: d, burg: burgFrom(d), sp: 1 });
+        segs.push({ origin: new THREE.Vector3(0,0,0), dir: dn, burg: burgFrom(dn), sp: 1 });
+    }
+    else if(p.nQ === 3) {
+        /* Baryons: Y-junction, 3 arms from origin */
+        var arms = [arm0, arm1, arm2];
+        for(var i=0; i<3; i++){
+            segs.push({ origin: new THREE.Vector3(0,0,0), dir: arms[i], burg: burgFrom(arms[i]), sp: p.sp[i] });
+        }
+    }
+    else if(partKey === 'dstar') {
+        /* Dibaryon: 2 Y-junctions. Δ₁ at origin, Δ₂ at OFS[0]*cS */
+        var offset = OFS[0].clone().multiplyScalar(cS).applyQuaternion(qUp);
+        var arms = [arm0, arm1, arm2];
+        /* Δ₁ arms from origin */
+        for(var i=0; i<3; i++){
+            segs.push({ origin: new THREE.Vector3(0,0,0), dir: arms[i], burg: burgFrom(arms[i]), sp: 1 });
+        }
+        /* Δ₂ arms from offset */
+        for(var i=0; i<3; i++){
+            segs.push({ origin: offset.clone(), dir: arms[i], burg: burgFrom(arms[i]), sp: 1 });
+        }
+    }
+    else {
+        /* Mesons: quark + antiquark = 2 partial dislocation LINES
+           bounding a stacking-fault ribbon on the (111) plane.
+           
+           The separation between quarks is along mesonArm0.
+           The dislocation LINES run perpendicular to this separation,
+           within the (111) plane: lineDir = [111] × mesonArm0.
+           
+           Each partial is an infinite line (2 back-to-back segments),
+           like the electron but offset to the quark position. */
+        var sep = 0.5;
+        if(partKey === 'kaon' || partKey === 'kaon0') sep = cS;   /* hex-cap ring edges */
+        if(partKey === 'kstar' || partKey === 'phi') sep = cS;    /* full shell */
+        if(partKey === 'eta') sep = cS;                            /* hex bilayer */
+        if(partKey === 'rho' || partKey === 'omega') sep = cS;    /* crossed fault Plane 1 */
+
+        /* Line direction: perpendicular to separation, in (111) plane */
+        var lineDir = new THREE.Vector3().crossVectors(yhat, mesonArm0).normalize();
+        var lineDirNeg = lineDir.clone().negate();
+
+        /* Quark at +sep, antiquark at -sep along mesonArm0 */
+        var pos0 = mesonArm0.clone().multiplyScalar(sep);
+        var pos1 = mesonArm1.clone().multiplyScalar(sep);
+
+        /* Each partial = 2 back-to-back semi-infinite segments = infinite line */
+        segs.push({ origin: pos0, dir: lineDir,    burg: burgFrom(lineDir), sp:  1 });
+        segs.push({ origin: pos0, dir: lineDirNeg, burg: burgFrom(lineDirNeg), sp:  1 });
+        segs.push({ origin: pos1, dir: lineDir,    burg: burgFrom(lineDir), sp: -1 });
+        segs.push({ origin: pos1, dir: lineDirNeg, burg: burgFrom(lineDirNeg), sp: -1 });
+
+        if(partKey === 'rho' || partKey === 'omega') {
+            /* Crossed fault: second pair on Plane 2 = (11̄1).
+               Plane 2's hex ring [1,7,11,2,4,8] has its diameter along
+               (1,0,1)/√2, NOT along arm1.  OFS[7]↔OFS[4] are the
+               diametrically opposite pair at distance 2.0. */
+            var crossSep2 = new THREE.Vector3(1,0,1).normalize().applyQuaternion(qUp);
+            var lineDir2 = new THREE.Vector3().crossVectors(yhat, crossSep2).normalize();
+            var lineDir2N = lineDir2.clone().negate();
+            var pos2 = crossSep2.clone().multiplyScalar(sep);       /* sep = cS, full ring extent */
+            var pos3 = crossSep2.clone().negate().multiplyScalar(sep);
+            var sp2 = (partKey === 'rho') ? 0.7 : 1.0;
+            segs.push({ origin: pos2, dir: lineDir2,  burg: burgFrom(lineDir2), sp:  sp2 });
+            segs.push({ origin: pos2, dir: lineDir2N, burg: burgFrom(lineDir2N), sp:  sp2 });
+            segs.push({ origin: pos3, dir: lineDir2,  burg: burgFrom(lineDir2), sp: -sp2 });
+            segs.push({ origin: pos3, dir: lineDir2N, burg: burgFrom(lineDir2N), sp: -sp2 });
+        }
+    }
+    return segs;
+}
+
+function getQuarkArms(partKey) {
+    var p = particles[partKey];
+    if(p.nQ === 3) {
+        return [arm0, arm1, arm2];
+    }
+    if(p.nQ === 1) {
+        /* Leptons: single infinite dislocation line along arm0.
+           Two arms in opposite directions to show the full line
+           (sp=[1,1,0] so both halves are active, arm2 is dummy). */
+        var neg = arm0.clone().negate();
+        return [arm0, neg, new THREE.Vector3(0,1,0)];
+    }
+    /* Mesons: dipolar strain field, two arms in opposite directions.
+       Third arm direction is a dummy (sp[2]=0 zeroes its contribution). */
+    return [mesonArm0, mesonArm1, new THREE.Vector3(0,1,0)];
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+window.addEventListener('load', function(){
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+
+    renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setScissorTest(true);
+    renderer.sortObjects = true;
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    var d1=new THREE.DirectionalLight(0xffffff,0.6); d1.position.set(5,5,5); scene.add(d1);
+    var d2=new THREE.DirectionalLight(0xffffff,0.3); d2.position.set(-5,-5,-5); scene.add(d2);
+    scene.add(new THREE.PointLight(0xffffff,0.6,15));
+
+    /* Dislocation segment cylinders — red for spin +, blue for spin − */
+    var armLen = cS * 1.3;
+    var armRad = 0.03;
+    armLines = [];
+    for(var ai=0; ai<8; ai++){
+        var cyl = new THREE.Mesh(
+            new THREE.CylinderGeometry(armRad, armRad, armLen, 8),
+            new THREE.MeshBasicMaterial({color:0xff0000})
+        );
+        cyl.visible = false;
+        scene.add(cyl);
+        armLines.push(cyl);
+    }
+
+    /* Proton charge radius circle: R_p = 0.300ℓ in the (111) plane (xz after qUp) */
+    var RP_RADIUS = 0.300;
+    var rpGeo = new THREE.RingGeometry(RP_RADIUS - 0.01, RP_RADIUS + 0.01, 64);
+    rpCircle = new THREE.Mesh(rpGeo, new THREE.MeshBasicMaterial({color:0x00AA00, side:THREE.DoubleSide}));
+    /* Rotate from xy default to xz plane (the (111) plane after qUp) */
+    rpCircle.rotation.x = -Math.PI/2;
+    rpCircle.visible = false;
+    scene.add(rpCircle);
+
+    setupCams();
+    controls = new THREE.OrbitControls(cP, document.getElementById('pz'));
+    controls.enableDamping=false;
+    controls.minDistance=3; controls.maxDistance=20;
+
+    buildAxes();
+    buildVolumeMesh();
+    buildOverlay();
+
+    /* Build initial cage (proton) */
+    switchParticle('proton');
+
+    drawCB();
+
+    /* Event listeners */
+    document.getElementById('ps').addEventListener('change', function(e){
+        switchParticle(e.target.value);
+        needsStaticUpdate=true;
+    });
+    document.getElementById('fs').addEventListener('change', function(e){
+        var v = e.target.value;
+        if(v === 'spheres'){
+            volMesh.visible = false;
+            if(currentCageGroup) {
+                currentCageGroup.userData.nodeMeshes.forEach(function(m){m.visible = true;});
+            }
+            drawCB();
+        } else {
+            volMesh.visible = true;
+            if(currentCageGroup) {
+                currentCageGroup.userData.nodeMeshes.forEach(function(m){m.visible = false;});
+            }
+            mU.value = (v==='strain') ? 0.0 : (v==='displacement') ? 5.0 : (v==='strainenergy') ? 3.0 : (v==='cosserat') ? 4.0 : (v==='coulomb') ? 1.0 : 2.0;
+            updateVolR();
+            drawCB();
+        }
+        needsStaticUpdate=true;
+    });
+    document.getElementById('ws').addEventListener('input', function(e){
+        var v = parseFloat(e.target.value);
+        wU.value = v*v;
+        document.getElementById('wv').textContent = v.toFixed(3);
+        /* Recompute peak field for new w */
+        updateFieldScale();
+        drawCB();
+        needsStaticUpdate=true;
+    });
+    document.getElementById('xb').addEventListener('click', exportHR);
+    document.getElementById('armToggle').addEventListener('change', function(e){
+        var show = e.target.checked;
+        if(armLines){
+            var segs = getSegments(currentPartKey);
+            var armLen = cS * 1.3;
+            for(var ai=0; ai<8; ai++){
+                if(show && ai < segs.length && segs[ai].sp !== 0){
+                    var d = segs[ai].dir;
+                    var o = segs[ai].origin;
+                    armLines[ai].visible = true;
+                    armLines[ai].material.color.set(segs[ai].sp > 0 ? 0xDD2222 : 0x2244DD);
+                    armLines[ai].quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d);
+                    armLines[ai].position.copy(d).multiplyScalar(armLen/2).add(o);
+                } else {
+                    armLines[ai].visible = false;
+                }
+            }
+        }
+        needsStaticUpdate=true;
+    });
+    document.getElementById('posOnly').addEventListener('change', function(e){
+        volMesh.material.uniforms.uPosOnly.value = e.target.checked ? 1.0 : 0.0;
+        needsStaticUpdate=true;
+    });
+    document.getElementById('rpToggle').addEventListener('change', function(e){
+        if(rpCircle) rpCircle.visible = e.target.checked;
+        needsStaticUpdate=true;
+    });
+    document.getElementById('wireToggle').addEventListener('change', function(e){
+        cageVisible = e.target.checked;
+        if(currentCageGroup) updateCageVisibility();
+        needsStaticUpdate=true;
+    });
+    window.addEventListener('resize', onRz);
+    anim();
+});
+
+/* ================================================================
+   VOLUME MESH (shared across all particles)
+   ================================================================ */
+function buildVolumeMesh() {
+    var R = STRAIN_R;
+    var p = particles.proton;
+    var qPos = getQuarkPositions('proton');
+    var qArms = getQuarkArms('proton');
+
+    /* Initialise segment arrays (max 8 segments) */
+    var initSegO = [], initSegD = [], initSegB = [];
+    var initSegS = [];
+    for(var i=0;i<8;i++){
+        initSegO.push(new THREE.Vector3(0,0,0));
+        initSegD.push(new THREE.Vector3(1,0,0));
+        initSegB.push(new THREE.Vector3(0,0,1));
+        initSegS.push(0.0);
+    }
+
+    /* Initialise 32-element arrays for legacy node positions */
+    var initNP = [];
+    var initNS = [];
+    for(var i=0;i<32;i++){
+        initNP.push(new THREE.Vector3(0,0,0));
+        initNS.push(0.0);
+    }
+
+    var unis = {
+        uCP:  {value: new THREE.Vector3()},
+        /* Generic segment arrays */
+        uSegO: {value: initSegO},
+        uSegD: {value: initSegD},
+        uSegB: {value: initSegB},
+        uSegS: {value: initSegS},
+        uNSeg: {value: 3.0},
+        /* Coulomb mode (kept separate) */
+        uCh:  {value: new THREE.Vector3(p.ch[0], p.ch[1], p.ch[2])},
+        uQ0:  {value: qPos[0].clone()},
+        uQ1:  {value: qPos[1].clone()},
+        uQ2:  {value: qPos[2].clone()},
+        uW2:  {value: 0.783*0.783},
+        uR:   {value: R},
+        uMode:{value: 0.0},
+        uSteps:{value: LIVE_STEPS},
+        /* Legacy node-based uniforms (kept for Coulomb/fallback) */
+        uNP:  {value: initNP},
+        uNS:  {value: initNS},
+        uNC:  {value: 0.0},
+        uFT:  {value: 0.0},
+        uFieldScale: {value: 1.0},
+        uPosOnly: {value: 0.0},
+        uCoreType: {value: 0.0},
+        uRibSep: {value: new THREE.Vector3(1,0,0)},
+        uRibHalf: {value: 0.0},
+        uRibOn: {value: 0.0}
+    };
+
+    wU  = unis.uW2;
+    mU  = unis.uMode;
+    stU = unis.uSteps;
+
+    var vG = new THREE.SphereGeometry(R, 32, 32);
+    var vM = new THREE.ShaderMaterial({
+        vertexShader: vS, fragmentShader: fS_code,
+        uniforms: unis, transparent: true,
+        side: THREE.BackSide, depthWrite: false
+    });
+    volMesh = new THREE.Mesh(vG, vM);
+    volMesh.renderOrder = 2;
+    scene.add(volMesh);
+}
+
+function updateVolR(){
+    var isC = (mU.value > 0.5 && mU.value < 2.5);  /* modes 1,2 = Coulomb */
+    var p = particles[currentPartKey];
+    var pR = p.strainR || STRAIN_R;
+    var R = isC ? Math.max(COULOMB_R, pR + 0.5) : pR;
+    volMesh.geometry.dispose();
+    volMesh.geometry = new THREE.SphereGeometry(R, 32, 32);
+    volMesh.material.uniforms.uR.value = R;
+}
+
+/* ================================================================
+   CAGE VISIBILITY TOGGLE
+   Hides/shows all cage geometry (wireframe edges, face polygons,
+   bond lines) while leaving node spheres and the volume mesh alone.
+   ================================================================ */
+function updateCageVisibility() {
+    if(!currentCageGroup) return;
+    var nodes = new Set(currentCageGroup.userData.nodeMeshes || []);
+    currentCageGroup.children.forEach(function(child){
+        if(!nodes.has(child)){
+            child.visible = cageVisible;
+        }
+    });
+}
+
+/* ================================================================
+   PARTICLE SWITCHING
+   ================================================================ */
+function switchParticle(partKey) {
+    currentPartKey = partKey;
+    var p = particles[partKey];
+
+    /* Remove old cage group */
+    if(currentCageGroup) {
+        scene.remove(currentCageGroup);
+        currentCageGroup.traverse(function(c){
+            if(c.geometry) c.geometry.dispose();
+            if(c.material) {
+                if(Array.isArray(c.material)) c.material.forEach(function(m){m.dispose();});
+                else c.material.dispose();
+            }
+        });
+    }
+
+    /* Reset Rp circle: hide and uncheck on every particle switch */
+    if(rpCircle) rpCircle.visible = false;
+    document.getElementById('rpToggle').checked = false;
+
+    /* Build new cage */
+    currentCageGroup = buildCageGroup(p.cage);
+    scene.add(currentCageGroup);
+
+    /* ── Update volume mesh uniforms ── */
+    var u = volMesh.material.uniforms;
+    var qPos = getQuarkPositions(partKey);
+
+    u.uCh.value = new THREE.Vector3(p.ch[0], p.ch[1], p.ch[2]);
+    u.uQ0.value = qPos[0].clone();
+    u.uQ1.value = qPos[1].clone();
+    u.uQ2.value = qPos[2].clone();
+
+    /* ── Populate generic segment arrays ── */
+    var segs = getSegments(partKey);
+    for(var i=0; i<8; i++){
+        if(i < segs.length){
+            u.uSegO.value[i].copy(segs[i].origin);
+            u.uSegD.value[i].copy(segs[i].dir);
+            u.uSegB.value[i].copy(segs[i].burg);
+            u.uSegS.value[i] = segs[i].sp;
+        } else {
+            u.uSegO.value[i].set(0,0,0);
+            u.uSegD.value[i].set(1,0,0);
+            u.uSegB.value[i].set(0,0,1);
+            u.uSegS.value[i] = 0.0;
+        }
+    }
+    u.uNSeg.value = segs.length;
+    u.uCoreType.value = (p.coreType !== undefined) ? p.coreType : 0.0;
+
+    /* ── Node-based field for particles where segment model is insufficient ──
+       Strange baryons have Y-junction segments PLUS hex-cap extensions that
+       extend beyond the cuboctahedron — node field shows the full cluster.
+       All other particles now use the physical segment-based strain. */
+    var nodePositions = [];
+    var nodeSigns = [];
+    var fieldType = 0.0;  /* 0 = segment-based, 1 = node-based */
+
+    if(partKey === 'lambda' || partKey === 'sigma_plus' || partKey === 'sigma_zero' || partKey === 'sigma_minus' || partKey === 'xi_zero' || partKey === 'xi_minus' || partKey === 'omega_minus') {
+        /* Strange baryons: cuboctahedron + hex-cap extension nodes.
+           Uses node-based field to show the extended cluster shape. */
+        fieldType = 1.0;
+        var EXTS_ALL = [EXT0, EXT1, EXT2];
+        var BILS_ALL = [EXT0_BIL, EXT1_BIL, EXT2_BIL];
+        var sArms = [];
+        var hasBil = false;
+
+        if(partKey === 'lambda')      { sArms = [0]; }
+        else if(partKey === 'sigma_plus' || partKey === 'sigma_zero' || partKey === 'sigma_minus') { sArms = [0]; hasBil = true; }
+        else if(partKey === 'xi_zero' || partKey === 'xi_minus')    { sArms = [0, 1]; }
+        else if(partKey === 'omega_minus')      { sArms = [0, 1, 2]; hasBil = true; }
+
+        /* Centre node (Omega has no centre — triple bilayer) */
+        if(partKey !== 'omega_minus'){
+            nodePositions.push(new THREE.Vector3(0,0,0));
+            nodeSigns.push(1.5);
+        }
+        /* 12 cuboctahedral vertices */
+        for(var i=0;i<12;i++){
+            nodePositions.push(OFS[i].clone().applyQuaternion(qUp));
+            nodeSigns.push(1.0);
+        }
+        /* Extension nodes for each strange arm */
+        for(var sa=0; sa<sArms.length; sa++){
+            var ai = sArms[sa];
+            for(var ei=0; ei<3; ei++){
+                nodePositions.push(EXTS_ALL[ai][ei].clone().applyQuaternion(qUp));
+                nodeSigns.push(1.2); /* slightly brighter than shell */
+            }
+            if(hasBil){
+                nodePositions.push(BILS_ALL[ai].clone().applyQuaternion(qUp));
+                nodeSigns.push(1.0);
+            }
+        }
+    }
+
+    if(partKey === 'f2') {
+        /* ── f₂(1270): analytic microrotation curvature mode ──
+           fieldType = 2.0 triggers the analytic Y₂⁰ × radial_envelope
+           shader branch instead of the node-blob field.
+           The quadrupole axis is crystal [001] rotated into the viewing frame. */
+        fieldType = 2.0;
+        /* Store quadrupole axis in uRibSep (reused; no ribbon for phonons) */
+        u.uRibSep.value = new THREE.Vector3(0,0,1).applyQuaternion(qUp).normalize();
+    }
+
+    /* Scale node positions to match cS-scaled cage */
+    if(fieldType > 0.5){
+        for(var i=0;i<nodePositions.length;i++){
+            nodePositions[i].multiplyScalar(cS);
+        }
+    }
+
+    /* Write node arrays */
+    var uNP = u.uNP.value;
+    var uNS = u.uNS.value;
+    for(var i=0;i<32;i++){
+        if(i < nodePositions.length){
+            uNP[i].copy(nodePositions[i]);
+            uNS[i] = nodeSigns[i];
+        } else {
+            uNP[i].set(0,0,0);
+            uNS[i] = 0.0;
+        }
+    }
+    u.uNC.value = nodePositions.length;
+    u.uFT.value = fieldType;
+
+    /* ── Ribbon uniforms for mesons ── */
+    if(p.nQ === 2 && fieldType < 0.5){
+        /* Segment-based meson: enable ribbon between quark positions.
+           The ribbon is a constant-strain slab in the (111) plane between 
+           the two partial dislocation lines. */
+        u.uRibOn.value = 1.0;
+        u.uRibSep.value.copy(mesonArm0);
+        var sep = 0.5;                                             /* pion, pion0: cell pair */
+        if(partKey === 'kaon' || partKey === 'kaon0') sep = cS;    /* hex cap */
+        if(partKey === 'eta') sep = cS;                             /* hex bilayer */
+        if(partKey === 'kstar' || partKey === 'phi') sep = cS;     /* full shell */
+        if(partKey === 'rho' || partKey === 'omega') sep = cS;     /* crossed fault Plane 1 */
+        /* Note: rho/omega have a SECOND ribbon on Plane 2 (along crossSep2).
+           The shader currently supports only one ribbon; the second plane's
+           contribution comes from the segment strain, not the ribbon slab.
+           This is a known approximation. */
+        u.uRibHalf.value = sep;
+    } else {
+        u.uRibOn.value = 0.0;
+    }
+
+    /* ── Compute peak field for colourmap scaling ── */
+    var peakField = 0.001;
+    var wNow = parseFloat(document.getElementById('ws').value);
+    var w2now = wNow * wNow;
+    if(fieldType > 1.5){
+        /* Analytic microrotation: peak of Y₂⁰ × (r²/σ²)exp(-r²/σ²)
+           = 2.0 × (1/e) = 0.7358 at r = σ = √2 along the quadrupole axis. */
+        peakField = 2.0 / Math.E;
+    } else if(fieldType > 0.5 && nodePositions.length > 0){
+        var testPts = [new THREE.Vector3(0,0,0)];
+        for(var i=0;i<nodePositions.length;i++) testPts.push(nodePositions[i]);
+        for(var ti=0;ti<testPts.length;ti++){
+            var tp = testPts[ti];
+            var f = 0;
+            for(var j=0;j<nodePositions.length;j++){
+                var dx = tp.x - nodePositions[j].x;
+                var dy = tp.y - nodePositions[j].y;
+                var dz = tp.z - nodePositions[j].z;
+                f += nodeSigns[j] / (1.0 + (dx*dx+dy*dy+dz*dz)/w2now);
+            }
+            f = f / nodePositions.length;
+            if(Math.abs(f) > peakField) peakField = Math.abs(f);
+        }
+    } else {
+        var ct = (p.coreType !== undefined) ? p.coreType : 0;
+        var nSeg = segs.length;
+        if(ct < 0.5){
+            peakField = 1.0 / (2.0 * wNow * nSeg);
+        } else {
+            peakField = 1.0 / (8.0 * wNow * nSeg);
+        }
+    }
+    if(peakField < 0.001) peakField = 0.1;
+    u.uFieldScale.value = 1.0 / peakField;
+
+    /* Update rendering sphere radius for particles that extend beyond standard size */
+    var pR = p.strainR || STRAIN_R;
+    var fsMode = document.getElementById('fs').value;
+    var isC = (fsMode === 'coulomb' || fsMode === 'coulomb2');
+    var R = isC ? Math.max(COULOMB_R, pR + 0.5) : pR;
+    volMesh.geometry.dispose();
+    volMesh.geometry = new THREE.SphereGeometry(R, 32, 32);
+    u.uR.value = R;
+
+    volMesh.material.uniformsNeedUpdate = true;
+
+    /* Show nodes or field depending on current mode */
+    var fsVal = document.getElementById('fs').value;
+    if(fsVal === 'spheres') {
+        volMesh.visible = false;
+        currentCageGroup.userData.nodeMeshes.forEach(function(m){m.visible = true;});
+    } else {
+        volMesh.visible = true;
+        currentCageGroup.userData.nodeMeshes.forEach(function(m){m.visible = false;});
+    }
+
+    /* Update segment cylinders from segment list */
+    if(armLines){
+        var showArms = document.getElementById('armToggle').checked;
+        var armLen = cS * 1.3;
+        for(var ai=0; ai<8; ai++){
+            if(showArms && ai < segs.length && segs[ai].sp !== 0){
+                var d = segs[ai].dir;
+                var o = segs[ai].origin;
+                armLines[ai].visible = true;
+                armLines[ai].material.color.set(segs[ai].sp > 0 ? 0xDD2222 : 0x2244DD);
+                armLines[ai].quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d);
+                armLines[ai].position.copy(d).multiplyScalar(armLen/2).add(o);
+            } else {
+                armLines[ai].visible = false;
+            }
+        }
+    }
+
+    /* Respect cage visibility toggle */
+    updateCageVisibility();
+
+    needsStaticUpdate = true;
+}
+
+/* ================================================================
+   COLORBAR
+   ================================================================ */
+function drawCB(){
+    var cbc=document.getElementById('cbc');
+    var v=document.getElementById('fs').value;
+    if(v==='spheres'){ cbc.style.display='none'; return; }
+    cbc.style.display='flex';
+    var cvs=document.getElementById('cb');
+    var ctx=cvs.getContext('2d');
+    var w=cvs.width,h=cvs.height;
+    var mode=mU?mU.value:0;
+    var isEnergy = (mode > 2.5 && mode < 3.5);
+    var isCosserat = (mode > 3.5 && mode < 4.5);
+    var isDisp = (mode > 4.5 && mode < 5.5);
+    var isOverlap = (mode > 5.5);
+    var isStrain = (mode < 0.5);
+    var isCoul   = (mode > 0.5 && mode < 1.5);
+
+    /* Compute peak PN strain: ε₀ = b/(2πw) = ℓ/(2πw) = 1/(2π·w/ℓ) */
+    var wSlider = parseFloat(document.getElementById('ws').value);
+    var eps0 = 1.0/(2.0*Math.PI*wSlider);
+
+    if(isOverlap){
+        document.getElementById('cbt').textContent = '+ε·γ';
+        document.getElementById('cbb').textContent = '−ε·γ';
+    } else if(isDisp){
+        document.getElementById('cbt').textContent = '+b/2';
+        document.getElementById('cbb').textContent = '−b/2';
+    } else if(isCosserat){
+        document.getElementById('cbt').textContent = 'U_Coss';
+        document.getElementById('cbb').textContent = '0';
+    } else if(isEnergy){
+        document.getElementById('cbt').textContent = (eps0*eps0/4).toFixed(3);
+        document.getElementById('cbb').textContent = '0';
+    } else if(isStrain){
+        document.getElementById('cbt').textContent = '+' + (eps0/2).toFixed(2);
+        document.getElementById('cbb').textContent = '−' + (eps0/2).toFixed(2);
+    } else if(isCoul){
+        document.getElementById('cbt').textContent = '+φ';
+        document.getElementById('cbb').textContent = '−φ';
+    } else {
+        document.getElementById('cbt').textContent = '+φ²';
+        document.getElementById('cbb').textContent = '−φ²';
+    }
+
+    for(var y=0;y<h;y++){
+        var t=1.0-y/h;
+        var rgb = (isEnergy || isCosserat) ? hotJS(t) : jetJS(t);
+        ctx.fillStyle='rgb('+Math.round(rgb[0]*255)+','+Math.round(rgb[1]*255)+','+Math.round(rgb[2]*255)+')';
+        ctx.fillRect(0,y,w,1);
+    }
+}
+function jetJS(t){
+    t=Math.max(0,Math.min(1,t));
+    return [
+        Math.max(0,Math.min(1,1.5-Math.abs(4.0*t-3.0))),
+        Math.max(0,Math.min(1,1.5-Math.abs(4.0*t-2.0))),
+        Math.max(0,Math.min(1,1.5-Math.abs(4.0*t-1.0)))
+    ];
+}
+function hotJS(t){
+    t=Math.max(0,Math.min(1,t));
+    return [
+        Math.min(1, 2.0*t),
+        Math.max(0, Math.min(1, 2.0*t - 1.0)),
+        0
+    ];
+}
+
+/* ================================================================
+   CAMERAS
+   ================================================================ */
+function setupCams(){
+    var a=window.innerWidth/window.innerHeight, hs=fS/2;
+    c111=new THREE.OrthographicCamera(-hs*a,hs*a,hs,-hs,0.1,100);
+    c111.position.set(0,10,0); c111.lookAt(0,0,0);
+    c121=new THREE.OrthographicCamera(-hs*a,hs*a,hs,-hs,0.1,100);
+    c121.position.set(0,0,10); c121.lookAt(0,0,0);
+    c101=new THREE.OrthographicCamera(-hs*a,hs*a,hs,-hs,0.1,100);
+    c101.position.set(10,0,0); c101.lookAt(0,0,0);
+    cP=new THREE.PerspectiveCamera(42,a,0.1,100);
+    cP.position.set(6,4,8); cP.lookAt(0,0,0);
+}
+
+/* ================================================================
+   AXES
+   ================================================================ */
+function buildAxes(){
+    var bs=5,ga=0.9;
+    var g1=new THREE.GridHelper(bs,bs,0xBB44BB,0xBB44BB);
+    g1.material.opacity=ga; g1.material.transparent=true; g1.position.y=-bs/2; scene.add(g1);
+    var g2=new THREE.GridHelper(bs,bs,0xDD8800,0xDD8800);
+    g2.material.opacity=ga; g2.material.transparent=true; g2.rotation.x=Math.PI/2; g2.position.z=-bs/2; scene.add(g2);
+    var g3=new THREE.GridHelper(bs,bs,0x44BBBB,0x44BBBB);
+    g3.material.opacity=ga; g3.material.transparent=true; g3.rotation.z=Math.PI/2; g3.position.x=-bs/2; scene.add(g3);
+    var corner=new THREE.Vector3(-bs/2,-bs/2,-bs/2);
+    function addA(dir,col){
+        var sR=0.03,hR=0.12,hL=0.4,sL=bs-hL;
+        var m=new THREE.MeshBasicMaterial({color:col});
+        var sh=new THREE.Mesh(new THREE.CylinderGeometry(sR,sR,sL,12),m); sh.position.y=sL/2;
+        var hd=new THREE.Mesh(new THREE.ConeGeometry(hR,hL,12),m); hd.position.y=sL+hL/2;
+        var g=new THREE.Group(); g.add(sh); g.add(hd);
+        g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
+        g.position.copy(corner); scene.add(g);
+    }
+    addA(new THREE.Vector3(1,0,0),0xDD0000);
+    addA(new THREE.Vector3(0,1,0),0x00BB00);
+    addA(new THREE.Vector3(0,0,1),0x0000DD);
+}
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function buildOverlay(){
+    overlayScene = new THREE.Scene();
+    /* Proton charge radius: R_p = 0.84 fm, ℓ = 2.82 fm → R_p/ℓ = 0.298 */
+    var Rp = 0.84 / 2.82;
+    var ringThick = 0.012;
+    var ringGeo = new THREE.RingGeometry(Rp - ringThick, Rp + ringThick, 64);
+    var ringMat = new THREE.MeshBasicMaterial({color:0x000000, side:THREE.DoubleSide, transparent:true, opacity:0.7});
+    scaleRing = new THREE.Mesh(ringGeo, ringMat);
+    overlayScene.add(scaleRing);
+
+    /* Ortho camera matching the main cameras' coordinate system */
+    overlayCam = new THREE.OrthographicCamera(-1,1,1,-1, 0.1, 10);
+    overlayCam.position.set(0,0,5);
+    overlayCam.lookAt(0,0,0);
+}
+
+function updateViewState(cam) {
+    if(volMesh.visible) {
+        volMesh.material.uniforms.uCP.value.copy(cam.position);
+    }
+    if(currentCageGroup) {
+        var ud = currentCageGroup.userData;
+        if(ud.lineUnisB) ud.lineUnisB.uCP.value.copy(cam.position);
+        if(ud.lineUnisF) ud.lineUnisF.uCP.value.copy(cam.position);
+        if(ud.lineUnisB2) ud.lineUnisB2.uCP.value.copy(cam.position);
+        if(ud.lineUnisF2) ud.lineUnisF2.uCP.value.copy(cam.position);
+
+        var tempPos = new THREE.Vector3();
+        var viewDir = new THREE.Vector3();
+        ud.nodeMeshes.forEach(function(m){
+            m.getWorldPosition(tempPos);
+            viewDir.subVectors(cam.position, tempPos);
+            m.renderOrder = tempPos.dot(viewDir) < 0 ? 1 : 3;
+        });
+    }
+}
+
+function rV(cam,x,y,w,h,showOverlay){
+    updateViewState(cam);
+    renderer.setViewport(x,y,w,h);
+    renderer.setScissor(x,y,w,h);
+    renderer.render(scene,cam);
+    /* Proton charge radius overlay (ortho viewports only, if Rp toggle checked) */
+    if(showOverlay && overlayScene && document.getElementById('rpToggle').checked){
+        var hs = fS/2;
+        var aspect = w/h;
+        overlayCam.left = -hs*aspect;
+        overlayCam.right = hs*aspect;
+        overlayCam.top = hs;
+        overlayCam.bottom = -hs;
+        overlayCam.updateProjectionMatrix();
+        scaleRing.position.set(0, 0, 0);
+        renderer.autoClear = false;
+        renderer.clearDepth();
+        renderer.render(overlayScene, overlayCam);
+        renderer.autoClear = true;
+    }
+}
+
+function anim(){
+    requestAnimationFrame(anim);
+    controls.update();
+    stU.value = LIVE_STEPS;
+    var hw=window.innerWidth/2, hh=window.innerHeight/2;
+
+    if(needsStaticUpdate){
+        rV(c111, 0, hh, hw, hh, true);
+        rV(c121, hw, hh, hw, hh, true);
+        rV(c101, 0, 0, hw, hh, true);
+        needsStaticUpdate = false;
+    }
+
+    rV(cP, hw, 0, hw, hh, false);
+}
+
+function onRz(){
+    var w=window.innerWidth, h=window.innerHeight, a=w/h;
+    renderer.setSize(w,h);
+    var hs=fS/2;
+    [c111,c121,c101].forEach(function(cam){
+        cam.left=-hs*a; cam.right=hs*a; cam.top=hs; cam.bottom=-hs;
+        cam.updateProjectionMatrix();
+    });
+    cP.aspect=a; cP.updateProjectionMatrix();
+    needsStaticUpdate=true;
+}
+
+/* ================================================================
+   FIELD SCALE — recompute peak when w changes
+   ================================================================ */
+function updateFieldScale(){
+    var u = volMesh.material.uniforms;
+    var p = particles[currentPartKey];
+    var wNow = parseFloat(document.getElementById('ws').value);
+    var w2now = wNow * wNow;
+    var ft = u.uFT.value;
+    var nc = u.uNC.value;
+    var peakField = 0.001;
+    if(ft > 1.5){
+        /* Analytic microrotation: peak of Y₂⁰ × (r²/σ²)exp(-r²/σ²)
+           = 2.0 × (1/e) = 0.7358 at r = σ = √2 along the quadrupole axis. */
+        peakField = 2.0 / Math.E;
+    } else if(ft > 0.5 && nc > 0){
+        var uNP = u.uNP.value;
+        var uNS = u.uNS.value;
+        var testPts = [new THREE.Vector3(0,0,0)];
+        for(var i=0;i<nc;i++) testPts.push(uNP[i].clone());
+        for(var ti=0;ti<testPts.length;ti++){
+            var tp = testPts[ti];
+            var f = 0;
+            for(var j=0;j<nc;j++){
+                var dx = tp.x - uNP[j].x, dy = tp.y - uNP[j].y, dz = tp.z - uNP[j].z;
+                f += uNS[j] / (1.0 + (dx*dx+dy*dy+dz*dz)/w2now);
+            }
+            f = f / nc;
+            if(Math.abs(f) > peakField) peakField = Math.abs(f);
+        }
+    } else {
+        var ct = (p.coreType !== undefined) ? p.coreType : 0;
+        var nSeg = u.uNSeg.value;
+        if(ct < 0.5){
+            peakField = 1.0 / (2.0 * wNow * Math.max(nSeg,1));
+        } else {
+            peakField = 1.0 / (8.0 * wNow * Math.max(nSeg,1));
+        }
+    }
+    if(peakField < 0.001) peakField = 0.1;
+    u.uFieldScale.value = 1.0 / peakField;
+}
+
+/* ================================================================
+   EXPORT
+   ================================================================ */
+function exportHR(){
+    var btn=document.getElementById('xb');
+    btn.textContent='Rendering...'; btn.disabled=true;
+    stU.value=EXPORT_STEPS;
+
+    var cbW=120;  /* colourbar strip width */
+    var pW=1200,pH=1200,tW=cbW+pW*4,tH=pH;
+    var hi=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+    hi.setSize(pW*4,tH); hi.setPixelRatio(1);
+    hi.setScissorTest(true); hi.setClearColor(0xffffff,1);
+
+    var pa=pW/pH,hs=fS/2;
+    var cams=[c111,c121,c101,cP];
+    var oC=[c111,c121,c101];
+
+    var saved=oC.map(function(cam){return{l:cam.left,r:cam.right,t:cam.top,b:cam.bottom};});
+    oC.forEach(function(cam){cam.left=-hs*pa;cam.right=hs*pa;cam.top=hs;cam.bottom=-hs;cam.updateProjectionMatrix();});
+    var spa=cP.aspect;cP.aspect=pa;cP.updateProjectionMatrix();
+
+    for(var i=0;i<4;i++){
+        hi.setViewport(i*pW,0,pW,pH);
+        hi.setScissor(i*pW,0,pW,pH);
+        updateViewState(cams[i]);
+        hi.render(scene,cams[i]);
+        /* Proton charge radius overlay (ortho panels only) */
+        if(i < 3 && overlayScene && document.getElementById('rpToggle').checked){
+            overlayCam.left=-hs*pa; overlayCam.right=hs*pa;
+            overlayCam.top=hs; overlayCam.bottom=-hs;
+            overlayCam.updateProjectionMatrix();
+            scaleRing.position.set(0, 0, 0);
+            hi.autoClear=false; hi.clearDepth();
+            hi.render(overlayScene, overlayCam);
+            hi.autoClear=true;
+        }
+    }
+
+    oC.forEach(function(cam,ci){cam.left=saved[ci].l;cam.right=saved[ci].r;cam.top=saved[ci].t;cam.bottom=saved[ci].b;cam.updateProjectionMatrix();});
+    cP.aspect=spa;cP.updateProjectionMatrix();
+    stU.value=LIVE_STEPS;
+
+    /* ── Compose final image: colourbar strip + 4 panels ── */
+    var fc=document.createElement('canvas');fc.width=tW;fc.height=tH;
+    var ctx=fc.getContext('2d');
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,tW,tH);
+
+    /* Draw colourbar strip on the left */
+    var mode=mU?mU.value:0;
+    var isEnergy=(mode>2.5 && mode<3.5), isCosserat=(mode>3.5 && mode<4.5), isDisp=(mode>4.5 && mode<5.5), isOverlap=(mode>5.5), isStrain=(mode<0.5);
+    var cbX=20, cbY=100, cbH=tH-240, cbBarW=30;
+    for(var y=0;y<cbH;y++){
+        var t=1.0-y/cbH;
+        var rgb=(isEnergy||isCosserat) ? hotJS(t) : jetJS(t);
+        ctx.fillStyle='rgb('+Math.round(rgb[0]*255)+','+Math.round(rgb[1]*255)+','+Math.round(rgb[2]*255)+')';
+        ctx.fillRect(cbX,cbY+y,cbBarW,1);
+    }
+    ctx.strokeStyle='#666'; ctx.lineWidth=1;
+    ctx.strokeRect(cbX,cbY,cbBarW,cbH);
+
+    /* Colourbar labels */
+    var wSlider=parseFloat(document.getElementById('ws').value);
+    var eps0=(1.0/(2.0*Math.PI*wSlider));
+    ctx.font='22px serif'; ctx.fillStyle='#1A1A1A'; ctx.textAlign='left';
+    if(isOverlap){
+        ctx.fillText('+ε·γ', cbX+cbBarW+6, cbY+16);
+        ctx.fillText('−ε·γ', cbX+cbBarW+6, cbY+cbH+6);
+    } else if(isDisp){
+        ctx.fillText('+b/2', cbX+cbBarW+6, cbY+16);
+        ctx.fillText('−b/2', cbX+cbBarW+6, cbY+cbH+6);
+    } else if(isCosserat){
+        ctx.fillText('U_Coss', cbX+cbBarW+6, cbY+16);
+        ctx.fillText('0', cbX+cbBarW+6, cbY+cbH+6);
+    } else if(isEnergy){
+        ctx.fillText('ε²=' + (eps0*eps0/4).toFixed(3), cbX+cbBarW+6, cbY+16);
+        ctx.fillText('0', cbX+cbBarW+6, cbY+cbH+6);
+    } else if(isStrain){
+        ctx.fillText('+ε₀='+(eps0/2).toFixed(2), cbX+cbBarW+6, cbY+16);
+        ctx.fillText('0', cbX+cbBarW+6, cbY+cbH/2+6);
+        ctx.fillText('−'+(eps0/2).toFixed(2), cbX+cbBarW+6, cbY+cbH+6);
+    } else {
+        ctx.fillText('+', cbX+cbBarW+6, cbY+16);
+        ctx.fillText('0', cbX+cbBarW+6, cbY+cbH/2+6);
+        ctx.fillText('−', cbX+cbBarW+6, cbY+cbH+6);
+    }
+    /* Colourbar title */
+    ctx.save();
+    ctx.font='bold 24px serif';
+    ctx.translate(cbX-6, cbY+cbH/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';
+    var fN=document.getElementById('fs').value;
+    var cbTitle = (fN==='strain') ? 'Strain ε/ε₀' : (fN==='overlap') ? 'Photon overlap ε·γ' : (fN==='displacement') ? 'Displacement u/b' : (fN==='strainenergy') ? 'Strain energy (ε/ε₀)²' : (fN==='cosserat') ? 'Cosserat U = μ_tot ε² + γ κ²' : (fN==='coulomb') ? 'Coulomb φ' : (fN==='coulomb2') ? 'Coulomb φ²' : '';
+    ctx.fillText(cbTitle, 0, 0);
+    ctx.restore();
+
+    /* PN core width label */
+    ctx.font='18px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('w/ℓ = '+wSlider, cbX, tH-40);
+
+    /* Draw the 4 rendered panels offset by cbW */
+    ctx.drawImage(hi.domElement, cbW, 0);
+
+    /* View labels */
+    ctx.font='bold 32px sans-serif';ctx.fillStyle='#1A1A1A';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ['[111]','[12̄1]','[101̄]','Perspective'].forEach(function(lbl,i){ctx.fillText(lbl,cbW+i*pW+pW/2,tH-16);});
+
+    var pN=document.getElementById('ps').value;
+    var wVal=document.getElementById('ws').value;
+    fc.toBlob(function(blob){
+        var aa=document.createElement('a');aa.href=URL.createObjectURL(blob);
+        aa.download=fN+'_'+pN+'_w'+wVal+'_600dpi.png';
+        document.body.appendChild(aa);aa.click();document.body.removeChild(aa);
+        hi.dispose();
+        btn.textContent='Export 600 DPI';btn.disabled=false;
+    },'image/png');
+}
+</script>
+</body>
+</html>
