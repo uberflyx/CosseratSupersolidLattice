@@ -41,7 +41,7 @@ class FCCLattice:
     def __init__(self):
         self._build(); self._shell(); self._planes()
         self._voids(); self._extensions(); self._invariants()
-        self._sft()  # stacking fault tetrahedron
+        self._omega_sites(); self._sft()  # stacking fault tetrahedron
 
     def _build(self):
         a1,a2,a3 = np.array([1.,1,0]),np.array([1.,0,1]),np.array([0.,1,1])
@@ -87,6 +87,45 @@ class FCCLattice:
                  and sum(1 for a in above_c if abs(np.sum((p-a)**2)-2.0)<0.01)==2]
             self.plane_extensions.append(ext)
         self.n_ext_per_plane=len(self.plane_extensions[0])
+
+    def _omega_sites(self):
+        """Compute 3×8 = 24 FCC sites for the Ω⁻ triple bilayer.
+        Uses the first three coordination shells (d = √2, 2, √6),
+        grouped into 3 bilayers by {111} normal proximity."""
+        ell = math.sqrt(2)
+        dists = [ell, 2.0, math.sqrt(6)]
+        candidates = []
+        for p in self.all_pts.values():
+            d = np.linalg.norm(p)
+            if d < 0.01: continue
+            if any(abs(d - dt) < 0.01 for dt in dists):
+                candidates.append(p)
+        candidates.sort(key=lambda p: np.linalg.norm(p))
+        # Deduplicate by rounding
+        seen = set(); unique = []
+        for p in candidates:
+            k = tuple(np.round(p, 4))
+            if k not in seen: seen.add(k); unique.append(p)
+        unique = unique[:24]  # 12 + 6 + 6
+        # Assign to 3 groups of 8 by {111} normal proximity
+        normals = self.plane_normals[:3]
+        groups = [[] for _ in range(3)]
+        remaining = list(unique)
+        for ni in range(3):
+            nn = normals[ni] / np.linalg.norm(normals[ni])
+            scored = sorted(remaining, key=lambda p: -abs(np.dot(nn, p)))
+            taken = 0
+            for p in scored:
+                if taken >= self.N_bilayer: break
+                if any(np.allclose(p, r) for r in remaining):
+                    groups[ni].append(p)
+                    remaining = [r for r in remaining if not np.allclose(r, p)]
+                    taken += 1
+        # Any remainder goes to smallest group
+        for p in remaining:
+            lens = [len(g) for g in groups]
+            groups[lens.index(min(lens))].append(p)
+        self.omega_bilayer_sites = groups  # list of 3 lists of 8 np.arrays
 
     def _invariants(self):
         G=self.G_shell
@@ -266,6 +305,13 @@ class Defect:
             s.pos[n]=s.lat.void_positions[vi].copy()
         s.has_voids=True
     def add_winding(s,B=1): s.has_winding=True; s.winding_B=B
+    def add_triple_bilayer(s):
+        """Add 3×8 = 24 FCC-positioned nodes for the Ω⁻ triple bilayer."""
+        for pi in range(s.lat.N_c):
+            sites = s.lat.omega_bilayer_sites[pi]
+            for k, p in enumerate(sites):
+                n=f'tb{pi}_{k}'; s.nodes.add(n); s.roles[n]='bilayer'
+                s.pos[n]=p.copy()
     def add_crossed_fault(s,p1,p2,J):
         s.add_centre()
         for i in (s.lat.plane_inplane[p1]|s.lat.plane_inplane[p2]):
@@ -343,6 +389,96 @@ class Defect:
                 if nm.startswith(f'e{pi}') or nm.startswith(f'ed{pi}'):
                     n+=1; break
         return n
+
+    # ── GRAPH TOPOLOGY (for decay engine) ──
+
+    def positioned_nodes(s):
+        """Return ordered list of node IDs that have real-space positions."""
+        return sorted(n for n in s.nodes if n in s.pos)
+
+    def nn_edge_list(s):
+        """Return list of (nodeA, nodeB) pairs for physical bonds.
+        NN distance for lattice nodes; tetrahedral face bonds for voids.
+        Only includes nodes with positions (excludes charm colour-space nodes)."""
+        pn = s.positioned_nodes()
+        edges = []
+        seen = set()
+        for i, a in enumerate(pn):
+            for b in pn[i+1:]:
+                d = np.linalg.norm(s.pos[a] - s.pos[b])
+                # Standard NN bond
+                if abs(d - _ELL) < 0.01:
+                    edges.append((a, b)); seen.add((a,b))
+                # Void-to-shell bond: void centre at tetrahedral interstitial
+                # distance = sqrt(3)/2 ≈ 0.866 from each face vertex
+                elif (s.roles.get(a) == 'void' or s.roles.get(b) == 'void'):
+                    d_tet = math.sqrt(3) / 2  # FCC tetrahedral interstitial distance
+                    if abs(d - d_tet) < 0.05 and (a,b) not in seen:
+                        edges.append((a, b)); seen.add((a,b))
+        return edges
+
+    def graph_matrices(s):
+        """Return (node_list, adjacency_matrix, laplacian_matrix).
+        node_list: ordered list of positioned node IDs.
+        A: |V|×|V| adjacency matrix.
+        L: |V|×|V| Laplacian L = D - A."""
+        pn = s.positioned_nodes()
+        n = len(pn)
+        if n == 0:
+            return pn, np.zeros((0,0)), np.zeros((0,0))
+        idx = {nd: i for i, nd in enumerate(pn)}
+        A = np.zeros((n, n))
+        for a, b in s.nn_edge_list():
+            i, j = idx[a], idx[b]
+            A[i, j] = A[j, i] = 1.0
+        D = np.diag(A.sum(axis=1))
+        L = D - A
+        return pn, A, L
+
+    def laplacian_spectrum(s):
+        """Return sorted eigenvalues of the graph Laplacian."""
+        _, _, L = s.graph_matrices()
+        if L.shape[0] == 0:
+            return np.array([])
+        return np.sort(np.linalg.eigvalsh(L))
+
+    def fiedler(s):
+        """Return (fiedler_value, fiedler_vector, node_list).
+        fiedler_value: λ₂ (algebraic connectivity).
+        fiedler_vector: eigenvector of λ₂.
+        node_list: ordered node IDs matching vector indices."""
+        pn, _, L = s.graph_matrices()
+        if L.shape[0] < 2:
+            return 0.0, np.array([]), pn
+        evals, evecs = np.linalg.eigh(L)
+        # λ₂ is the second-smallest eigenvalue
+        return float(evals[1]), evecs[:, 1], pn
+
+    def boundary_edges_to_lattice(s):
+        """Return list of (defect_node, lattice_point_key) for NN connections
+        from defect nodes to external (non-defect) FCC sites.
+        Each entry represents one bond crossing the defect boundary."""
+        keys = s._site_keys()
+        boundary = []
+        for nm, p in s.pos.items():
+            for qk, q in s.lat.all_pts.items():
+                if abs(np.linalg.norm(p - q) - _ELL) < 0.01:
+                    if tuple(np.round(q, 5)) not in keys:
+                        boundary.append((nm, qk))
+        return boundary
+
+    def void_count(s):
+        """Number of activated void nodes."""
+        return sum(1 for n in s.nodes if s.roles.get(n) == 'void')
+
+    def free_void_count(s):
+        """Number of voids not blocked by strange extensions.
+        For baryons: 4 - |S| (capped at 0)."""
+        n_ext = s.extension_plane_count()
+        nv = s.void_count()
+        if nv == 0:
+            return 0
+        return max(0, s.lat.n_voids - n_ext)
 
 # ================================================================
 # PAULI VOID CHECK — derived from graph sectors + spin
@@ -446,9 +582,7 @@ def _asm_baryon(qn, lat):
     if qn.J>1.5+0.01 and qn.P==+1: return d,'regge: J>3/2'
 
     if absS==lat.N_c:
-        for pi in range(lat.N_c):
-            for k in range(lat.N_bilayer):
-                d.nodes.add(f'tb{pi}_{k}'); d.roles[f'tb{pi}_{k}']='bilayer'
+        d.add_triple_bilayer()
         return d,'triple_bilayer'
 
     d.add_shell()
@@ -461,7 +595,7 @@ def _asm_baryon(qn, lat):
             for arm in range(absS): d.add_strange_ext(arm)
     if is_dec:
         if absS==0 and needs_voids: d.add_voids()
-        elif absS<lat.N_c:
+        elif absS>0 and absS<lat.N_c:
             for pi in range(lat.n_planes):
                 if pi not in d.activated_planes: d.add_strange_ext(pi); break
     return d,f'baryon_S{absS}'
@@ -534,9 +668,7 @@ def _asm_charm_baryon(qn, lat):
     n_light_strange = absS  # strange quarks not counted as charm
     if n_light_strange >= lat.N_c:
         # All light quarks are strange → Ω_c type cluster
-        for pi in range(lat.N_c):
-            for k in range(lat.N_bilayer):
-                d.nodes.add(f'tb{pi}_{k}'); d.roles[f'tb{pi}_{k}']='bilayer'
+        d.add_triple_bilayer()
         return d,'charm_baryon_Omega'
 
     d.add_shell()  # coordination shell (no winding for charm baryons)
@@ -649,7 +781,7 @@ def _compute_Q(qn, cluster, defect, lat):
             Qb = -cb_charm + cn_charm  # Σ-type: -12+10 = -2 (from loops)
         elif qn.I<1 and absS>=1:
             Qb=0  # strange extension disrupts boundary
-            Qc=-(lat.N_c**(ep_charm+1))  # colour screening from plane count
+            Qc=-(lat.N_c**(absS+1))  # colour screening from strangeness count
         elif qn.I<1:
             Qc=-(lat.N_c**2)  # I=0 colour screening
         # Charm coupling from graph: Q_charm = N_charm × accessible_target + junction
@@ -809,45 +941,58 @@ def _compute_Q(qn, cluster, defect, lat):
 # ================================================================
 # PREDICT
 # ================================================================
-def predict(qn):
+def _predict_core(qn):
+    """Shared assembly + Q computation. Returns (Result, Defect_or_None, cluster_str)."""
     lat=_lat
-    if abs(qn.I3)>qn.I+0.01: return Result(cluster=f'forbidden: |I3|>I')
+    if abs(qn.I3)>qn.I+0.01:
+        return Result(cluster=f'forbidden: |I3|>I'), None, 'forbidden'
     if qn.B==2:
         mass,cl=_asm_dibaryon(qn,lat)
-        return Result(mass=mass,cluster=cl) if mass else Result(cluster=cl)
+        r = Result(mass=mass,cluster=cl) if mass else Result(cluster=cl)
+        return r, None, cl
 
-    # Non-bonding meson (κ/σ sector): J=0, P=+1, no charm
     if qn.B==0 and qn.n_charm==0 and qn.n_bottom==0 and qn.J==0 and qn.P==+1:
         d,cl=_asm_nonbonding_meson(qn,lat)
-        N=d.N_eff; Q=0; mass=N*M0
-        return Result(N=N,Q=0,mass=mass,cluster=cl,n_vertices=len(d.nodes))
+        N=d.N_eff; mass=N*M0
+        return Result(N=N,Q=0,mass=mass,cluster=cl,n_vertices=len(d.nodes)), d, cl
 
-    # Bottom meson (splittings only: absolute mass from empirical input)
     if qn.n_bottom>=1 and qn.B==0:
-        return _predict_bottom_meson(qn,lat)
+        return _predict_bottom_meson(qn,lat), None, 'bottom'
 
-    # Charm dispatch
     if qn.n_charm>=1:
         if qn.B==0: defect,cl=_asm_charm_meson(qn,lat)
         elif qn.B==1: defect,cl=_asm_charm_baryon(qn,lat)
-        else: return Result(cluster='unknown')
+        else: return Result(cluster='unknown'), None, 'unknown'
     elif qn.B==0: defect,cl=_asm_meson(qn,lat)
     elif qn.B==1: defect,cl=_asm_baryon(qn,lat)
-    else: return Result(cluster='unknown')
+    else: return Result(cluster='unknown'), None, 'unknown'
 
     if cl.startswith('forbidden') or cl.startswith('exotic') or cl=='regge' or cl.startswith('regge'):
-        return Result(cluster=cl)
+        return Result(cluster=cl), defect, cl
 
     N=defect.N_eff
     Q,Qb,Qc,Qs,Qi,Qch=_compute_Q(qn,cl,defect,lat)
     mass=N*M0+Q*ME
 
-    # f₂ NLO: microrotation sector gets (1+α/π) correction to mass
     if cl=='microrotation':
         mass*=(1+ALPHA/math.pi)
 
-    return Result(N=N,Q=Q,Q_bond=Qb,Q_col=Qc,Q_surf=Qs,Q_iso=Qi,
-                  mass=mass,cluster=cl,n_vertices=len(defect.nodes))
+    r = Result(N=N,Q=Q,Q_bond=Qb,Q_col=Qc,Q_surf=Qs,Q_iso=Qi,
+               mass=mass,cluster=cl,n_vertices=len(defect.nodes))
+    return r, defect, cl
+
+
+def predict(qn):
+    """Predict mass from quantum numbers. Returns Result."""
+    r, _, _ = _predict_core(qn)
+    return r
+
+
+def predict_with_defect(qn):
+    """Predict mass and return the assembled Defect for graph analysis.
+    Returns (Result, Defect_or_None, cluster_str).
+    Defect is None for dibaryons and bottom mesons (no single graph)."""
+    return _predict_core(qn)
 
 # ================================================================
 # BOTTOM MESON PREDICTIONS (splittings from graph invariants)
@@ -983,9 +1128,13 @@ def catalogue():
                             all_states.append(('M',absS,I,I3,J,P,lv,0,r))
 
     # Light baryons
+    # Octet (J=1/2): (|S|,I) = (0,1/2),(1,0),(1,1),(2,1/2)
+    # Decuplet (J=3/2): (|S|,I) = (0,3/2),(1,1),(2,1/2),(3,0)
     BARYON_SU3=[(0,0.5),(0,1.5),(1,0),(1,1),(2,0.5),(3,0)]
+    DEC_SU3={(0,1.5),(1,1.0),(2,0.5),(3,0.0)}
     for absS,I in BARYON_SU3:
         for J in [0.5,1.5]:
+            if J>=1.5 and (absS,I) not in DEC_SU3: continue
             for I3 in [I - k for k in range(int(2*I)+1)]:
                 r=predict(QN(B=1,S=-absS,I=I,I3=I3,J=J,P=+1))
                 if r.mass>0 and not r.cluster.startswith('forbidden'):
@@ -1010,8 +1159,16 @@ def catalogue():
         for absS in range(4-nc):
             n_light=3-nc
             if absS>n_light: continue
-            I_max=(n_light-absS)/2
-            for I in [i/2 for i in range(int(2*I_max)+1)]:
+            # SU(2) isospin from n_ud non-strange light quarks:
+            # n_ud quarks each carry I=1/2; allowed I values step by 1
+            n_ud=n_light-absS
+            I_min=(n_ud%2)*0.5   # 0 if even, 1/2 if odd
+            I_max=n_ud/2.0
+            I_vals=[]
+            Iv=I_min
+            while Iv<=I_max+0.01:
+                I_vals.append(Iv); Iv+=1.0
+            for I in I_vals:
                 for I3 in [I - k for k in range(int(2*I)+1)]:
                     r=predict(QN(B=1,S=-absS,I=I,I3=I3,J=0.5,P=+1,n_charm=nc))
                     if r.mass>0 and not r.cluster.startswith('forbidden'):
@@ -1073,9 +1230,15 @@ if __name__=='__main__':
         # Charm mesons (N test — Q is from bipartite formula)
         ('eta_c',0,0,0,0,0,-1,1,2,2983.9),('J/psi',0,0,0,0,1,-1,1,2,3096.9),
         ('D0',0,0,.5,.5,0,-1,1,1,1864.84),('D+',0,0,.5,-.5,0,-1,1,1,1869.66),
-        # Charm baryons: Λ_c(udc)=S=0, Σ_c(uuc)=S=0 I=1, Ξ_c(usc)=S=-1
+        ('Ds+',0,1,0,0,0,-1,1,1,1968.35),
+        ('D*0',0,0,.5,.5,1,-1,1,1,2006.85),('D*+',0,0,.5,-.5,1,-1,1,1,2010.26),
+        ('Ds*+',0,1,0,0,1,-1,1,1,2112.2),
+        # Charm baryons: Λ_c(udc)=S=0 I=0, Σ_c(uuc)=S=0 I=1, Ξ_c(usc)=S=-1 I=1/2
         ('Lam_c',1,0,0,0,.5,1,1,1,2286.46),('Sig_c',1,0,1,1,.5,1,1,1,2453.97),
-        ('Xi_c',1,-1,0,0,.5,1,1,1,2467.71),
+        ('Xi_c+',1,-1,.5,.5,.5,1,1,1,2467.71),
+        ('Om_c',1,-2,0,0,.5,1,1,1,2695.2),
+        # Doubly charmed baryons
+        ('Xi_cc++',1,0,.5,.5,.5,1,1,2,3621.2),('Xi_cc+',1,0,.5,-.5,.5,1,1,2,3619.97),
         # Dibaryon
         ('d*',2,0,0,0,3,1,1,0,2380.0),
     ]

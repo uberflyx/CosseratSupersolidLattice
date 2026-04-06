@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosserat Defect Visualiser</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#1a1a1a;padding:16px;max-width:920px;margin:0 auto}
+h1{font-size:17px;font-weight:500;margin-bottom:10px;color:#222}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+select{padding:5px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;min-width:170px;background:#fff}
+button{padding:5px 14px;border:1px solid #bbb;border-radius:6px;font-size:13px;cursor:pointer;background:#fff}
+button:hover{background:#f0f0f0}
+button:disabled{opacity:0.35;cursor:default}
+label.ck{font-size:13px;color:#555;display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none}
+#box{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:480px}
+.ov{position:absolute;pointer-events:none}
+#mb{bottom:10px;right:10px;background:rgba(255,255,255,0.93);border:1px solid #ddd;border-radius:6px;padding:8px 12px;font-family:'SF Mono',Consolas,monospace;font-size:13px;line-height:1.65;text-align:right;color:#333}
+#mb .v{font-size:16px;font-weight:600;color:#a07510}
+#nc{top:10px;right:10px;background:rgba(255,255,255,0.93);border:1px solid #ddd;border-radius:6px;padding:4px 10px;font-family:'SF Mono',Consolas,monospace;font-size:11px;color:#666}
+#giz{bottom:10px;left:10px;width:110px;height:110px}
+#log{margin-top:10px}
+.st{display:flex;gap:8px;align-items:baseline;margin-bottom:4px;opacity:0;transition:opacity 0.2s}
+.dt{min-width:20px;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;flex-shrink:0}
+.sl{font-size:13px;font-weight:500;color:#222}
+.sd{font-size:12px;color:#888;margin-left:4px}
+</style>
+</head>
+<body>
+<h1>Cosserat supersolid lattice &mdash; defect graph visualiser</h1>
+<div class="bar">
+<select id="sel"></select>
+<button id="bBtn" onclick="startBuild()">Build particle</button>
+<button onclick="resetAll()">Reset</button>
+<button onclick="exportJPG()">Export JPG</button>
+<label class="ck"><input type="checkbox" id="ghCk" checked> Ghost sites</label>
+</div>
+<div id="box">
+<div id="mb" class="ov"></div>
+<div id="nc" class="ov"></div>
+<canvas id="giz" class="ov" width="220" height="220"></canvas>
+</div>
+<div id="log"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const VS=0.40,SR=0.12,ME=0.511,M0=70.025,DL=200;
+function vA(a,b){return[a[0]+b[0],a[1]+b[1],a[2]+b[2]]}
+function vS(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function vMul(a,s){return[a[0]*s,a[1]*s,a[2]*s]}
+function vDot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]}
+function vL(a){return Math.sqrt(vDot(a,a))}
+function vDi(a,b){return vL(vS(a,b))}
+function vMn(ar){const s=[0,0,0];ar.forEach(p=>{s[0]+=p[0];s[1]+=p[1];s[2]+=p[2]});return vMul(s,1/ar.length)}
+
+class FCCLattice{
+constructor(){
+this.a1=[1,1,0];this.a2=[1,0,1];this.a3=[0,1,1];this.ELL=Math.sqrt(2);this.origin=[0,0,0];
+this.allPts=[];
+for(let n1=-3;n1<=3;n1++)for(let n2=-3;n2<=3;n2++)for(let n3=-3;n3<=3;n3++){
+const p=vA(vA(vMul(this.a1,n1),vMul(this.a2,n2)),vMul(this.a3,n3));
+if(vL(p)<5)this.allPts.push(p)}
+this.shell=this.allPts.filter(p=>{const d=vL(p);return d>0.01&&Math.abs(d-this.ELL)<0.01});
+this.Z1=12;this.Nc=3;this.nP=4;this.nV=4;this.nBL=8;this.nCH=18;
+this.pN=[[1,1,1],[1,1,-1],[1,-1,1],[-1,1,1]];
+this.pI=[];this.pA=[];
+this.pN.forEach(n=>{
+this.pI.push(this.shell.map((_,i)=>i).filter(i=>Math.abs(vDot(n,this.shell[i]))<0.01));
+this.pA.push(this.shell.map((_,i)=>i).filter(i=>Math.abs(vDot(n,this.shell[i])-2)<0.01))});
+this.vP=[];for(let pi=0;pi<this.nP;pi++)this.vP.push(vMn([this.origin,...this.pA[pi].map(i=>this.shell[i])]));
+this.pE=[];
+for(let pi=0;pi<this.nP;pi++){const n=this.pN[pi];const ac=this.pA[pi].map(i=>this.shell[i]);
+this.pE.push(this.allPts.filter(p=>{if(Math.abs(vDot(n,p)-4)>0.01)return false;let c=0;ac.forEach(a=>{if(Math.abs(vDi(p,a)-this.ELL)<0.01)c++});return c===2}))}
+this.s2=this.allPts.filter(p=>Math.abs(vL(p)-2)<0.01);
+this.s3=this.allPts.filter(p=>Math.abs(vL(p)-Math.sqrt(6))<0.01).slice(0,12);
+this.omSites=[[-1,-1,0],[-1,0,-1],[-1,0,1],[-1,1,0],[0,-1,-1],[0,-1,1],[0,1,-1],[0,1,1],
+[1,-1,0],[1,0,-1],[1,0,1],[1,1,0],[-2,0,0],[0,-2,0],[0,0,-2],[0,0,2],
+[0,2,0],[2,0,0],[-2,-1,1],[-2,1,-1],[-1,-2,1],[-1,2,-1],[1,-1,-2],[1,1,2]]}}
+const lat=new FCCLattice();
+
+class Defect{
+constructor(){this.nodes=[];this.steps=[];this.aP=new Set();this.hasW=false;this.wB=0;this.sC=0}
+_h(id){return this.nodes.some(n=>n.id===id)}
+addCentre(){if(!this._h('C'))this.nodes.push({id:'C',role:'centre',pos:vMul(lat.origin,VS)})}
+addShell(){this.addCentre();this.steps.push({l:'Core node',r:'centre',ids:['C'],t:'Centre of coordination shell.'});
+const ids=[];for(let i=0;i<lat.shell.length;i++){const id='s'+i;ids.push(id);this.nodes.push({id,role:'shell',pos:vMul(lat.shell[i],VS)})}
+this.steps.push({l:'Coordination shell (Z1=12)',r:'shell',ids,t:'Cuboctahedral nearest neighbours.'})}
+addCellPair(){this.nodes.push({id:'cp0',role:'cell_pair',pos:vMul(lat.origin,VS)});
+this.nodes.push({id:'cp1',role:'cell_pair',pos:vMul(lat.shell[0],VS)});
+this.steps.push({l:'Cell pair (N=2)',r:'cell_pair',ids:['cp0','cp1'],t:'Adjacent nodes in antiphase.'})}
+addHexCap(pi){this.addCentre();const ids=['C'];
+lat.pI[pi].forEach(i=>{const id='s'+i;if(!this._h(id)){ids.push(id);this.nodes.push({id,role:'hex_ring',pos:vMul(lat.shell[i],VS)})}});
+this.aP.add(pi);this.steps.push({l:'Hex cap (N\u209B\u209C\u2099=7)',r:'hex_ring',ids,t:'Core + 6 ring on {111} plane.'})}
+addBilayerNode(pi){const i=lat.pA[pi][0];const id='s'+i;
+if(!this._h(id)){this.nodes.push({id,role:'bilayer',pos:vMul(lat.shell[i],VS)});this.steps.push({l:'Bilayer node (+1)',r:'bilayer',ids:[id],t:'Adjacent {111} layer.'})}}
+addStrangeExt(pi){const ids=[];
+lat.pE[pi].forEach((p,k)=>{const id='e'+pi+'_'+k;ids.push(id);this.nodes.push({id,role:'extension',pos:vMul(p,VS)})});
+this.aP.add(pi);this.steps.push({l:'Strange extension (+N_c=3)',r:'extension',ids,t:'One stacking period on {111} plane '+pi+'.'})}
+addVoids(){const ids=[];for(let i=0;i<lat.nV;i++){const id='v'+i;ids.push(id);this.nodes.push({id,role:'void',pos:vMul(lat.vP[i],VS)})}
+this.steps.push({l:'Void activation (+4)',r:'void',ids,t:'Tetrahedral voids, Pauli exclusion.'})}
+addWinding(B){this.hasW=true;this.wB=B;this.steps.push({l:'Topological winding (+\u00bd)',r:'winding',ids:[],t:'Baryon number B='+B+', stacking-phase energy.'})}
+addTripleBilayer(){for(let pi=0;pi<lat.Nc;pi++){const ids=[];
+for(let k=0;k<lat.nBL;k++){const id='tb'+pi+'_'+k;ids.push(id);
+this.nodes.push({id,role:'bilayer',pos:vMul(lat.omSites[pi*lat.nBL+k],VS)})}
+this.steps.push({l:'Bilayer '+(pi+1)+' (Nbl=8)',r:'bilayer',ids,t:pi===0?'sss: topology changes to triple bilayer.':'{111} plane '+(pi+1)+'.'})}}
+addCharmNodes(nc){const sites=[...lat.s2,...lat.s3];
+for(let ci=0;ci<nc;ci++){const ids=[];const ox=ci*2*VS;
+for(let k=0;k<lat.nCH;k++){const id='ch'+ci+'_'+k;ids.push(id);
+this.nodes.push({id,role:'charm',pos:vA(vMul(sites[k%sites.length],VS),[ox,0,0])})}
+this.steps.push({l:'Charm quark (N_charm=18)',r:'charm',ids,t:'2N_c\u00b2 antibonding colour modes.'})}}
+addCrossedFault(p1,p2,J){this.addCentre();const ids=['C'];
+const u=new Set([...lat.pI[p1],...lat.pI[p2]]);
+u.forEach(i=>{const id='s'+i;if(!this._h(id)){ids.push(id);this.nodes.push({id,role:'fault',pos:vMul(lat.shell[i],VS)})}});
+this.sC=J*(J+1)/(2*(lat.Z1+1));
+this.steps.push({l:'Crossed fault (N='+ids.length+')',r:'fault',ids,t:'Two intersecting {111} faults.'})}}
+
+function pNV(aS,I,J){const n=3-aS;if(n<=1)return false;if(n>=2&&I>=1)return true;if(n>=2&&I>=n/2&&J>=1.5)return true;return false}
+function asmMeson(q){const d=new Defect(),aS=Math.abs(q.S);
+if(q.J===0){if(aS===0&&q.I>0){d.addCellPair();return d}if(aS===0&&q.I===0){d.addHexCap(0);d.addBilayerNode(0);return d}if(aS>=1){d.addHexCap(0);return d}}
+else if(q.J>=1&&q.P===-1){if(aS===0){d.addCrossedFault(0,1,q.J);return d}if(aS>=1){d.addShell();return d}}return d}
+function asmBaryon(q){const d=new Defect(),aS=Math.abs(q.S),isDec=q.J>=1.5&&q.P===1;
+if(aS===lat.Nc){d.addTripleBilayer();return d}
+d.addShell();if(aS===0)d.addWinding(q.B);
+const nv=pNV(aS,q.I,q.J);
+if(aS>=1){if(nv)d.addVoids();else for(let a=0;a<aS;a++)d.addStrangeExt(a)}
+if(isDec){if(aS===0&&nv)d.addVoids();else if(aS>0&&aS<lat.Nc){for(let pi=0;pi<lat.nP;pi++){if(!d.aP.has(pi)){d.addStrangeExt(pi);break}}}}return d}
+function asmCharmBaryon(q){const d=new Defect(),aS=Math.abs(q.S);
+d.addCharmNodes(q.nc);d.addShell();
+if(q.I>=1)d.addVoids();else if(aS>=2){d.addVoids();d.addStrangeExt(0)}
+else if(aS>=1)for(let a=0;a<aS;a++)d.addStrangeExt(a);return d}
+
+const PARTICLES=[
+{name:'Pion (\u03c0\u207a)',qn:{B:0,S:0,I:1,J:0,P:-1,nc:0},N:2,Q:-1,Qd:'Qbond=-1'},
+{name:'Kaon (K\u207a)',qn:{B:0,S:1,I:0.5,J:0,P:-1,nc:0},N:7,Q:7,Qd:'Qbond=+7 (excited boundary)'},
+{name:'Eta (\u03b7)',qn:{B:0,S:0,I:0,J:0,P:-1,nc:0},N:8,Q:-24,Qd:'Qbond=+21, Qcol=-45'},
+{name:'Rho (\u03c1)',qn:{B:0,S:0,I:1,J:1,P:-1,nc:0},N:144/13,Q:0,Qd:'Q=0 (isovector: EM correction vanishes)'},
+{name:'Proton (p)',qn:{B:1,S:0,I:0.5,J:0.5,P:1,nc:0},N:13.5,Q:-12,Qd:'Qbond=-12 (all Z1 bonds)'},
+{name:'Neutron (n)',qn:{B:1,S:0,I:0.5,J:0.5,P:1,nc:0},N:13.5,Q:-10,Qd:'Qbond=-10 (edge character: 2 disrupted)'},
+{name:'Lambda (\u039b)',qn:{B:1,S:-1,I:0,J:0.5,P:1,nc:0},N:16,Q:-9,Qd:'Qbond=0, Qcol=-N_c\u00b2=-9'},
+{name:'Sigma (\u03a3\u207a)',qn:{B:1,S:-1,I:1,J:0.5,P:1,nc:0},N:17,Q:-2,Qd:'Qbond=-2 (partial void activation)'},
+{name:'Xi (\u039e\u2070)',qn:{B:1,S:-2,I:0.5,J:0.5,P:1,nc:0},N:19,Q:-31,Qd:'Qbond=0, Qcol=-27, Qsurf=-4'},
+{name:'Delta (\u0394\u207a\u207a)',qn:{B:1,S:0,I:1.5,J:1.5,P:1,nc:0},N:17.5,Q:15,Qd:'Qbond=-12+27=+15 (void activation)'},
+{name:'Sigma* (\u03a3*\u207a)',qn:{B:1,S:-1,I:1,J:1.5,P:1,nc:0},N:20,Q:-35,Qd:'Qbond=-35 (full activation)'},
+{name:'Xi* (\u039e*\u2070)',qn:{B:1,S:-2,I:0.5,J:1.5,P:1,nc:0},N:22,Q:-17,Qd:'Qbond=0, Qcol=-9, Qsurf=-8'},
+{name:'Omega (\u03a9\u207b)',qn:{B:1,S:-3,I:0,J:1.5,P:1,nc:0},N:24,Q:-16,Qd:'Qbond=-12, Qcol=0 (Pauli collapse), Qsurf=-4'},
+{name:'Lambda_c (\u039bc\u207a)',qn:{B:1,S:0,I:0,J:0.5,P:1,nc:1},N:31,Q:226,Qd:'Qlight=-9, Qcharm=+235'},
+{name:'Sigma_c (\u03a3c\u207a\u207a)',qn:{B:1,S:0,I:1,J:0.5,P:1,nc:1},N:35,Q:6,Qd:'Qlight=-2, Qcharm=+8 (Pauli blocks coupling)'},
+{name:'Omega_c (\u03a9c\u2070)',qn:{B:1,S:-2,I:0,J:0.5,P:1,nc:1},N:38,Q:67,Qd:'Qlight=-31, Qcharm=+98'}];
+
+const RC={centre:'#c89520',shell:'#2a937e',void:'#5a8c1a',extension:'#b84878',bilayer:'#c85830',charm:'#3a78b0',cell_pair:'#7060a8',hex_ring:'#2a937e',winding:'#aaa',fault:'#2a937e',stub:'#999'};
+let sc,cam,ren,grp,cvs,meshes=[],building=false;
+let dragging=false,prevMX=0,prevMY=0,autoRot=true,camZ=5.0;
+let rotQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.3,0.4,0));
+
+function init(){
+const box=document.getElementById('box');
+const w=box.clientWidth,h=box.clientHeight;
+cvs=document.createElement('canvas');
+cvs.style.cssText='display:block;cursor:grab;position:absolute;top:0;left:0';
+box.insertBefore(cvs,box.firstChild);
+sc=new THREE.Scene();sc.background=new THREE.Color(0xffffff);
+cam=new THREE.PerspectiveCamera(34,w/h,0.1,100);
+cam.position.set(0,0,camZ);cam.lookAt(0,0,0);
+ren=new THREE.WebGLRenderer({canvas:cvs,antialias:true,preserveDrawingBuffer:true});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));
+ren.setSize(w,h);
+grp=new THREE.Group();grp.quaternion.copy(rotQ);sc.add(grp);
+sc.add(new THREE.AmbientLight(0xffffff,0.6));
+const d1=new THREE.DirectionalLight(0xffffff,0.55);d1.position.set(5,7,6);sc.add(d1);
+sc.add(new THREE.DirectionalLight(0x778899,0.25)).position.set(-4,-3,-5);
+cvs.addEventListener('pointerdown',e=>{dragging=true;autoRot=false;prevMX=e.clientX;prevMY=e.clientY;cvs.style.cursor='grabbing'});
+window.addEventListener('pointermove',e=>{if(!dragging)return;
+const dx=(e.clientX-prevMX)*0.006,dy=(e.clientY-prevMY)*0.006;
+prevMX=e.clientX;prevMY=e.clientY;
+rotQ.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),dx));
+rotQ.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),dy))});
+window.addEventListener('pointerup',()=>{dragging=false;cvs.style.cursor='grab'});
+cvs.addEventListener('wheel',e=>{e.preventDefault();camZ=Math.max(1.5,Math.min(18,camZ+e.deltaY*0.005))},{passive:false});
+window.addEventListener('resize',()=>{const w2=box.clientWidth,h2=box.clientHeight;cam.aspect=w2/h2;cam.updateProjectionMatrix();ren.setSize(w2,h2)});
+const sl=document.getElementById('sel');
+PARTICLES.forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;sl.appendChild(o)});
+(function lp(){requestAnimationFrame(lp);
+if(autoRot)rotQ.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),0.005));
+grp.quaternion.copy(rotQ);cam.position.set(0,0,camZ);cam.lookAt(0,0,0);
+ren.render(sc,cam);drawGizmo()})()}
+
+function drawGizmo(){
+const gc=document.getElementById('giz'),ctx=gc.getContext('2d');
+ctx.clearRect(0,0,220,220);
+const m=new THREE.Matrix4().makeRotationFromQuaternion(rotQ).invert();
+const axes=[{d:[1,0,0],c:'#cc3333',l:'[100]'},{d:[0,1,0],c:'#33aa33',l:'[010]'},{d:[0,0,1],c:'#3355cc',l:'[001]'}];
+const cx=60,cy=155,L=42;
+const proj=axes.map(ax=>{const v=new THREE.Vector3(...ax.d).applyMatrix4(m);return{x:v.x,y:-v.y,c:ax.c,l:ax.l,z:v.z}});
+proj.sort((a,b)=>a.z-b.z);
+proj.forEach(p=>{const ex=cx+p.x*L,ey=cy+p.y*L;
+ctx.globalAlpha=p.z<0?0.2:0.75;
+ctx.strokeStyle=p.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.stroke();
+ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(ex,ey,3.5,0,Math.PI*2);ctx.fill();
+ctx.font='bold 11px sans-serif';ctx.fillText(p.l,ex+6,ey+(p.y<0?-5:14))});
+ctx.globalAlpha=0.4;ctx.font='10px sans-serif';ctx.fillStyle='#555';ctx.fillText('FCC cubic',6,14);ctx.globalAlpha=1}
+
+function clr(){while(grp.children.length)grp.remove(grp.children[0]);meshes=[];
+document.getElementById('mb').innerHTML='';document.getElementById('nc').innerHTML='';document.getElementById('log').innerHTML=''}
+function mkS(pos,col,r){r=r||SR;
+const s=new THREE.Mesh(new THREE.SphereGeometry(r,20,20),new THREE.MeshPhongMaterial({color:new THREE.Color(col),shininess:45}));
+s.position.set(...pos);s.scale.set(0.01,0.01,0.01);grp.add(s);meshes.push(s);return s}
+function grow(arr,ms){return new Promise(r=>{const t0=performance.now();
+(function f(){const p=Math.min(1,(performance.now()-t0)/ms);const e=1-Math.pow(1-p,3);arr.forEach(s=>s.scale.set(e,e,e));p<1?requestAnimationFrame(f):r()})()})}
+function addEdges(nodes){
+const ELL=lat.ELL*VS;const mt=new THREE.LineBasicMaterial({color:0x99aabb,transparent:true,opacity:0.45});let ct=0;
+const pts=nodes.filter(n=>n.role!=='winding'&&n.role!=='charm').map(n=>n.pos);
+for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+if(vDi(pts[i],pts[j])<ELL*1.08&&vDi(pts[i],pts[j])>0.01){ct++;
+grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...pts[i]),new THREE.Vector3(...pts[j])]),mt))}}
+return ct}
+function addGhosts(nodes,cen){
+const showGh=document.getElementById('ghCk').checked;
+const ELL=lat.ELL*VS;
+const dkS=new Set(nodes.filter(n=>n.role!=='winding'&&n.role!=='charm').map(n=>n.pos.map(v=>Math.round(v*1e3)).join(',')));
+const ext=lat.allPts.map(p=>vS(vMul(p,VS),cen));
+const mt=new THREE.LineBasicMaterial({color:0xbbbbbb,transparent:true,opacity:0.25});
+const ghM=new THREE.MeshPhongMaterial({color:new THREE.Color('#999'),shininess:5,transparent:true,opacity:0.12});
+let ct=0;const ghSet=new Set();
+nodes.filter(n=>n.role!=='winding'&&n.role!=='charm').forEach(n=>{
+ext.forEach(ep=>{
+if(vDi(n.pos,ep)<ELL*1.08&&vDi(n.pos,ep)>0.01){
+const ek=ep.map(v=>Math.round(v*1e3)).join(',');
+if(!dkS.has(ek)){ct++;
+grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...n.pos),new THREE.Vector3(...ep)]),mt));
+if(showGh&&!ghSet.has(ek)){ghSet.add(ek);
+const gh=new THREE.Mesh(new THREE.SphereGeometry(SR*0.5,10,10),ghM.clone());
+gh.position.set(...ep);grp.add(gh)}}}})});
+return ct}
+function showMass(N,Q){const Nv=typeof N==='number'?N:eval(N);
+const Ns=typeof N==='number'?(N%1===0.5?(2*N)+'/2':''+N):''+Math.round(N*100)/100;
+document.getElementById('mb').innerHTML='N = '+Ns+'<br>Q = '+(Q>=0?'+':'')+Q+'<br><span class="v">m = '+(Nv*M0+Q*ME).toFixed(1)+' MeV</span>'}
+function logStep(n,l,t,r){const d=RC[r]||'#888';const el=document.getElementById('log');
+const row=document.createElement('div');row.className='st';
+row.innerHTML='<span class="dt" style="background:'+d+'">'+n+'</span><div><span class="sl">'+l+'</span>'+(t?'<span class="sd">\u2014 '+t+'</span>':'')+'</div>';
+el.appendChild(row);requestAnimationFrame(()=>row.style.opacity='1')}
+function resetAll(){clr();building=false;autoRot=true;document.getElementById('bBtn').disabled=false}
+async function startBuild(){
+if(building)return;building=true;autoRot=false;clr();
+const pD=PARTICLES.find(p=>p.name===document.getElementById('sel').value);if(!pD)return;
+document.getElementById('bBtn').disabled=true;
+const q=pD.qn;let def;
+if(q.B===0)def=asmMeson(q);else if(q.nc>=1)def=asmCharmBaryon(q);else def=asmBaryon(q);
+const cen=vMn(def.nodes.filter(n=>n.pos).map(n=>n.pos));
+def.nodes.forEach(n=>{if(n.pos)n.pos=vS(n.pos,cen)});
+def._cen=cen;
+let sn=0;
+for(const st of def.steps){sn++;logStep(sn,st.l,st.t,st.r);
+if(st.ids.length===0){const w=mkS([0,0,0],'#ccc',SR*0.55);w.material.transparent=true;w.material.opacity=0.15;
+await grow([w],120);await new Promise(r=>setTimeout(r,DL));
+}else{const nm=[];st.ids.forEach(id=>{const nd=def.nodes.find(n=>n.id===id);if(nd)nm.push(mkS(nd.pos,RC[nd.role]||'#888'))});
+await grow(nm,200);await new Promise(r=>setTimeout(r,DL))}}
+sn++;const bc=addEdges(def.nodes);
+logStep(sn,'|V|='+def.nodes.length+' nodes, |E|='+bc+' internal edges','Defect graph complete.','shell');
+await new Promise(r=>setTimeout(r,DL));
+sn++;addGhosts(def.nodes,def._cen);
+logStep(sn,'Lattice interface','Ghost spheres show surrounding FCC sites. Lines = NN connections across defect boundary.','stub');
+await new Promise(r=>setTimeout(r,DL));
+sn++;const Nv=typeof pD.N==='number'?pD.N:eval(pD.N);
+const Ns=typeof pD.N==='number'?(pD.N%1===0.5?(2*pD.N)+'/2':''+pD.N):''+Math.round(pD.N*100)/100;
+logStep(sn,'N='+Ns+', Q='+(pD.Q>=0?'+':'')+pD.Q,pD.Qd,'centre');
+document.getElementById('nc').innerHTML='|V|='+def.nodes.length+' |E|='+bc;
+showMass(pD.N,pD.Q);
+await new Promise(r=>setTimeout(r,DL));
+building=false;document.getElementById('bBtn').disabled=false}
+function exportJPG(){
+const s=3,box=document.getElementById('box'),w=box.clientWidth*s,h=box.clientHeight*s;
+const tr=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+tr.setPixelRatio(1);tr.setSize(w,h);tr.setClearColor(0xffffff);tr.render(sc,cam);
+const a=document.createElement('a');
+a.download='cosserat_'+document.getElementById('sel').value.replace(/[^a-zA-Z0-9]/g,'_')+'.jpg';
+a.href=tr.domElement.toDataURL('image/jpeg',0.95);a.click();tr.dispose()}
+requestAnimationFrame(init);
+</script>
+</body>
+</html>
