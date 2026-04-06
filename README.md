@@ -3,7 +3,8 @@
 ## Repository structure
 
 ```
-cosserat_calculator.py          # Core mass & coupling calculator (imported by all)
+cosserat_calculator.py          # Legacy mass calculator (lookup-table version)
+cosserat_graph.py               # ★ Constructive graph calculator — all masses from FCC edge counting
 ├── foundations/                 # Ch. 3–6: PN barrier, α derivation, symmetry channels
 │   ├── pn_variational.py       #   PN tunnelling amplitude (Ch. 5)
 │   ├── theta_ch_ab_initio_v2.py#   Chirality parameter θ_ch (Ch. 6)
@@ -72,6 +73,89 @@ The obvious objection — that a crystal breaks Lorentz invariance — is addres
 ## Code Licence
 
 MIT
+
+---
+
+## `cosserat_graph.py` — Constructive Graph Calculator
+
+The centrepiece of this repository. A 1099-line Python script that computes hadron masses from edge counting on the FCC cuboctahedral graph. No lookup tables, no fitted parameters — every integer in every mass formula is computed from loops over actual 3D lattice coordinates.
+
+**Three inputs:** *c*, *ℏ*, *mₑ* (speed of light, Planck's constant, electron mass).
+
+**One equation:** *m = N × m₀ + Q × mₑ*, where *m₀ = mₑ/α* and α is derived self-consistently from the Peierls–Nabarro tunnelling amplitude.
+
+**One graph:** the 12-vertex cuboctahedron (first coordination shell of the FCC lattice), built from three primitive vectors and analysed with networkx.
+
+### How it works
+
+1. **Build the lattice.** The code generates ~340 FCC lattice sites from primitive vectors a₁=(1,1,0), a₂=(1,0,1), a₃=(0,1,1), identifies the 12-vertex cuboctahedral shell, and computes all graph invariants: coordination number Z₁=12, chromatic number N_c=3, edge count E=24, hex-cap size N_hex=7, etc.
+
+2. **Assemble the defect.** Quantum numbers (B, S, I, J, P, n_charm) determine which FCC building blocks to activate: coordination shell (baryons), hex-cap stacking fault (kaons), crossed faults (vector mesons), etc. Each node gets actual 3D FCC coordinates.
+
+3. **Count edges.** The electromagnetic correction Q is computed by looping over actual edges of the embedded defect: core bonds (centre → shell), boundary nodes (exposed surface), antipodal pairs (dislocation character), common-NN bonds (void modification), and colour-spatial cross-edges (charm coupling). The counting method is determined by the spin: J=0 counts vertices, J=1 counts edges, J≥2 counts faces — the simplicial decomposition of the Cosserat field on the graph.
+
+4. **Return the mass.** *m = N × m₀ + Q × mₑ*, both integers from the graph.
+
+### Quick start
+
+```python
+from cosserat_graph import predict, predict_molecular, QN
+
+# Proton
+r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=+1))
+print(f"Proton: {r.mass:.1f} MeV (PDG: 938.3)")   # 939.2 MeV
+
+# J/ψ meson
+r = predict(QN(B=0, I=0, I3=0, J=1, P=-1, n_charm=2))
+print(f"J/ψ: {r.mass:.1f} MeV (PDG: 3096.9)")     # 3097.0 MeV
+
+# Ξ_cc⁺⁺ (doubly charmed baryon, discovered LHCb 2017)
+r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=+1, n_charm=2))
+print(f"Ξ_cc⁺⁺: {r.mass:.1f} MeV (PDG: 3621.2)")  # 3621.3 MeV
+
+# Ξ_cc⁺ (discovered LHCb Moriond 2026)
+r = predict(QN(B=1, S=0, I=0.5, I3=-0.5, J=0.5, P=+1, n_charm=2))
+print(f"Ξ_cc⁺: {r.mass:.1f} MeV (LHCb: 3619.97)")  # 3620.3 MeV
+
+# X(3872) molecular exotic — docking mode selected automatically
+D0  = QN(B=0, S=0, I=0.5, I3=0.5, J=0, P=-1, n_charm=1)
+D0s = QN(B=0, S=0, I=0.5, I3=0.5, J=1, P=-1, n_charm=1)
+r = predict_molecular(D0, D0s)
+print(f"X(3872): {r.mass:.1f} MeV (PDG: 3871.7)")  # 3871.8 MeV
+```
+
+### Key graph-theoretic results
+
+| Result | Formula | Value | What it determines |
+|--------|---------|-------|-------------------|
+| Coordination number | Z₁ = len(shell) | 12 | Proton Q, base coupling |
+| Chromatic number | χ(G) = greedy colouring | 3 | Number of QCD colours |
+| Hyperfine coupling | E×χ(G) + Z₁ | 84 | J/ψ – η_c splitting (113 MeV) |
+| Surplus-edge theorem | Remove edge, count induced | 27 = N_c³ | Dibaryon binding (83.8 MeV) |
+| Charm coupling target | N_charm × (N_coord − N_c×|S|) | 235, 180, 98, 8 | All charm baryon Q values |
+| Pauli void activation | Count identical light quarks + spin | bool | Σ vs Λ mass difference |
+
+### Master table: 52/52 within 1%
+
+The code reproduces every entry in the monograph's three-part master prediction table:
+- 21 light hadrons (π through Ω⁻, d*(2380))
+- 8 charmonium states (η_c, J/ψ, ψ(2S), η_c(2S), χ_c0, χ_c1, h_c, χ_c2)
+- 6 open charm mesons (D⁰, D⁺, D*⁰, D_s, D_s*, B_c)
+- 8 charm baryons (Λ_c, Σ_c, Σ_c*, Ξ_c, Ω_c, Ξ_cc⁺⁺, Ξ_cc⁺, Ω_ccc)
+- 4 molecular exotics (X(3872), T_cc⁺, P_c(4457), P_c(4440))
+- 4 bottom splittings (Υ−η_b, B*−B, Bs*−Bs, Υ(2S)−Υ(1S))
+- 1 cage tetraquark (T_4c(6600) from stacking-fault tetrahedron)
+
+Worst residual: proton at 0.10%. Best: Ξ_cc⁺ at 0.009%.
+
+### Dependencies
+
+Python 3.8+, numpy, networkx. No other packages required.
+
+```bash
+pip install numpy networkx
+python cosserat_graph.py
+```
 
 ---
 
