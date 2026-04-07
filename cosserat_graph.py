@@ -764,7 +764,7 @@ def _compute_Q(qn, cluster, defect, lat):
         elif cluster=='hex_cap':
             Qb=defect.boundary_node_count()  # loops over defect nodes, checks external NNs → 7
         elif cluster=='crossed_fault_I0':
-            Qb=defect.core_bond_count()  # = Z₁ = 12 from edge loop
+            Qb=lat.Z1  # isoscalar: symmetric wavefunction adds all Z1=12 endpoints coherently
         elif cluster=='bilayer_pair':
             Qb=lat.N_bilayer
         elif cluster=='microrotation':
