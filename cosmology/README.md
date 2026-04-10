@@ -5,21 +5,22 @@ Scripts for the cosmological predictions of the Cosserat supersolid lattice fram
 ## Files
 
 ### gw_spectrum_crystallisation.py
-Computes the stochastic gravitational wave background from the vacuum lattice
-crystallisation phase transition. Uses the standard fitting formulas (Caprini et al.
-2016, 2020; Hindmarsh et al. 2017; Ellis & Lewicki 2020) with all four
-thermodynamic parameters determined from FCC lattice mechanics:
+Gravitational wave spectrum from the vacuum lattice crystallisation phase transition.
+Uses standard fitting formulas (Caprini et al. 2016; Hindmarsh et al. 2017) with
+lattice-determined parameters. Peak at ~350 nHz (PTA/SKA band).
 
-- **T\*** ≈ 150–220 MeV (nucleation temperature, from the Debye temperature Θ_D = πm₀)
-- **α** ≈ 0.03–1.0 (transition strength, principal uncertainty)
-- **β/H\*** ≈ 5–8 (inverse duration, from CNT barrier ΔG\* ≈ 1.17 GeV)
-- **v_w** = c/√3 (Jouguet detonation velocity)
+### potts_fcc_mc.py
+Monte Carlo simulation of the 3D ferromagnetic 3-state Potts model on the FCC lattice.
+Determines the critical coupling K_c(FCC) = 0.258 ± 0.003, which converts to the
+QCD deconfinement temperature T_c = 156.1 MeV via the D4 Polyakov loop mechanism.
 
-**Key result**: the GW spectrum peaks at ~350 nHz (in the PTA band), with amplitude
-h²Ω_peak ~ 10⁻¹⁵ to 10⁻⁹ depending on α. The prediction is testable by SKA.
+**Key result**: T_c = ε_SF / ((3+√3) × K_c) = 156.1 MeV, matching lattice QCD
+(156 ± 3 MeV) to 0.06%. This is the first observable that distinguishes D3 from D4:
+D3 gives T_melt ≈ 230 MeV (48% off), D4 gives 156.1 MeV (0.06% off).
 
-Produces two figures:
-- `gw_spectrum_crystallisation.png/pdf` — spectrum for four α scenarios vs NANOGrav data
-- `gw_spectrum_decomposition.png/pdf` — sound wave / bubble / turbulence decomposition
+Inputs:
+- ε_SF = (π√3/2)m₀ = 190.5 MeV (stacking-fault energy per temporal plaquette)
+- K_c = 0.258 (from MC on FCC lattice, L=8-12, numba-accelerated)
+- Z_eff = 3 + √3 (geometric factor from {111} fault Burgers vector projection)
 
-**Dependencies**: numpy, matplotlib
+**Dependencies**: numpy, numba, scipy
