@@ -24,9 +24,13 @@ cosserat_graph.py               # ★ Constructive graph calculator — all mass
 ├── neutrinos/                  # Ch. 8: neutrino sector
 │   ├── neutrino_predictions.py #   ν mass and mixing predictions
 │   └── neutrino_error_budget.py#   Error propagation
-└── gravity/                    # Ch. 15–16: black holes, gravity
-    ├── bh_entropy_derivation.py#   Bekenstein-Hawking entropy
-    └── bh_statistical_mechanics.py # BH statistical mechanics
+├── gravity/                    # Ch. 15–16: black holes, gravity
+│   ├── bh_entropy_derivation.py#   Bekenstein-Hawking entropy
+│   └── bh_statistical_mechanics.py # BH statistical mechanics
+└── d4/                         # Sec. 2.8: four-dimensional interpretation
+    ├── d4_lattice_sums.py      #   D3 vs D4 elastic lattice sums
+    ├── d4_mu_prime.py          #   μ' = 2 self-consistency: KK reduction
+    └── d4_scales.py            #   Temperature hierarchy, G × K_sf = c⁴/ℓ²
 ```
 
 
