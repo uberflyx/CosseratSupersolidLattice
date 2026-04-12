@@ -16,6 +16,7 @@ below the Kaluza–Klein scale.
 | `d4_mu_prime.py` | Acoustoelastic check: verifies μ' = 2 identically in FCC and D4 after KK reduction. |
 | `d4_scales.py` | Temperature hierarchy and the exact identity G × K_sf = c⁴/ℓ². |
 | `d4_chirality.py` | **20-branch spectrum**, chirality splitting, and the imaginary phase of the compact-direction self-energy. |
+| `d4_casimir.py` | Discrete lattice sum for Casimir energy of the compact direction (N₄ = 3 sites). Compares with continuum formula and shows convergence. |
 
 ## Key results
 
@@ -24,6 +25,7 @@ The Zener ratio A = 1 exactly in D4, versus A ≠ 1 in FCC. The inter-layer
 bonds stiffen the ⟨100⟩ directions without affecting the shear modulus.
 
 ### Chirality splitting (d4_chirality.py)
+| `d4_casimir.py` | Discrete lattice sum for Casimir energy of the compact direction (N₄ = 3 sites). Compares with continuum formula and shows convergence. |
 The 4D Cosserat theory has 20 phonon branches (not 12), because SO(4) has
 6 rotation generators. At k₄ = 0, the 20 branches factorise exactly into
 System A (the familiar 12) and System B (8 massive KK modes).
