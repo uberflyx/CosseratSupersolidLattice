@@ -61,3 +61,33 @@ the structural advantages of D4.
   a smooth eigenvalue flow with no qualitative change — the barrier remains
   opaque at all k₄, confirming that single-node compression tunnelling is
   forbidden regardless of the compact momentum.
+
+
+## Chirality analysis results (d4_transfer_matrix_20x20.py)
+
+The transfer matrix at nonzero compact momentum k₄ reveals three structural results:
+
+1. **Eigenvalue flow**: the EM tunnelling amplitude drops from α to 0.63α at the
+   first KK level (k₄ℓ = 2π/3), a 37% geometric suppression.
+
+2. **Self-dual/anti-self-dual splitting**: the two EM polarisations (blocks CG and DF)
+   split by 1.17% of α at the KK scale. The self-dual component tunnels more easily.
+   The splitting is quadratic in k₄ (required by time-reversal symmetry).
+
+3. **Imaginary phase of Σ₁₃**: the compact-rotation component of the EM eigenvector
+   is purely imaginary (phase π/2 relative to displacement). This makes the
+   compact-direction self-energy TIME-REVERSAL-ODD — a geometric CP violation
+   mechanism from the compact direction.
+
+### The thermal window
+
+The propagation chirality exists only in the range T_geom < T < T_c (23–156 MeV).
+It crosses the constitutive chirality θ_ch at T ≈ 103 MeV. Above T_c, the temporal
+stacking melts and the geometric chirality vanishes.
+
+### Testable prediction
+
+The chiral magnetic effect in heavy-ion collisions should have a DEFINITE SIGN
+(from the geometric stacking chirality), not a random sign (from topological
+fluctuations). The signal is generated during hadronisation (T ~ 120–156 MeV),
+not in the initial hot QGP.
