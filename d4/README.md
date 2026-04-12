@@ -1,93 +1,42 @@
 # D4 Interpretation
 
 Scripts supporting the four-dimensional (D4) interpretation of the Cosserat
-supersolid lattice (Sec. 2.8 of the monograph).
+supersolid lattice.
 
-The D4 interpretation treats the vacuum as a four-dimensional FCC crystal (the
-D4 root lattice / 24-cell) with one compact direction of circumference
-L₄ = 3ℓ ≈ 8.5 fm identified as Euclidean time. Every quantitative prediction
-is identical in D3 (3+1) and D4 (4+0); the scripts verify this and compute
-the structural advantages of D4.
+The D4 lattice (densest 4D packing, 24-cell nearest-neighbour shell) has one
+compact direction of circumference L₄ = 3ℓ ≈ 8.5 fm identified as Euclidean
+time. Every quantitative prediction is identical in FCC (3+1) and D4 (4+0)
+below the Kaluza–Klein scale.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `d4_lattice_sums.py` | Computes all SOEC/TOEC lattice sums for the 12-vector (FCC) and 24-vector (24-cell) shells. Verifies A = 1, S₂₂₂ = 0, and the cross-index invariance. |
-| `d4_mu_prime.py` | Verifies μ' = (3−ξ)/5 = 2.000 identically in D3 and D4 after KK reduction. Resolves the apparent discrepancy from the naive 4D formula. |
-| `d4_scales.py` | Computes the temperature hierarchy (T_geom, m_KK, T_c, Λ_QCD, T_D) and verifies the exact identity G × K_sf = c⁴/ℓ². |
+| `d4_lattice_sums.py` | Elastic constants: verifies A = 1 (exact isotropy), S₂₂₂ = 0, and cross-index invariance for both 12-vector (FCC) and 24-vector (24-cell) shells. |
+| `d4_mu_prime.py` | Acoustoelastic check: verifies μ' = 2 identically in FCC and D4 after KK reduction. |
+| `d4_scales.py` | Temperature hierarchy and the exact identity G × K_sf = c⁴/ℓ². |
+| `d4_chirality.py` | **20-branch spectrum**, chirality splitting, and the imaginary phase of the compact-direction self-energy. |
 
 ## Key results
 
-- **Exact isotropy**: The Zener ratio A = 2C₄₄/(C₁₁−C₁₂) = 1 in D4, versus
-  A = 2 in D3. The inter-layer bonds stiffen the ⟨100⟩ directions without
-  affecting the shear modulus.
+### Elastic isotropy (d4_lattice_sums.py)
+The Zener ratio A = 1 exactly in D4, versus A ≠ 1 in FCC. The inter-layer
+bonds stiffen the ⟨100⟩ directions without affecting the shear modulus.
 
-- **μ' = 2 in both D3 and D4**: The inter-layer bonds contribute to C₁₁ but
-  not C₄₄ (each has only one nonzero 3D component, so R₁²R₂² = 0). The ratio
-  μ_V/(3K) = 1/5 is invariant under KK reduction.
+### Chirality splitting (d4_chirality.py)
+The 4D Cosserat theory has 20 phonon branches (not 12), because SO(4) has
+6 rotation generators. At k₄ = 0, the 20 branches factorise exactly into
+System A (the familiar 12) and System B (8 massive KK modes).
 
-- **S₂₂₂ = 0 in both D3 and D4**: The C₄₅₆ = 0 selection rule that protects
-  the α derivation holds in D4.
+At k₄ ≠ 0, the two EM polarisations **split**: the self-dual component
+tunnels 1.2% more easily than the anti-self-dual at the first KK level.
+The origin is the sign correlation between the curl coupling (opposite for
+the two polarisations) and the compact-direction mixing (same sign for both).
 
-- **G × K_sf = c⁴/ℓ²**: Newton's constant times the superfluid bulk modulus
-  is an exact algebraic identity of the bootstrap equations.
+The compact-rotation component of the EM eigenvector has phase exactly π/2
+— the coupling Σ₁₃ is **purely imaginary**, making it time-reversal-odd.
+This is geometric CP violation from the stacking chirality A→B→C.
 
-## References
-
-- Conway & Sloane, *Sphere Packings, Lattices and Groups* (Springer, 1999):
-  D4 root lattice and the 24-cell.
-- Kaluza, Sitzungsber. Preuss. Akad. Wiss. (1921) 966; Klein, Z. Phys. 37,
-  895 (1926): Kaluza–Klein compactification.
-- Gross, Pisarski & Yaffe, Rev. Mod. Phys. 53, 43 (1981): deconfinement as
-  a KK phase transition.
-
-| `d4_cosserat_phonons.py` | SO(4) decomposition, Hodge star eigenvectors, self-dual/anti-self-dual basis, factorisation proof verification. |
-| `d4_transfer_matrix_20x20.py` | Full 20×20 D4 transfer matrix (block-diagonal: CG 6×6 + DF 6×6 + AE 6×6 + Bt 2×2). Sweeps k₄ from 0 to 2π/(3ℓ) and tracks eigenvalue flow, chirality splitting, and KK corrections to α. |
-
-## Key new results (d4_transfer_matrix_20x20.py)
-
-- **KK correction to α**: the tunnelling amplitude drops ~37% at the first KK
-  level (k₄ℓ = 2π/3). This is a geometric suppression from the compact
-  direction's effective mass, not RG running.
-
-- **Chirality breaking**: the two transverse EM polarisations (blocks CG and DF)
-  split by ~1.2% of α at the KK scale. The splitting arises from the opposite
-  signs of the curl coupling in the two sectors, which propagate differently
-  through the ik₄ mixing to System B. This is the SU(2)_L × SU(2)_R breaking
-  predicted by the chiral decomposition analysis.
-
-- **Compression sector**: Block AE (compression + compact displacement) shows
-  a smooth eigenvalue flow with no qualitative change — the barrier remains
-  opaque at all k₄, confirming that single-node compression tunnelling is
-  forbidden regardless of the compact momentum.
-
-
-## Chirality analysis results (d4_transfer_matrix_20x20.py)
-
-The transfer matrix at nonzero compact momentum k₄ reveals three structural results:
-
-1. **Eigenvalue flow**: the EM tunnelling amplitude drops from α to 0.63α at the
-   first KK level (k₄ℓ = 2π/3), a 37% geometric suppression.
-
-2. **Self-dual/anti-self-dual splitting**: the two EM polarisations (blocks CG and DF)
-   split by 1.17% of α at the KK scale. The self-dual component tunnels more easily.
-   The splitting is quadratic in k₄ (required by time-reversal symmetry).
-
-3. **Imaginary phase of Σ₁₃**: the compact-rotation component of the EM eigenvector
-   is purely imaginary (phase π/2 relative to displacement). This makes the
-   compact-direction self-energy TIME-REVERSAL-ODD — a geometric CP violation
-   mechanism from the compact direction.
-
-### The thermal window
-
-The propagation chirality exists only in the range T_geom < T < T_c (23–156 MeV).
-It crosses the constitutive chirality θ_ch at T ≈ 103 MeV. Above T_c, the temporal
-stacking melts and the geometric chirality vanishes.
-
-### Testable prediction
-
-The chiral magnetic effect in heavy-ion collisions should have a DEFINITE SIGN
-(from the geometric stacking chirality), not a random sign (from topological
-fluctuations). The signal is generated during hadronisation (T ~ 120–156 MeV),
-not in the initial hot QGP.
+The effect exists only in the thermal window 23 MeV < T < 156 MeV (between
+the geometric temperature and the deconfinement transition). It is active
+during hadronisation in heavy-ion collisions and in neutron star mergers.
