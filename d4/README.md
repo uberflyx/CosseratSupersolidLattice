@@ -41,3 +41,23 @@ the structural advantages of D4.
   895 (1926): Kaluza–Klein compactification.
 - Gross, Pisarski & Yaffe, Rev. Mod. Phys. 53, 43 (1981): deconfinement as
   a KK phase transition.
+
+| `d4_cosserat_phonons.py` | SO(4) decomposition, Hodge star eigenvectors, self-dual/anti-self-dual basis, factorisation proof verification. |
+| `d4_transfer_matrix_20x20.py` | Full 20×20 D4 transfer matrix (block-diagonal: CG 6×6 + DF 6×6 + AE 6×6 + Bt 2×2). Sweeps k₄ from 0 to 2π/(3ℓ) and tracks eigenvalue flow, chirality splitting, and KK corrections to α. |
+
+## Key new results (d4_transfer_matrix_20x20.py)
+
+- **KK correction to α**: the tunnelling amplitude drops ~37% at the first KK
+  level (k₄ℓ = 2π/3). This is a geometric suppression from the compact
+  direction's effective mass, not RG running.
+
+- **Chirality breaking**: the two transverse EM polarisations (blocks CG and DF)
+  split by ~1.2% of α at the KK scale. The splitting arises from the opposite
+  signs of the curl coupling in the two sectors, which propagate differently
+  through the ik₄ mixing to System B. This is the SU(2)_L × SU(2)_R breaking
+  predicted by the chiral decomposition analysis.
+
+- **Compression sector**: Block AE (compression + compact displacement) shows
+  a smooth eigenvalue flow with no qualitative change — the barrier remains
+  opaque at all k₄, confirming that single-node compression tunnelling is
+  forbidden regardless of the compact momentum.
