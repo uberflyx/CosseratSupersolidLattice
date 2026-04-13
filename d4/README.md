@@ -1,44 +1,32 @@
-# D4 Interpretation
+# D4 Compact Direction Analysis
 
-Scripts supporting the four-dimensional (D4) interpretation of the Cosserat
-supersolid lattice.
-
-The D4 lattice (densest 4D packing, 24-cell nearest-neighbour shell) has one
-compact direction of circumference L₄ = 3ℓ ≈ 8.5 fm identified as Euclidean
-time. Every quantitative prediction is identical in FCC (3+1) and D4 (4+0)
-below the Kaluza–Klein scale.
+Scripts for the D4 (four-dimensional) interpretation of the FCC Cosserat lattice.
 
 ## Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `d4_lattice_sums.py` | Elastic constants: verifies A = 1 (exact isotropy), S₂₂₂ = 0, and cross-index invariance for both 12-vector (FCC) and 24-vector (24-cell) shells. |
-| `d4_mu_prime.py` | Acoustoelastic check: verifies μ' = 2 identically in FCC and D4 after KK reduction. |
-| `d4_scales.py` | Temperature hierarchy and the exact identity G × K_sf = c⁴/ℓ². |
-| `d4_chirality.py` | **20-branch spectrum**, chirality splitting, and the imaginary phase of the compact-direction self-energy. |
-| `d4_casimir.py` | Discrete lattice sum for Casimir energy of the compact direction (N₄ = 3 sites). Compares with continuum formula and shows convergence. |
+### `layer_entropy_catalogue.py`
 
-## Key results
+Computes the D4 stacking-layer decomposition for every hadron in the constructive
+Cosserat mass calculator. Assigns each node of each defect graph to one of three
+stacking layers (A, B, C), classifies bonds as spatial or temporal, computes the
+layer entropy and variance, and tests the prediction that the mass-formula residual
+correlates with temporal asymmetry.
 
-### Elastic isotropy (d4_lattice_sums.py)
-The Zener ratio A = 1 exactly in D4, versus A ≠ 1 in FCC. The inter-layer
-bonds stiffen the ⟨100⟩ directions without affecting the shear modulus.
+**Key results:**
+- Every baryon graph fragments when temporal bonds are removed (confinement = temporal binding)
+- The decuplet baryons (Δ, Σ*, Ξ*, Ω⁻) show perfect rank correlation (ρ = 1.000)
+  between layer entropy and prediction accuracy
+- The Ω⁻ (H = 1.000, perfectly balanced across all three layers) has the smallest
+  mass residual of any light baryon (0.001%)
 
-### Chirality splitting (d4_chirality.py)
-| `d4_casimir.py` | Discrete lattice sum for Casimir energy of the compact direction (N₄ = 3 sites). Compares with continuum formula and shows convergence. |
-The 4D Cosserat theory has 20 phonon branches (not 12), because SO(4) has
-6 rotation generators. At k₄ = 0, the 20 branches factorise exactly into
-System A (the familiar 12) and System B (8 massive KK modes).
+**Usage:**
+```
+python layer_entropy_catalogue.py          # full analysis
+python layer_entropy_catalogue.py --plot   # also generate scatter plot
+```
 
-At k₄ ≠ 0, the two EM polarisations **split**: the self-dual component
-tunnels 1.2% more easily than the anti-self-dual at the first KK level.
-The origin is the sign correlation between the curl coupling (opposite for
-the two polarisations) and the compact-direction mixing (same sign for both).
+**Dependencies:** numpy, scipy, matplotlib (optional), cosserat_graph
 
-The compact-rotation component of the EM eigenvector has phase exactly π/2
-— the coupling Σ₁₃ is **purely imaginary**, making it time-reversal-odd.
-This is geometric CP violation from the stacking chirality A→B→C.
+## Reference
 
-The effect exists only in the thermal window 23 MeV < T < 156 MeV (between
-the geometric temperature and the deconfinement transition). It is active
-during hadronisation in heavy-ion collisions and in neutron star mergers.
+M. A. Cox, *The Cosserat Supersolid*, Sec. layer_decomposition (decay chapter).
