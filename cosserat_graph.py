@@ -256,8 +256,25 @@ _lat=FCCLattice()
 # ================================================================
 @dataclass
 class QN:
+    """Hadron quantum numbers.
+
+    Standard fields: B (baryon number), S (open strangeness, signed by
+    convention -1 per s quark), I, I3 (isospin), J (total spin), P (parity),
+    C (C-parity, when defined), level (radial / shell quantum, 1=ground),
+    n_charm, n_bottom (heavy-quark counts).
+
+    Disambiguation field: n_hidden_s — number of hidden strange-antistrange
+    pairs in the wavefunction.  Default 0.  This distinguishes states with
+    identical (B, S, I, J, P) but different flavour content, which the
+    monograph's recipe card otherwise cannot tell apart.  Examples:
+        f_2(1270) -> n_hidden_s=0   (uū+dd̄ tensor)
+        f_2'(1525) -> n_hidden_s=1  (ss̄ tensor)
+        omega(782) -> n_hidden_s=0  (uū+dd̄ vector, level=1)
+        phi(1020)  -> n_hidden_s=1  (ss̄ vector,    level=1)
+    """
     B:int=0; S:int=0; I:float=0; I3:float=0
     J:float=0; P:int=-1; C:int=0; level:int=1; n_charm:int=0; n_bottom:int=0
+    n_hidden_s:int=0
 
 @dataclass
 class Result:
@@ -592,10 +609,13 @@ def _asm_meson(qn, lat):
             d.add_crossed_fault(0, 1, 1)
             return d, 'crossed_fault'
         if flavor == 'light_neutral':
-            if qn.level == 1:
+            # Disambiguate ω family (n_hidden_s=0) from φ family
+            # (n_hidden_s=1) — same (J, P, I, S) at level 1.
+            if qn.n_hidden_s == 0 and qn.level == 1:
                 d.add_crossed_fault(0, 1, 1)
                 return d, 'crossed_fault_I0'
-            if qn.level == 2:
+            if qn.n_hidden_s == 1 and qn.level == 1:
+                # phi(1020) — ssbar vector
                 dk = Defect(lat); dk.add_shell()
                 dr = Defect(lat); dr.add_crossed_fault(0, 1, 1)
                 N_GMO = 2 * dk.N_eff - dr.N_eff
@@ -603,21 +623,28 @@ def _asm_meson(qn, lat):
                 d.add_shell(); d.add_bilayer_node(0); d.add_bilayer_node(1)
                 d.spin_corr = N_GMO - deloc - len(d.nodes)
                 return d, 'bilayer_pair'
-            return d, f'refuse: isoscalar vector level={qn.level} rule not derived'
+            return d, (f'refuse: isoscalar vector level={qn.level}, '
+                       f'n_hidden_s={qn.n_hidden_s} rule not derived '
+                       f'(omega(1420), phi(1680), etc.)')
         if flavor == 'strange' and qn.level == 1:
             d.add_shell()
             return d, 'strange_vector'
         return d, f'refuse: vector level={qn.level} with flavor={flavor} rule not derived'
 
-    # Tensor: 2^+  — f_2(1270) sector only
+    # Tensor: 2^+  — f_2(1270) for n_hidden_s=0; f_2'(1525) for n_hidden_s=1
     if qn.J == 2 and qn.P == +1:
-        if flavor == 'light_neutral' and qn.level == 1:
+        if flavor == 'light_neutral' and qn.level == 1 and qn.n_hidden_s == 0:
             for i in range(lat.n_shell):
                 n = f's{i}'; d.nodes.add(n); d.roles[n] = 'shell'
             for k in range(lat.N_square):
                 n = f'b2_{k}'; d.nodes.add(n); d.roles[n] = 'born'
             d.spin_corr = qn.J * (qn.J + 1) / (2 * (lat.Z1 + lat.N_square + 1))
             return d, 'microrotation'
+        if flavor == 'light_neutral' and qn.level == 1 and qn.n_hidden_s == 1:
+            # f_2'(1525) — ssbar tensor.  Microrotation rule with strange-arm
+            # contribution to N from the hidden ss pair; the rule for the
+            # exact ribbon structure has not yet been derived.
+            return d, 'refuse: ssbar tensor (f_2_prime) graph rule not yet derived'
         # J=2, P=+1 with I>=1 or |S|=1 -> Regge trajectory partner
         return d, 'regge: J=2 P=+1 non-f2 sector (Regge trajectory)'
 
