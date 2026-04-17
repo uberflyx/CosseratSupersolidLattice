@@ -17,7 +17,10 @@ cosserat_graph.py               # ★ Constructive graph calculator — all mass
 │   ├── excited_baryons.py      #   N(1440), N(1535), Λ(1670) masses (Ch. 12)
 │   ├── exotic_catalogue.py     #   Exotic hadron classification
 │   ├── exotic_filling_fraction.py
-│   └── three_mechanisms.py     #   Vacuum energy mechanisms (Ch. 13)
+│   ├── three_mechanisms.py     #   Vacuum energy mechanisms (Ch. 13)
+│   ├── probe_cosserat_graph.py #   PDG validation harness for cosserat_graph
+│   ├── pdg_comparison.md       #   Full prediction-vs-PDG comparison report
+│   └── fcc_defect_catalogue.py #   Composition catalogue of FCC defect cores
 ├── decays/                     # Ch. 12: decay rates and lifetimes
 │   ├── cosserat_decay_engine.py#   Full decay rate calculator
 │   └── test_decay_engine.py    #   Regression tests
@@ -151,6 +154,12 @@ The code reproduces every entry in the monograph's three-part master prediction 
 - 1 cage tetraquark (T_4c(6600) from stacking-fault tetrahedron)
 
 Worst residual: proton at 0.10%. Best: Ξ_cc⁺ at 0.009%.
+
+### Validation harness
+
+A standalone script `hadrons/probe_cosserat_graph.py` runs `predict()` against 127 PDG hadrons and classifies each as `WIN` (within 1%), `SOFT-OK` (within 3%), `WRONG` (silent failure), `REGGE-SKIP` (clean refusal), or `FORBIDDEN` (Pauli-blocked). The full report comparing predictions against PDG 2024 masses is in `hadrons/pdg_comparison.md`.
+
+The four hadron assemblers (`_asm_meson`, `_asm_baryon`, `_asm_charm_meson`, `_asm_charm_baryon`) are organised by `(J, P)` sector with uniform flavour handling within each sector. Quantum-number combinations for which no rule has been derived return `cluster='refuse: <reason>'` and zero mass rather than falling through to the nearest case. This means every mass returned has been derived by an explicit rule, and every state the code cannot derive is named.
 
 ### Dependencies
 

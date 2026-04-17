@@ -532,114 +532,243 @@ def _pauli_check(B, absS, I, J, lat):
 # ASSEMBLY: LIGHT MESONS
 # ================================================================
 def _asm_meson(qn, lat):
-    d=Defect(lat); absS=abs(qn.S)
-    if absS>1: return d,'forbidden: meson |S|>1'
-    if qn.I>1.01 and qn.J<2: return d,f'exotic: meson I={qn.I}>1'
+    """Meson assembly rule.
 
-    if qn.J==0:
-        if absS==0 and qn.I>0:
-            d.add_cell_pair(); return d,'cell_pair'
-        elif absS==0 and qn.I==0:
-            if qn.level==1:
-                d.add_hex_cap(0); d.add_bilayer_node(0); return d,'singlet_L1'
-            else:
+    Meson graph = flavor_base(I, S) + ribbon(J, P) + n_r × bilayer_quantum.
+
+    Organised by (J, P) sector; within each sector the rule applies
+    uniformly across all flavor combinations.  Refuses cleanly when the
+    requested sector's rule has not been derived.
+    """
+    d = Defect(lat)
+    absS = abs(qn.S)
+
+    # --- Physical constraints ---
+    if qn.B != 0:
+        return d, 'forbidden: meson requires B=0'
+    if absS > 1:
+        return d, f'forbidden: meson |S|={absS}>1'
+    if qn.I > 1.01 and qn.J < 2:
+        return d, f'forbidden: meson I={qn.I}>1 with J<2'
+    if qn.P not in (-1, +1):
+        return d, f'forbidden: invalid P={qn.P}'
+    if qn.J < 0 or qn.level < 1:
+        return d, 'forbidden: unphysical (J<0 or level<1)'
+
+    # --- Flavor class: which quark content ---
+    if absS == 0 and qn.I >= 1:
+        flavor = 'light_charged'        # q q̄ with I=1 (π, ρ, a, ...)
+    elif absS == 0 and qn.I == 0:
+        flavor = 'light_neutral'        # isoscalar mixing (η, ω, φ, f, ...)
+    else:                                # absS == 1
+        flavor = 'strange'               # s q̄ (K, K*, ...)
+
+    # --- (J, P) sector rules ---
+    # Pseudoscalar: 0^-
+    if qn.J == 0 and qn.P == -1:
+        if flavor == 'light_charged':
+            if qn.level > 1:
+                return d, f'refuse: light charged pseudoscalar level={qn.level} rule not derived (pi(1300), pi(1800))'
+            d.add_cell_pair()
+            return d, 'cell_pair'
+        if flavor == 'light_neutral':
+            if qn.level == 1:
+                d.add_hex_cap(0); d.add_bilayer_node(0)
+                return d, 'singlet_L1'
+            if qn.level == 2:
                 d.add_shell()
-                d.nodes.add('e0_0'); d.roles['e0_0']='cap_extension'
-                return d,'singlet_L2'
-        elif absS>=1:
-            d.add_hex_cap(0); return d,'hex_cap'
-    elif qn.J>=1 and qn.P==-1:
-        if absS==0 and qn.I>=1:
-            d.add_crossed_fault(0,1,qn.J); return d,'crossed_fault'
-        elif absS==0 and qn.I==0:
-            if qn.level>=2:
-                dk=Defect(lat); dk.add_shell(); dr=Defect(lat); dr.add_crossed_fault(0,1,qn.J)
-                N_GMO=2*dk.N_eff-dr.N_eff; deloc=(lat.Z1-1)/(2*(lat.Z1+1))
+                d.nodes.add('e0_0'); d.roles['e0_0'] = 'cap_extension'
+                return d, 'singlet_L2'
+            return d, f'refuse: isoscalar pseudoscalar level={qn.level} rule not derived'
+        # flavor == 'strange'
+        if qn.level == 1:
+            d.add_hex_cap(0)
+            return d, 'hex_cap'
+        return d, f'refuse: strange pseudoscalar level={qn.level} rule not derived'
+
+    # Vector: 1^-
+    if qn.J == 1 and qn.P == -1:
+        if flavor == 'light_charged' and qn.level == 1:
+            d.add_crossed_fault(0, 1, 1)
+            return d, 'crossed_fault'
+        if flavor == 'light_neutral':
+            if qn.level == 1:
+                d.add_crossed_fault(0, 1, 1)
+                return d, 'crossed_fault_I0'
+            if qn.level == 2:
+                dk = Defect(lat); dk.add_shell()
+                dr = Defect(lat); dr.add_crossed_fault(0, 1, 1)
+                N_GMO = 2 * dk.N_eff - dr.N_eff
+                deloc = (lat.Z1 - 1) / (2 * (lat.Z1 + 1))
                 d.add_shell(); d.add_bilayer_node(0); d.add_bilayer_node(1)
-                d.spin_corr=N_GMO-deloc-len(d.nodes); return d,'bilayer_pair'
-            else:
-                d.add_crossed_fault(0,1,qn.J); return d,'crossed_fault_I0'
-        elif absS>=1:
-            d.add_shell(); return d,'strange_vector'
-    elif qn.J>=2 and qn.P==+1 and qn.I==0 and absS==0:
-        for i in range(lat.n_shell):
-            n=f's{i}'; d.nodes.add(n); d.roles[n]='shell'
-        for k in range(lat.N_square):
-            n=f'b2_{k}'; d.nodes.add(n); d.roles[n]='born'
-        d.spin_corr=qn.J*(qn.J+1)/(2*(lat.Z1+lat.N_square+1))
-        return d,'microrotation'
-    return d,'regge'
+                d.spin_corr = N_GMO - deloc - len(d.nodes)
+                return d, 'bilayer_pair'
+            return d, f'refuse: isoscalar vector level={qn.level} rule not derived'
+        if flavor == 'strange' and qn.level == 1:
+            d.add_shell()
+            return d, 'strange_vector'
+        return d, f'refuse: vector level={qn.level} with flavor={flavor} rule not derived'
+
+    # Tensor: 2^+  — f_2(1270) sector only
+    if qn.J == 2 and qn.P == +1:
+        if flavor == 'light_neutral' and qn.level == 1:
+            for i in range(lat.n_shell):
+                n = f's{i}'; d.nodes.add(n); d.roles[n] = 'shell'
+            for k in range(lat.N_square):
+                n = f'b2_{k}'; d.nodes.add(n); d.roles[n] = 'born'
+            d.spin_corr = qn.J * (qn.J + 1) / (2 * (lat.Z1 + lat.N_square + 1))
+            return d, 'microrotation'
+        # J=2, P=+1 with I>=1 or |S|=1 -> Regge trajectory partner
+        return d, 'regge: J=2 P=+1 non-f2 sector (Regge trajectory)'
+
+    # Higher J: Regge trajectory
+    if qn.J >= 3:
+        return d, f'regge: J={qn.J} (Regge trajectory)'
+
+    # Axial vector: 1^+  — physics not yet graph-derived
+    if qn.J == 1 and qn.P == +1:
+        return d, 'refuse: axial vector J=1 P=+1 graph rule not yet derived'
+
+    # Scalar: 0^+  — known glueball / tetraquark mixing, physics pending
+    if qn.J == 0 and qn.P == +1:
+        return d, 'refuse: scalar J=0 P=+1 graph rule not yet derived'
+
+    return d, f'refuse: unhandled (J={qn.J}, P={qn.P}, level={qn.level})'
 
 # ================================================================
 # ASSEMBLY: LIGHT BARYONS
 # ================================================================
 def _asm_baryon(qn, lat):
-    d=Defect(lat); absS=abs(qn.S)
-    is_dec=(qn.J>=1.5 and qn.P==+1)
-    if absS>lat.N_c: return d,f'forbidden: |S|={absS}>N_c'
-    ok,reason=_pauli_check(qn.B,absS,qn.I,qn.J,lat)
-    if not ok: return d,f'forbidden: {reason}'
-    if qn.J>1.5+0.01 and qn.P==+1: return d,'regge: J>3/2'
+    """Light baryon assembly rule.
 
-    if absS==lat.N_c:
+    Graph = coord_shell + winding(B) + strange_arms(|S|) + void_activation(Pauli)
+            + decuplet_extension(if J=3/2, P=+1).
+
+    Uniform across strangeness and isospin; the void-vs-arm choice is
+    determined by the Pauli-exclusion predicate _pauli_needs_voids.
+    """
+    d = Defect(lat)
+    absS = abs(qn.S)
+
+    # --- Physical constraints ---
+    if qn.B != 1:
+        return d, 'forbidden: baryon requires B=1'
+    if absS > lat.N_c:
+        return d, f'forbidden: |S|={absS} > N_c={lat.N_c}'
+
+    # --- Pauli gatekeeping (same rules already in _pauli_check) ---
+    ok, reason = _pauli_check(qn.B, absS, qn.I, qn.J, lat)
+    if not ok:
+        return d, f'forbidden: {reason}'
+
+    # --- Level (radial) refusal: baryon radial rule not yet derived ---
+    if qn.level > 1:
+        return d, (f'refuse: baryon radial excitation level={qn.level} '
+                   f'graph rule not yet derived (Roper / N(1440) etc.)')
+
+    # --- Parity refusal: negative-parity baryons not yet handled ---
+    if qn.P != +1:
+        return d, (f'refuse: baryon P={qn.P} graph rule not yet derived '
+                   f'(L=1 orbital: N(1520), Λ(1405), etc.)')
+
+    # --- Spin gate: J=1/2 (octet) or J=3/2 (decuplet) only ---
+    is_dec = (qn.J >= 1.5 and qn.P == +1)
+    if qn.J > 1.5 + 0.01:
+        return d, f'regge: baryon J={qn.J} > 3/2 (Regge trajectory)'
+
+    # --- Rule body (unchanged from dibaryon-style original) ---
+    if absS == lat.N_c:
         d.add_triple_bilayer()
-        return d,'triple_bilayer'
+        return d, 'triple_bilayer'
 
     d.add_shell()
-    if absS==0: d.add_winding(qn.B)
-    # Void activation from Pauli exclusion on the graph
+    if absS == 0:
+        d.add_winding(qn.B)
+
     needs_voids = _pauli_needs_voids(absS, qn.I, qn.J, is_dec)
-    if absS>=1:
-        if needs_voids: d.add_voids()
+    if absS >= 1:
+        if needs_voids:
+            d.add_voids()
         else:
-            for arm in range(absS): d.add_strange_ext(arm)
+            for arm in range(absS):
+                d.add_strange_ext(arm)
     if is_dec:
-        if absS==0 and needs_voids: d.add_voids()
-        elif absS>0 and absS<lat.N_c:
+        if absS == 0 and needs_voids:
+            d.add_voids()
+        elif 0 < absS < lat.N_c:
             for pi in range(lat.n_planes):
-                if pi not in d.activated_planes: d.add_strange_ext(pi); break
-    return d,f'baryon_S{absS}'
+                if pi not in d.activated_planes:
+                    d.add_strange_ext(pi)
+                    break
+    return d, f'baryon_S{absS}'
 
 # ================================================================
 # ASSEMBLY: CHARM MESONS (c q̄ and cc̄) — constructive ribbon selection
 # ================================================================
 def _asm_charm_meson(qn, lat):
-    """Charm meson: N = Σ N_q(K₉,₉) + N_ribbon(J^P) + n_r × N_bilayer."""
-    d=Defect(lat); absS=abs(qn.S); nc=qn.n_charm
-    if nc<1: return d,'not charm'
-    if nc>2: return d,'forbidden: max 2 charm in meson'
+    """Charm meson: N = Σ N_q(K_{9,9}) + N_ribbon(J, P) + n_r × N_bilayer.
+
+    Ribbon selection is a uniform rule on (J, P): hex_cap for 0^-,
+    bilayer for 1^-, shell for 0^+, shell+1 for 1^+ and 2^+ (degenerate —
+    the χ_c1 vs h_c Q-splitting is not graph-derived).  Radial quanta
+    stack as n_r copies of the bilayer block.
+    """
+    d = Defect(lat)
+    absS = abs(qn.S)
+    nc = qn.n_charm
+
+    if nc < 1:
+        return d, 'forbidden: charm meson requires n_charm >= 1'
+    if nc > 2:
+        return d, 'forbidden: max 2 charm quarks in meson'
+    if absS > 1:
+        return d, f'forbidden: charm meson |S|={absS}>1'
+    if qn.J > 2 + 0.01:
+        return d, f'regge: charm meson J={qn.J} > 2 (Regge trajectory)'
+    if qn.J == 2 and qn.P == -1:
+        return d, 'refuse: charm D-wave (1^3D_2) rule not yet derived'
+    # Charmonium supports level up to 2 (2S); open-charm only ground.
+    if nc == 2 and qn.level > 2:
+        return d, (f'refuse: charmonium level={qn.level}>2 (psi(3770), psi(4040), '
+                   f'chi_c2(3930)) — D-wave / 3S rule not yet derived')
+    if nc == 1 and qn.level > 1:
+        return d, (f'refuse: open-charm level={qn.level}>1 rule not yet derived')
 
     # Charm quark nodes
     d.add_charm_nodes(nc)
-    d.is_charmonium=(nc==2)
+    d.is_charmonium = (nc == 2)
 
-    # Strange quark: fractional node contribution N_sq = N_111/N_c = 4/3
+    # Strange quark: fractional node contribution (spin_corr only)
     d.spin_corr += absS * lat.N_sq
 
-    # Ribbon from J^P (same building blocks as light mesons):
-    n_radial = qn.level - 1  # 0=ground, 1=2S, 2=3S...
-    if qn.P == -1:  # S-wave
+    # Ribbon from J^P (uniform rule; same block family as light mesons)
+    n_radial = qn.level - 1
+    if qn.P == -1:                          # S-wave
         if qn.J == 0:
-            d.add_hex_cap(0)                             # hex cap = 7
+            d.add_hex_cap(0)
             cl = 'charm_PS'
-        else:
-            d.add_hex_cap(0); d.add_bilayer_node(0)      # bilayer = 8
+        elif qn.J == 1:
+            d.add_hex_cap(0); d.add_bilayer_node(0)
             cl = 'charm_V'
-    elif qn.P == +1:  # P-wave
-        if qn.J == 0:
-            d.add_shell()                                # coord shell = 13
-            cl = 'charm_Pwave_S'
         else:
-            d.add_shell()                                # shell + 1 = 14
-            d.nodes.add('pw0'); d.roles['pw0']='pwave_ext'
+            return d, f'refuse: charm S-wave J={qn.J} rule not derived'
+    elif qn.P == +1:                        # P-wave
+        if qn.J == 0:
+            d.add_shell()
+            cl = 'charm_Pwave_S'
+        elif qn.J in (1, 2):
+            d.add_shell()
+            d.nodes.add('pw0'); d.roles['pw0'] = 'pwave_ext'
             cl = 'charm_Pwave'
+        else:
+            return d, f'refuse: charm P-wave J={qn.J} rule not derived'
     else:
-        return d, 'charm_unknown'
+        return d, f'forbidden: invalid P={qn.P}'
 
-    # Radial excitations: each crossing adds N_bilayer nodes
+    # Radial quanta: each adds one bilayer
     for nr in range(n_radial):
         for k in range(lat.N_bilayer):
-            nid=f'rad{nr}_{k}'; d.nodes.add(nid); d.roles[nid]='radial'
+            nid = f'rad{nr}_{k}'; d.nodes.add(nid); d.roles[nid] = 'radial'
 
     return d, cl
 
@@ -647,45 +776,68 @@ def _asm_charm_meson(qn, lat):
 # ASSEMBLY: NON-BONDING MESONS (κ, σ)
 # ================================================================
 def _asm_nonbonding_meson(qn, lat):
-    """Non-bonding sector of K_{N_c²,N_c²}: N = N_c², Q = 0."""
-    d=Defect(lat)
-    for k in range(lat.N_c**2):
-        nid=f'nb{k}'; d.nodes.add(nid); d.roles[nid]='nonbonding'
-    return d, 'nonbonding'
+    """Non-bonding sector of K_{N_c², N_c²}: N = N_c², Q = 0.
+
+    Represents the placeholder scalar-meson template.  The light-scalar
+    spectrum (f_0, a_0, K_0*) involves glueball/tetraquark/molecule mixing
+    that has not been graph-derived in the monograph, so this assembler
+    refuses cleanly instead of returning a false 630 MeV answer.
+    """
+    d = Defect(lat)
+    return d, 'refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)'
+
 
 # ================================================================
 # ASSEMBLY: CHARM BARYONS
 # ================================================================
 def _asm_charm_baryon(qn, lat):
-    """Charm baryon: N = n_charm × N_charm + N_light_cluster."""
-    d=Defect(lat); absS=abs(qn.S); nc=qn.n_charm
-    if nc<1: return d,'not charm'
+    """Charm baryon: n_charm × N_charm + light cluster.
 
-    # Add charm quark nodes
+    Applies the same shell/void/arm rule as _asm_baryon (without winding,
+    since the charm quark carries baryon number in this convention), with
+    an N_charm ribbon appended.  Refuses for parity- or radial-excited
+    states whose graph rules have not been derived.
+    """
+    d = Defect(lat)
+    absS = abs(qn.S)
+    nc = qn.n_charm
+
+    if nc < 1:
+        return d, 'forbidden: charm baryon requires n_charm >= 1'
+    if nc > 1:
+        return d, f'forbidden: charm baryon n_charm={nc} > 1 not implemented'
+    if qn.B != 1:
+        return d, 'forbidden: charm baryon requires B=1'
+
+    # --- Parity / radial refusals (same as light baryon) ---
+    if qn.level > 1:
+        return d, (f'refuse: charm baryon radial level={qn.level} '
+                   f'graph rule not yet derived')
+    if qn.P != +1:
+        return d, (f'refuse: charm baryon P={qn.P} graph rule not yet derived '
+                   f'(Λ_c(2595), Λ_c(2625), Ξ_c(2790), etc.)')
+    if qn.J > 1.5 + 0.01:
+        return d, f'regge: charm baryon J={qn.J} > 3/2'
+
+    # --- Build the defect ---
     d.add_charm_nodes(nc)
 
-    # Light cluster (same geometry as light baryons, WITHOUT winding)
-    n_light_strange = absS  # strange quarks not counted as charm
+    n_light_strange = absS
     if n_light_strange >= lat.N_c:
-        # All light quarks are strange → Ω_c type cluster
         d.add_triple_bilayer()
-        return d,'charm_baryon_Omega'
+        return d, 'charm_baryon_Omega'
 
-    d.add_shell()  # coordination shell (no winding for charm baryons)
-    # Isovector light pair (I>=1): void activation (same as Σ in light sector)
-    if qn.I>=1:
+    d.add_shell()
+    if qn.I >= 1:
         d.add_voids()
-    # Strange light quarks with I<1:
-    if n_light_strange>=1 and qn.I<1:
-        if n_light_strange>=2:
-            # Identical ss pair: exchange correlation activates voids,
-            # plus only ONE arm extends (the other is absorbed into voids)
+    if n_light_strange >= 1 and qn.I < 1:
+        if n_light_strange >= 2:
             d.add_voids()
-            d.add_strange_ext(0)  # 1 arm only
+            d.add_strange_ext(0)
         else:
-            # Single strange arm: hex-cap extension
-            for arm in range(n_light_strange): d.add_strange_ext(arm)
-    return d,f'charm_baryon_S{absS}'
+            for arm in range(n_light_strange):
+                d.add_strange_ext(arm)
+    return d, f'charm_baryon_S{absS}'
 
 # ================================================================
 # ASSEMBLY: DIBARYONS
@@ -967,7 +1119,7 @@ def _predict_core(qn):
     elif qn.B==1: defect,cl=_asm_baryon(qn,lat)
     else: return Result(cluster='unknown'), None, 'unknown'
 
-    if cl.startswith('forbidden') or cl.startswith('exotic') or cl=='regge' or cl.startswith('regge'):
+    if cl.startswith(('forbidden', 'exotic', 'regge', 'refuse')):
         return Result(cluster=cl), defect, cl
 
     N=defect.N_eff
