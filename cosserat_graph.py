@@ -55,6 +55,9 @@ class FCCLattice:
     def _shell(self):
         self.shell=[p for p in self.all_pts.values() if abs(np.linalg.norm(p)-math.sqrt(2))<0.01]
         self.n_shell=len(self.shell)
+        # Second-NN shell (the 6 sites at distance 2 — the cubic axes)
+        self.z2_shell=[p for p in self.all_pts.values() if abs(np.linalg.norm(p)-2.0)<0.01]
+        self.n_z2_shell=len(self.z2_shell)
         self.G_shell=nx.Graph()
         for i in range(self.n_shell): self.G_shell.add_node(i)
         for i,j in combinations(range(self.n_shell),2):
@@ -341,6 +344,38 @@ class Defect:
                 n=f'ch{ci}_{k}'; s.nodes.add(n); s.roles[n]='charm'
                 # charm nodes are colour-space, no real-space position
         s.n_charm_quarks=n_c
+
+    def add_z2_shell(s):
+        """Add the 6 second-NN sites (the cubic-axis shell at distance 2).
+
+        Used as the radial-excitation building block for baryons: the
+        symmetric expansion of the coordination shell to the next FCC
+        coordination distance, contributing 6 nodes without breaking
+        any symmetry of the underlying defect.
+        """
+        for i in range(s.lat.n_z2_shell):
+            n=f'z2_{i}'; s.nodes.add(n); s.roles[n]='z2_shell'
+            s.pos[n]=s.lat.z2_shell[i].copy()
+
+    def add_orbital_bilayer(s, pi):
+        """Add the full 8-node bilayer on the given {111} plane.
+
+        Used as the L=1 orbital building block for negative-parity
+        baryons: the full {111} hex cap on the adjacent close-packed
+        layer (6 sites in the layer plus 2 closing the cluster), giving
+        +8 nodes and providing the mirror partner of the centre that
+        carries the parity flip.
+        """
+        # In-plane sites of the hex cap on plane pi (6 nodes)
+        for i in s.lat.plane_inplane[pi]:
+            n=f'ob_{pi}_{i}'; s.nodes.add(n); s.roles[n]='orbital_bilayer_in'
+            s.pos[n]=s.lat.shell[i].copy()
+        # Two closing sites on the layer above (the bilayer cap)
+        above_list=list(s.lat.plane_above[pi])[:2]
+        for k,i in enumerate(above_list):
+            n=f'ob_{pi}_a{k}'; s.nodes.add(n); s.roles[n]='orbital_bilayer_cap'
+            s.pos[n]=s.lat.shell[i].copy()
+        s.activated_planes.add(pi)
 
     @property
     def N_eff(s):
@@ -688,46 +723,59 @@ def _asm_baryon(qn, lat):
     if not ok:
         return d, f'forbidden: {reason}'
 
-    # --- Level (radial) refusal: baryon radial rule not yet derived ---
-    if qn.level > 1:
-        return d, (f'refuse: baryon radial excitation level={qn.level} '
-                   f'graph rule not yet derived (Roper / N(1440) etc.)')
-
-    # --- Parity refusal: negative-parity baryons not yet handled ---
-    if qn.P != +1:
-        return d, (f'refuse: baryon P={qn.P} graph rule not yet derived '
-                   f'(L=1 orbital: N(1520), Λ(1405), etc.)')
-
-    # --- Spin gate: J=1/2 (octet) or J=3/2 (decuplet) only ---
-    is_dec = (qn.J >= 1.5 and qn.P == +1)
+    # --- Higher-spin Regge ---
     if qn.J > 1.5 + 0.01:
         return d, f'regge: baryon J={qn.J} > 3/2 (Regge trajectory)'
 
-    # --- Rule body (unchanged from dibaryon-style original) ---
+    # --- Build the ground-state baryon (shell + winding/voids/arms) ---
+    # We always assemble the ground-state structure first.  Radial and
+    # orbital excitations are then applied as overlays that add
+    # additional FCC building blocks (Z₂ shell or {111} bilayer
+    # respectively) without changing the ground-state edge accounting,
+    # so Q_ground transfers unchanged.
+    is_dec = (qn.J >= 1.5 and qn.P != -1)  # J=3/2 ground or radial only
     if absS == lat.N_c:
         d.add_triple_bilayer()
-        return d, 'triple_bilayer'
+        cluster_base = 'triple_bilayer'
+    else:
+        d.add_shell()
+        if absS == 0:
+            d.add_winding(qn.B)
+        needs_voids = _pauli_needs_voids(absS, qn.I, qn.J, is_dec)
+        if absS >= 1:
+            if needs_voids:
+                d.add_voids()
+            else:
+                for arm in range(absS):
+                    d.add_strange_ext(arm)
+        if is_dec:
+            if absS == 0 and needs_voids:
+                d.add_voids()
+            elif 0 < absS < lat.N_c:
+                for pi in range(lat.n_planes):
+                    if pi not in d.activated_planes:
+                        d.add_strange_ext(pi)
+                        break
+        cluster_base = f'baryon_S{absS}'
 
-    d.add_shell()
-    if absS == 0:
-        d.add_winding(qn.B)
+    # --- Excitation overlays ---
+    # L=1 orbital excitation (P=-1): add a {111} bilayer (+8 nodes).
+    # Radial excitation (level>1): add the Z₂ shell (+6 nodes per quantum).
+    # Both rules transfer Q unchanged from the ground state.
+    overlays = []
+    if qn.P == -1:
+        # Pick a plane not already activated (or plane 0 if all are taken)
+        pi = next((p for p in range(lat.n_planes)
+                   if p not in d.activated_planes), 0)
+        d.add_orbital_bilayer(pi)
+        overlays.append('L1')
+    for _ in range(max(0, qn.level - 1)):
+        d.add_z2_shell()
+        overlays.append('rad')
 
-    needs_voids = _pauli_needs_voids(absS, qn.I, qn.J, is_dec)
-    if absS >= 1:
-        if needs_voids:
-            d.add_voids()
-        else:
-            for arm in range(absS):
-                d.add_strange_ext(arm)
-    if is_dec:
-        if absS == 0 and needs_voids:
-            d.add_voids()
-        elif 0 < absS < lat.N_c:
-            for pi in range(lat.n_planes):
-                if pi not in d.activated_planes:
-                    d.add_strange_ext(pi)
-                    break
-    return d, f'baryon_S{absS}'
+    if overlays:
+        return d, f'{cluster_base}+{"+".join(overlays)}'
+    return d, cluster_base
 
 # ================================================================
 # ASSEMBLY: CHARM MESONS (c q̄ and cc̄) — constructive ribbon selection
