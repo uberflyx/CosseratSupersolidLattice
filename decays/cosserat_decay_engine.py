@@ -457,48 +457,59 @@ def combine_EM_PION(parent_qn, m_parent):
     return ALPHA**2 * m_parent**3 / (64 * math.pi**3 * F_PI**2)
 
 
-def combine_VLEPTONIC(parent_qn, m_parent):
+def combine_VLEPTONIC(parent_qn, m_parent, parent_def=None):
     """Vector meson -> e+ e- via virtual photon (Sec. vector_leptonic).
-    Chapter formula: Gamma = 4 pi alpha^2 f_pi^2 / m_V.  For non-rho
-    vector mesons, correction factors derive from stacking character
-    (which sets Q^2_eff) and graph structure (which sets f_V):
-        rho0  (uu̅-dd̅)/sqrt2: Q^2 = 1/2  (base formula matches)
-        omega (uu̅+dd̅)/sqrt2: Q^2 = 1/18 -> base * 1/9
-        phi   (ss̅):          Q^2 = 1/9, f_V/f_pi = 2^{1/4} (hex-cap ring)
-        J/psi (cc̅):          Q^2 = 4/9, f_V structural from charm
-        Upsilon (bb̅):        Q^2 = 1/9, f_V structural from bottom
+    Chapter formula: Gamma = 4 pi alpha^2 f_pi^2 / m_V matches the rho
+    at +3.3% with Q^2_rho = 1/2 absorbed.  For other vector mesons:
+        Gamma(V->ee) = [4 pi alpha^2 f_pi^2 / m_V] * [Q^2_V/Q^2_rho] * [f_V/f_rho]^2
     
-    NOTE: the graph builder currently returns the same structure for
-    phi and omega (same QN), so phi gets the omega mass of 781.8 MeV
-    in the engine -- this contributes to phi residual.  A proper fix
-    requires cosserat_graph to build phi with bilayer-pair structure.
+    Lattice-derived factors:
+      Q^2 from quark-content Z3 stacking character (chapter Sec. colour_stacking):
+        rho0  (uu̅-dd̅)/sqrt2: Q^2 = (Q_u-Q_d)^2/2 = 1/2   (base case)
+        omega (uu̅+dd̅)/sqrt2: Q^2 = (Q_u+Q_d)^2/2 = 1/18
+        phi   (ss̅):          Q^2 = Q_s^2 = 1/9            (detected by n_hidden_s)
+        K*    (us̅):          Q^2 = 1/2 * N_c projection   (not currently tested)
+        J/psi (cc̅):          Q^2 = Q_c^2 = 4/9            (detected by n_charm>=1)
+        Upsilon (bb̅):        Q^2 = Q_b^2 = 1/9            (detected by n_bottom>=1)
+      
+      f_V from graph size: f_V/f_rho ~ sqrt(N_V/N_rho) where N is node count
+      (chapter Sec. vector_decay_constants, lattice derivation from the 
+      cell-pair normalisation extended to the vector meson's graph).
     """
     n_charm  = getattr(parent_qn, 'n_charm',  0) or 0
     n_bottom = getattr(parent_qn, 'n_bottom', 0) or 0
+    n_hid_s  = getattr(parent_qn, 'n_hidden_s', 0) or 0
     abs_S    = abs(parent_qn.S)
     
     base = 4.0 * math.pi * ALPHA**2 * F_PI**2 / m_parent
     
+    # Graph-node-count scaling for f_V (if parent graph available)
+    N_rho = 11  # rho's crossed-fault node count (reference)
+    if parent_def is not None:
+        N = len(parent_def.nodes)
+        fV_ratio_sq = N / N_rho   # (f_V/f_rho)^2 = N/N_rho
+    else:
+        fV_ratio_sq = 1.0
+    
+    # Q^2 from quark content (Z3 stacking character)
     if n_bottom >= 1:
-        # Upsilon: Q^2 = 1/9. f_Upsilon structural -- matching observation
-        # requires f_V/f_rho ~ 3.25 (PDG).  Lattice derivation pending.
-        # Applied formula: base * (Q^2_V/Q^2_rho) * (f_V/f_rho)^2
-        return base * (1.0/9.0 / 0.5) * 3.25**2
-    if n_charm >= 1:
-        # J/psi: Q^2 = 4/9, f_{J/psi}/f_rho ~ 1.82 (from PDG values).
-        # In the lattice (f_pi = 92.4 convention), f_D is our heavy-meson
-        # decay constant.  Effective ratio: (F_D/F_PI)^2 is close to
-        # (f_{J/psi}/f_rho)^2 / 2.
-        return base * (4.0/9.0 / 0.5) * (F_D/F_PI)**2 / 2.0
-    if abs_S == 1:
-        # phi: Q^2 = 1/9, f_phi/f_rho ~ 1.10 (PDG).  In lattice
-        # convention, this is close to (F_K/F_PI)^2 / 2^{1/2}.
-        return base * (1.0/9.0 / 0.5) * (F_K/F_PI)**2 / math.sqrt(2.0) * (775.0/m_parent)
-    if parent_qn.I == 0 and abs_S == 0:
-        # omega: Q^2 = 1/18 relative to rho's 1/2 -> factor 1/9
-        return base * (1.0/18.0 / 0.5)
-    # rho0: Q^2 = 1/2 (base matches chapter formula directly)
-    return base
+        # Upsilon: Q^2 = Q_b^2 = 1/9
+        Q2 = 1.0/9.0
+    elif n_charm >= 1:
+        # J/psi: Q^2 = Q_c^2 = 4/9
+        Q2 = 4.0/9.0
+    elif n_hid_s >= 1:
+        # phi (hidden ss̄ pair): Q^2 = Q_s^2 = 1/9
+        Q2 = 1.0/9.0
+    elif parent_qn.I == 0 and abs_S == 0:
+        # omega (isoscalar uū+dd̄): Q^2 = (Q_u+Q_d)^2/2 = 1/18
+        Q2 = 1.0/18.0
+    else:
+        # rho0: Q^2 = 1/2 (base case)
+        Q2 = 0.5
+    
+    # Apply (Q^2/Q^2_rho) × (f_V/f_rho)^2 scaling to base (which matches rho)
+    return base * (Q2 / 0.5) * fV_ratio_sq
 
 
 def combine_VMESON_STRONG(parent_def, parent_qn, daughter_defs, m_parent, daughter_masses):
@@ -795,7 +806,7 @@ def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
         return combine_EM_PION(parent_qn, m_p)
 
     if topology == 'VLEPTONIC':
-        return combine_VLEPTONIC(parent_qn, m_p)
+        return combine_VLEPTONIC(parent_qn, m_p, p_def)
 
     if topology == 'RADIATIVE':
         if d_defs:
@@ -928,10 +939,12 @@ def regression():
                                      QN(B=0,S=0,I=1,I3=-1,J=0)),
                                     5.07e-12, 'MeV', 'WEAK_2PS'),
 
-        # Charmonium leptonic (J/psi)
-        ('J/psi -> e+ e-',        v(QN(B=0,S=0,I=0,I3=0,J=1,n_charm=1,level=1),
+        # Charmonium leptonic (J/psi with hidden ccbar pair)
+        ('J/psi -> e+ e-',        v(QN(B=0,S=0,I=0,I3=0,J=1,n_charm=2,level=1),
                                      'e', 'e'),
                                     5.55e-3, 'MeV', 'VLEPTONIC'),
+        # Upsilon -> ee: pending cosserat_graph bottom-cluster assembly
+        # (d is None for n_bottom=2, so f_V node-count scaling fails)
 
         # Mode III: weak hadronic
         ('Lambda -> p pi-',       v(QN(B=1,S=-1,I=0,I3=0,J=0.5,P=+1),
@@ -958,8 +971,8 @@ def regression():
                                      'gamma', 'gamma'),
                                     0.516e-3, 'MeV', 'EM_PION'),
 
-        # phi -> e+ e- (strange vector leptonic)
-        ('phi -> e+ e-',          v(QN(B=0,S=0,I=0,I3=0,J=1),
+        # phi -> e+ e- (strange vector leptonic, hidden ssbar pair)
+        ('phi -> e+ e-',          v(QN(B=0,S=0,I=0,I3=0,J=1,level=1,n_hidden_s=1),
                                      'e', 'e'),
                                     1.27e-3, 'MeV', 'VLEPTONIC'),
 
