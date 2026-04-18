@@ -293,11 +293,15 @@ def classify_topology(parent_qn: QN, daughter_specs) -> str:
     # Dibaryon -> 2 baryons -> MOLECULAR
     if parent_qn.B == 2:
         return 'MOLECULAR'
-    # Decuplet baryon -> octet + pi -> VOID
+    # Decuplet baryon -> octet + pi -> VOID (ONLY when ΔS=0, else weak)
     if (parent_qn.B == 1 and parent_qn.J >= 1.5 and parent_qn.P == +1
         and any(q.B == 1 and q.J == 0.5 for q in daughter_qns)
         and any(q.B == 0 and q.J == 0 for q in daughter_qns)):
-        return 'VOID'
+        sum_S = sum(q.S for q in daughter_qns)
+        if parent_qn.S - sum_S == 0:
+            return 'VOID'
+        else:
+            return 'YJUNCTION'   # strangeness-changing decuplet (Omega-)
     # Octet baryon -> lighter baryon + pi with strangeness change -> YJUNCTION
     if (parent_qn.B == 1 and parent_qn.J == 0.5 
         and any(q.B == 1 and q.J == 0.5 for q in daughter_qns)
@@ -379,27 +383,47 @@ def combine_YJUNCTION(parent_def, daughter_defs, parent_qn, daughter_qns):
     """Hyperon weak hadronic decay via Y-junction flavour conversion.
     Amplitude in the T1g (evanescent) channel:
         |M| = theta_ch * sqrt(R_chi/2) * (per-arm geometric overlap)
-    For each converting strange arm, the per-arm amplitude is
-    M_hex_ring_pion / n_arms_total; spectator arms are excluded.
     
-    Currently handles Lambda/Xi-like parents (with explicit hex-cap
-    extensions).  Sigma-like parents (I=1, void-based strange content)
-    return None pending proper Pauli-antisymmetric strange-mode
-    derivation.  The naive sum over voids overshoots rates by ~45x
-    because the voids' geometric overlap with the pion is much larger
-    than the extensions', but the Pauli antisymmetry should produce
-    compensating cancellations.
+    Graph detection of strange arms:
+      - Lambda/Xi-like (I=0 or 1/2): extension/hex_ring nodes, 3 per arm
+      - Omega-like (|S|=3): 24 bilayer nodes as triple_bilayer cluster, 
+        8 per arm (3 strange arms)
+      - Sigma-like (I=1): voids (Pauli-antisymmetric, pending)
     
-    Note on isospin CG: pure ΔI=1/2 predicts CG^2 = 1/2 for neutral-pion
-    channels.  This overshoots ~25% due to ΔI=3/2 admixture; per-channel
-    CG is a pending refinement.
+    Note on isospin CG: pure ΔI=1/2 overshoots Ξ⁰ by ~25% due to 
+    ΔI=3/2 admixture; per-channel CG is a pending refinement.
     """
-    r = graph_couplings(parent_def, daughter_defs, channel='T1g')
-    n_hex_total = r['n_hex']
-    n_arms_parent = n_hex_total // 3
-    if n_arms_parent == 0: return None  # Sigma-like: pending Pauli treatment
-    geom_per_arm = r['M_hex_ring_pion'] / n_arms_parent
-    n_converting = abs(parent_qn.S) - sum(abs(q.S) for q in daughter_qns)
+    Gp, posp = defect_to_graph(parent_def)
+    Gd = nx.Graph(); posd = {}
+    for d in daughter_defs:
+        for n in d.nodes:
+            if n in Gd.nodes: continue
+            Gd.add_node(n, role=d.roles[n])
+            posd[n] = np.asarray(d.pos[n], dtype=float)
+    pion_mode = cell_pair_mode(Gd)
+    
+    # Detect strange source structure from graph
+    n_hex = sum(1 for n in Gp.nodes if Gp.nodes[n].get('role') in ('hex_ring','extension'))
+    n_bilayer = sum(1 for n in Gp.nodes if Gp.nodes[n].get('role') == 'bilayer')
+    abs_S = abs(parent_qn.S)
+    
+    if n_hex > 0:
+        # Lambda/Xi-type: extensions as strange source (3 nodes per arm)
+        source_mode = {n: (1.0 if Gp.nodes[n].get('role') in ('hex_ring','extension') else 0.0)
+                       for n in Gp.nodes}
+        n_arms_parent = n_hex // 3
+    elif n_bilayer >= 8 and abs_S >= 3:
+        # Omega-: triple_bilayer cluster (8 bilayer nodes per strange arm)
+        source_mode = {n: (1.0 if Gp.nodes[n].get('role') == 'bilayer' else 0.0)
+                       for n in Gp.nodes}
+        n_arms_parent = n_bilayer // 8
+    else:
+        return None  # Sigma-like or other: pending structural treatment
+    
+    M_source_pion = master_formula(source_mode, posp, pion_mode, posd, 'T1g')
+    geom_per_arm = M_source_pion / n_arms_parent
+    
+    n_converting = abs_S - sum(abs(q.S) for q in daughter_qns)
     if n_converting < 1: n_converting = 1
     suppression = A_PEIERLS**(max(0, n_converting - 1))
     return (THETA_CH * math.sqrt(R_CHI / 2.0) * geom_per_arm 
@@ -735,27 +759,50 @@ def combine_RADIATIVE(parent_def, daughter_defs, m_parent, m_daughter):
 
 
 def combine_WEAK_2PS(parent_def, parent_qn, daughter_qns, m_parent, daughter_masses):
-    """Pseudoscalar -> 2 pseudoscalars via ΔS=1 weak transition (K_S -> pi pi).
-    Rate scales as G_F^2 V_us^2 f_pi^2 m_K^3 beta / (64 pi) * enhancement,
-    where the enhancement is the ΔI=1/2 structural factor from the 
-    K's hex-cap coupling coherently to two pion cell pairs.
-    Structural form: enhancement = (n_hex / 2) * R_chi
-    where n_hex is the number of hex-ring nodes in the K graph (= 6 for
-    a strange pseudoscalar hex_cap cluster).  This matches the empirical
-    ΔI=1/2 rule (~ 170x) and is graph-derivable from the parent's
-    hex-cap count.
+    """Pseudoscalar -> 2 pseudoscalars via ΔS=1 weak transition.
+    
+    Two cases:
+      (a) ΔI=1/2 allowed (K_S → π+π−, K_L → π0π0):
+          Rate ~ G_F^2 V_us^2 f_pi^2 m_K^3 beta (n_hex/2) R_chi / (64 pi)
+          The (n_hex/2) R_chi factor is the ΔI=1/2 enhancement from
+          the hex-cap's coherent coupling to two pion cell pairs.
+      
+      (b) ΔI=3/2 only (K+ → π+π0, pure I=2 final state):
+          Rate ~ G_F^2 V_us^2 f_pi^2 m_K^3 beta / (64 pi)
+          No R_chi enhancement; ΔI=3/2 is the only allowed channel
+          (chapter Sec. delta_I_half, suppression factor 1/R_chi^2).
+    
+    Detection: two J=0 daughters with I3 sum s.t. the only possible
+    final-state I is 2 → pure ΔI=3/2 (K+ parent, both charged pions
+    or π+π0 combination gives I=2).  Otherwise ΔI=1/2 applies.
     """
     if len(daughter_masses) < 2: return None
     p_cm = cm_momentum(m_parent, daughter_masses[0], daughter_masses[1])
     beta = 2.0 * p_cm / m_parent
     base = G_F**2 * V_US**2 * F_PI**2 * m_parent**3 * beta / (64.0 * math.pi)
-    # Structural enhancement from hex-cap coupling: n_hex/2 * R_chi
-    n_hex = 0
-    if parent_def is not None:
-        n_hex = sum(1 for n in parent_def.nodes 
-                    if parent_def.roles.get(n) == 'hex_ring')
-    enhancement = (n_hex / 2.0) * R_CHI if n_hex > 0 else R_CHI
-    return base * enhancement
+    
+    # Final-state isospin: for K+ (I3=1/2) -> pi+ (I3=1) + pi0 (I3=0), 
+    # sum I3 = 1 = parent I3 + 1/2.  Since two J=0 pions are Bose-symmetric
+    # in s-wave, isospin must be symmetric: I_final = 0 or 2.
+    # I_final = 0 requires both pions charged opposite (I3=+1,-1).
+    # I_final = 2 for any other combination (I3=+1,0 or I3=+1,+1 etc.)
+    sum_I3 = sum(q.I3 for q in daughter_qns)
+    has_ds12_allowed = abs(sum_I3) < 0.1  # ΔI=1/2 allowed only if sum I3 = 0
+    
+    if has_ds12_allowed:
+        # ΔI=1/2 enhancement: structural (n_hex/2) × R_chi
+        n_hex = 0
+        if parent_def is not None:
+            n_hex = sum(1 for n in parent_def.nodes 
+                        if parent_def.roles.get(n) == 'hex_ring')
+        enhancement = (n_hex / 2.0) * R_CHI if n_hex > 0 else R_CHI
+        return base * enhancement
+    else:
+        # ΔI=3/2 only (K+ → π+π0): symmetric I=2 two-pion final state.
+        # No R_chi enhancement (ΔI=3/2 rule).  Bose symmetric factor 1/2
+        # from two symmetric pions.  Further structural work would 
+        # derive the 1/R_chi amplitude suppression (chapter pending).
+        return base * 0.5
 
 
 
@@ -1009,6 +1056,16 @@ def regression():
         # Sigma+ hadronic (Σ+→pπ0, Σ+→nπ+): pending Pauli-antisymmetric
         # void treatment.  Naive void-sum overshoots by ~45x due to void
         # spatial overlap being much larger than hex-cap overlap.
+        
+        # Omega- weak hadronic: triple_bilayer cluster needs proper 
+        # per-arm mode treatment.  Currently 24-node coherent sum
+        # overshoots by ~100x; pending structural refinement.
+        
+        # K+ -> pi+ pi0 (ΔI=3/2 only, suppressed vs K_S → ππ)
+        ('K+ -> pi+ pi0',         v(QN(B=0,S=1,I=0.5,I3=0.5,J=0),
+                                     QN(B=0,S=0,I=1,I3=1,J=0),
+                                     QN(B=0,S=0,I=1,I3=0,J=0)),
+                                    1.10e-14, 'MeV', 'WEAK_2PS'),
 
         # Sigma0 -> Lambda gamma (RADIATIVE)
         ('Sigma0 -> Lambda g',    v(QN(B=1,S=-1,I=1,I3=0,J=0.5,P=+1),
