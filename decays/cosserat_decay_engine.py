@@ -618,10 +618,12 @@ def combine_BETA(parent_qn, daughter_qns, m_parent, m_daughter):
         # Neutron-like: full Sirlin-Wilkinson
         return G_F**2 * ME**5 * (1.0 + 3.0 * G_A**2) * F_N / (2.0 * math.pi**3)
     
-    # Hyperon semileptonic: F/D = 9/16 derived from chapter's 
-    # microrotation absorption factor (2π-1)/(2π).
-    F_COUP = (9.0/25.0) * G_A
-    D_COUP = (16.0/25.0) * G_A
+    # Hyperon semileptonic: F/D = (2/3)(2pi-1)/(2pi) from chapter's 
+    # microrotation absorption factor (Eq. FD_lattice).  See monograph
+    # Sec. hyperon_semileptonic_graph for full derivation.
+    FD_RATIO = (2.0/3.0) * (2.0*math.pi - 1.0) / (2.0*math.pi)  # 0.5606
+    D_COUP = G_A / (1.0 + FD_RATIO)   # 0.819
+    F_COUP = G_A - D_COUP              # 0.460
     
     # Structural detection from parent isospin (graph role count
     # correlates: I=0 -> hex-cap extension; I=1 -> voids)
