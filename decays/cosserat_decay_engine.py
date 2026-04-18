@@ -362,28 +362,48 @@ def combine_VOID(parent_def, daughter_defs):
     return bare * math.sqrt(lambda_2 / LAMBDA_2_DELTA) * shadow
 
 
+def strange_source_mode(G):
+    """Strange boundary mode: extension/hex_ring nodes when present
+    (Lambda-like), else void nodes (Sigma-like, Pauli-antisymmetrised
+    strange content).  Both represent the strange arm's coupling to
+    the evanescent T1g field at the Y-junction.
+    """
+    ext_nodes = [n for n in G.nodes if G.nodes[n].get('role') in ('hex_ring','extension')]
+    if ext_nodes:
+        return {n: (1.0 if n in ext_nodes else 0.0) for n in G.nodes}
+    # No explicit extension (Sigma-like with voids): use void nodes as source
+    return {n: (1.0 if G.nodes[n].get('role') == 'void' else 0.0) for n in G.nodes}
+
+
 def combine_YJUNCTION(parent_def, daughter_defs, parent_qn, daughter_qns):
     """Hyperon weak hadronic decay via Y-junction flavour conversion.
-    Master formula amplitude in the T1g (evanescent) channel:
+    Amplitude in the T1g (evanescent) channel:
         |M| = theta_ch * sqrt(R_chi/2) * (per-arm geometric overlap)
-    For each strange arm present in the parent, the per-arm amplitude
-    is M_hex_ring_pion / n_arms_total -- i.e. only ONE arm converts at
-    a time, and spectator arms don't contribute coherently.  Number of
-    converting arms is parent_|S| - daughter_|S|; any remaining
-    strange arms are spectators.
+    For each converting strange arm, the per-arm amplitude is
+    M_hex_ring_pion / n_arms_total; spectator arms are excluded.
+    
+    Currently handles Lambda/Xi-like parents (with explicit hex-cap
+    extensions).  Sigma-like parents (I=1, void-based strange content)
+    return None pending proper Pauli-antisymmetric strange-mode
+    derivation.  The naive sum over voids overshoots rates by ~45x
+    because the voids' geometric overlap with the pion is much larger
+    than the extensions', but the Pauli antisymmetry should produce
+    compensating cancellations.
+    
+    Note on isospin CG: pure ΔI=1/2 predicts CG^2 = 1/2 for neutral-pion
+    channels.  This overshoots ~25% due to ΔI=3/2 admixture; per-channel
+    CG is a pending refinement.
     """
     r = graph_couplings(parent_def, daughter_defs, channel='T1g')
-    n_hex_total = r['n_hex']           # total hex-ring nodes in parent
-    n_arms_parent = n_hex_total // 3   # each hex cap has 3 nodes
-    if n_arms_parent == 0: return None
-    # Geometric overlap per arm (one strange arm's contribution only)
+    n_hex_total = r['n_hex']
+    n_arms_parent = n_hex_total // 3
+    if n_arms_parent == 0: return None  # Sigma-like: pending Pauli treatment
     geom_per_arm = r['M_hex_ring_pion'] / n_arms_parent
-    # Number of arms that convert in this decay channel
     n_converting = abs(parent_qn.S) - sum(abs(q.S) for q in daughter_qns)
     if n_converting < 1: n_converting = 1
-    # Per-arm amplitude times number of converting channels (incoherent)
     suppression = A_PEIERLS**(max(0, n_converting - 1))
-    return THETA_CH * math.sqrt(R_CHI / 2.0) * geom_per_arm * suppression * math.sqrt(float(n_converting))
+    return (THETA_CH * math.sqrt(R_CHI / 2.0) * geom_per_arm 
+            * suppression * math.sqrt(float(n_converting)))
 
 
 def combine_MOLECULAR(parent_def, daughter_defs):
@@ -548,30 +568,57 @@ def combine_PURELEPT(m_parent, BR=1.0):
 
 
 def combine_BETA(parent_qn, daughter_qns, m_parent, m_daughter):
-    """Baryon semileptonic decay (Sirlin-Wilkinson form).
+    """Baryon semileptonic decay (chapter Sec. hyperon_semileptonic).
+    
     Neutron (ΔS=0):  Gamma = G_F^2 m_e^5 (1 + 3 g_A^2) F_N / (2 pi^3)
-    Hyperon (ΔS=1):  Gamma = G_F^2 V_us^2 DeltaM^5 (1 + 3 g_A_eff^2) F_H / (60 pi^3)
-    The Δm^5 phase space plus the V_CKM^2 coupling; g_A_eff depends on
-    the strangeness-changing arm's graph structure.
-    Strangeness change detected from parent_qn.S vs daughter_qns[0].S.
+    Hyperon (ΔS=1): Cabibbo formula with SU(3) structure
+        Gamma = G_F^2 V_us^2 (Δm)^5 (g_V^2 + 3 g_A^2) / (60 pi^3)
+    
+    SU(3) coefficients from F/D = 9/16 (chapter Sec. FD_ratio, from
+    microrotation absorption (2π-1)/(2π)):
+        F = (9/25) g_A(n) = 0.460
+        D = (16/25) g_A(n) = 0.819
+    Hyperon couplings:
+        Λ -> p e ν:  g_V^2 = 3/2,  g_A = F + D/3 = 0.733
+        Σ- -> n e ν: g_V^2 = 1,    g_A = D - F = 0.359
+        Ξ- -> Λ e ν: g_V^2 = 3/2,  g_A = |D/3 - F| = 0.187
+    Graph detection: parent I=0 -> Lambda-like (hex cap, F+D/3);
+                     parent I=1 -> Sigma-like (voids, D-F).
     """
     daughter_qn = next((q for q in daughter_qns if q.B == 1), None)
     if daughter_qn is None: return None
     dS = parent_qn.S - daughter_qn.S
     dM = m_parent - m_daughter
+    
     if abs(dS) == 0:
-        # Neutron-like: full Sirlin-Wilkinson with F_N
+        # Neutron-like: full Sirlin-Wilkinson
         return G_F**2 * ME**5 * (1.0 + 3.0 * G_A**2) * F_N / (2.0 * math.pi**3)
-    # Hyperon semileptonic: G_F^2 V_us^2 × phase space with endpoint Δm
-    # g_A_eff for hyperon semileptonic (SU(3) F and D):
-    #   Λ -> p:  F + D/3 = 0.718  (chapter-derived from graph structure)
-    #   Σ- -> n: F - D   = -0.340 (sign for isospin)
-    #   Ξ- -> Λ: F - D/3
-    # Detection: daughter is nucleon (S=0) vs Lambda (S=-1)
-    g_A_eff = 0.718 if daughter_qn.S == 0 and abs(parent_qn.I) < 0.01 else \
-              0.340 if daughter_qn.S == 0 else \
-              0.25   # Xi -> Lambda value
-    return (G_F**2 * V_US**2 * dM**5 * (1.0 + 3.0 * g_A_eff**2) 
+    
+    # Hyperon semileptonic: F/D = 9/16 derived from chapter's 
+    # microrotation absorption factor (2π-1)/(2π).
+    F_COUP = (9.0/25.0) * G_A
+    D_COUP = (16.0/25.0) * G_A
+    
+    # Structural detection from parent isospin (graph role count
+    # correlates: I=0 -> hex-cap extension; I=1 -> voids)
+    if abs(parent_qn.I - 0.0) < 0.1:
+        # Lambda-like (I=0): strange hex cap, F+D/3 axial coupling
+        g_V_sq = 3.0/2.0
+        g_A_eff = F_COUP + D_COUP/3.0
+    elif abs(parent_qn.I - 1.0) < 0.1:
+        # Sigma-like (I=1): voids, D-F axial coupling
+        g_V_sq = 1.0
+        g_A_eff = D_COUP - F_COUP
+    elif abs(parent_qn.I - 0.5) < 0.1 and abs(parent_qn.S) == 2:
+        # Xi-like (I=1/2, |S|=2): double hex-cap, D/3-F coupling
+        g_V_sq = 3.0/2.0
+        g_A_eff = abs(D_COUP/3.0 - F_COUP)
+    else:
+        g_V_sq = 1.0
+        g_A_eff = G_A
+    
+    # Cabibbo formula with SU(3) structure
+    return (G_F**2 * V_US**2 * dM**5 * (g_V_sq + 3.0 * g_A_eff**2) 
             / (60.0 * math.pi**3))
 
 
@@ -931,7 +978,7 @@ def regression():
         # Bottom leptonic
         ('B+ -> tau+ nu',         v(QN(B=0,S=0,I=0.5,I3=0.5,J=0,n_bottom=1),
                                      'tau', 'nu_tau'),
-                                    5.5e-14, 'MeV', 'PSLEPTONIC'),
+                                    4.38e-14, 'MeV', 'PSLEPTONIC'),
 
         # Kaon hadronic (WEAK_2PS)
         ('K_S -> pi+ pi-',        v(QN(B=0,S=1,I=0.5,I3=0.5,J=0),
@@ -959,6 +1006,9 @@ def regression():
                                      QN(B=1,S=-1,I=0,I3=0,J=0.5,P=+1),
                                      QN(B=0,S=0,I=1,I3=0,J=0)),
                                     2.27e-12, 'MeV', 'YJUNCTION'),
+        # Sigma+ hadronic (Σ+→pπ0, Σ+→nπ+): pending Pauli-antisymmetric
+        # void treatment.  Naive void-sum overshoots by ~45x due to void
+        # spatial overlap being much larger than hex-cap overlap.
 
         # Sigma0 -> Lambda gamma (RADIATIVE)
         ('Sigma0 -> Lambda g',    v(QN(B=1,S=-1,I=1,I3=0,J=0.5,P=+1),
