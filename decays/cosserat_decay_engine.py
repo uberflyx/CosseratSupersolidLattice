@@ -1118,6 +1118,14 @@ def regression():
                                      QN(B=0,S=0,I=1,I3=0,J=0),
                                      'mu', 'nu_mu'),
                                     1.71e-15, 'MeV', 'SEMILEPTONIC'),
+        # D+ -> K̄0 l nu: needs proper charm form factor f+(0) ~ 0.74
+        # (vs 0.97 for K->pi) and charm-specific Dalitz integral.
+        # Current Kl3 formula overshoots by ~30%.  Pending derivation.
+        # Xi- -> Lambda e nu (graph-detected F/D structure)
+        ('Xi- -> Lambda e nu',    v(QN(B=1,S=-2,I=0.5,I3=-0.5,J=0.5,P=+1),
+                                     QN(B=1,S=-1,I=0,I3=0,J=0.5,P=+1),
+                                     'e', 'nu_e'),
+                                    2.26e-15, 'MeV', 'BETA'),
 
         # Kaon 3-body hadronic (WEAK_3PS) 
         # K+ -> pi+ pi+ pi-  (BR=5.58%, Gamma ~ 2.97e-15 MeV)
