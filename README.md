@@ -71,7 +71,7 @@ Please go read it: [https://doi.org/10.5281/zenodo.18636501](https://doi.org/10.
 
 The vacuum is modelled as an FCC Cosserat supersolid — a face-centred cubic crystal that is simultaneously superfluid (rigid to shear, frictionless to translation). Particles are topological defects: screw dislocations (electrons), partial dislocations (quarks, with the FCC threefold stacking degeneracy providing colour), edge dislocations (neutrinos), and vacancies (dark matter). Forces are elastic waves: transverse shear (electromagnetism), stacking-fault elasticity (strong force), evanescent modes (weak force), and longitudinal compression (gravity).
 
-The fine structure constant is the Boltzmann factor for tunnelling through the Peierls–Nabarro barrier. Newton's constant requires coherent tunnelling of all 19 nodes in the FCC coordination cluster, giving *G* ∝ α¹⁹ — the 10³⁸ hierarchy between electromagnetism and gravity is a counting problem (1 node vs 19). A universal mass formula *m* = *m*ₑ(*N*/α*ᵏ* + *Q*) yields the full particle spectrum from five geometric building blocks and a four-term electromagnetic correction, each derived from the defect geometry with no reference to experiment.
+The fine structure constant is the Boltzmann factor for tunnelling through the Peierls–Nabarro barrier. Newton's constant requires coherent tunnelling of all 19 nodes in the FCC coordination cluster, giving *G* ∝ α¹⁹ — the 10³⁸ hierarchy between electromagnetism and gravity is a counting problem (1 node vs 19). A universal mass formula *m* = *m*ₑ(*N*/α*ᵏ* + *Q*) yields the full particle spectrum from geometric building blocks, each derived from the defect geometry with no reference to experiment.
 
 The obvious objection — that a crystal breaks Lorentz invariance — is addressed quantitatively in the monograph and in a [dedicated paper](https://doi.org/10.5281/zenodo.18739953) (submitted, under review). Two suppression mechanisms intrinsic to the lattice (the Peierls–Nabarro form factor and Debye–Waller smearing from quantum zero-point delocalisation) combine to push Bragg scattering five orders of magnitude below the Fermi-LAT gamma-ray bound. The lattice is there, but it hides well.
 
@@ -83,93 +83,6 @@ MIT
 
 ---
 
-## `cosserat_graph.py` — Constructive Graph Calculator
+Warp drive doesn't jump out of this framework (unfortunately). But if the vacuum really is a crystal, then the universe is (now) an engineering problem — and that's a start. 
 
-The centrepiece of this repository. A 1099-line Python script that computes hadron masses from edge counting on the FCC cuboctahedral graph. No lookup tables, no fitted parameters — every integer in every mass formula is computed from loops over actual 3D lattice coordinates.
-
-**Three inputs:** *c*, *ℏ*, *mₑ* (speed of light, Planck's constant, electron mass).
-
-**One equation:** *m = N × m₀ + Q × mₑ*, where *m₀ = mₑ/α* and α is derived self-consistently from the Peierls–Nabarro tunnelling amplitude.
-
-**One graph:** the 12-vertex cuboctahedron (first coordination shell of the FCC lattice), built from three primitive vectors and analysed with networkx.
-
-### How it works
-
-1. **Build the lattice.** The code generates ~340 FCC lattice sites from primitive vectors a₁=(1,1,0), a₂=(1,0,1), a₃=(0,1,1), identifies the 12-vertex cuboctahedral shell, and computes all graph invariants: coordination number Z₁=12, chromatic number N_c=3, edge count E=24, hex-cap size N_hex=7, etc.
-
-2. **Assemble the defect.** Quantum numbers (B, S, I, J, P, n_charm) determine which FCC building blocks to activate: coordination shell (baryons), hex-cap stacking fault (kaons), crossed faults (vector mesons), etc. Each node gets actual 3D FCC coordinates.
-
-3. **Count edges.** The electromagnetic correction Q is computed by looping over actual edges of the embedded defect: core bonds (centre → shell), boundary nodes (exposed surface), antipodal pairs (dislocation character), common-NN bonds (void modification), and colour-spatial cross-edges (charm coupling). The counting method is determined by the spin: J=0 counts vertices, J=1 counts edges, J≥2 counts faces — the simplicial decomposition of the Cosserat field on the graph.
-
-4. **Return the mass.** *m = N × m₀ + Q × mₑ*, both integers from the graph.
-
-### Quick start
-
-```python
-from cosserat_graph import predict, predict_molecular, QN
-
-# Proton
-r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=+1))
-print(f"Proton: {r.mass:.1f} MeV (PDG: 938.3)")   # 939.2 MeV
-
-# J/ψ meson
-r = predict(QN(B=0, I=0, I3=0, J=1, P=-1, n_charm=2))
-print(f"J/ψ: {r.mass:.1f} MeV (PDG: 3096.9)")     # 3097.0 MeV
-
-# Ξ_cc⁺⁺ (doubly charmed baryon, discovered LHCb 2017)
-r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=+1, n_charm=2))
-print(f"Ξ_cc⁺⁺: {r.mass:.1f} MeV (PDG: 3621.2)")  # 3621.3 MeV
-
-# Ξ_cc⁺ (discovered LHCb Moriond 2026)
-r = predict(QN(B=1, S=0, I=0.5, I3=-0.5, J=0.5, P=+1, n_charm=2))
-print(f"Ξ_cc⁺: {r.mass:.1f} MeV (LHCb: 3619.97)")  # 3620.3 MeV
-
-# X(3872) molecular exotic — docking mode selected automatically
-D0  = QN(B=0, S=0, I=0.5, I3=0.5, J=0, P=-1, n_charm=1)
-D0s = QN(B=0, S=0, I=0.5, I3=0.5, J=1, P=-1, n_charm=1)
-r = predict_molecular(D0, D0s)
-print(f"X(3872): {r.mass:.1f} MeV (PDG: 3871.7)")  # 3871.8 MeV
-```
-
-### Key graph-theoretic results
-
-| Result | Formula | Value | What it determines |
-|--------|---------|-------|-------------------|
-| Coordination number | Z₁ = len(shell) | 12 | Proton Q, base coupling |
-| Chromatic number | χ(G) = greedy colouring | 3 | Number of QCD colours |
-| Hyperfine coupling | E×χ(G) + Z₁ | 84 | J/ψ – η_c splitting (113 MeV) |
-| Surplus-edge theorem | Remove edge, count induced | 27 = N_c³ | Dibaryon binding (83.8 MeV) |
-| Charm coupling target | N_charm × (N_coord − N_c×|S|) | 235, 180, 98, 8 | All charm baryon Q values |
-| Pauli void activation | Count identical light quarks + spin | bool | Σ vs Λ mass difference |
-
-### Master table: 52/52 within 1%
-
-The code reproduces every entry in the monograph's three-part master prediction table:
-- 21 light hadrons (π through Ω⁻, d*(2380))
-- 8 charmonium states (η_c, J/ψ, ψ(2S), η_c(2S), χ_c0, χ_c1, h_c, χ_c2)
-- 6 open charm mesons (D⁰, D⁺, D*⁰, D_s, D_s*, B_c)
-- 8 charm baryons (Λ_c, Σ_c, Σ_c*, Ξ_c, Ω_c, Ξ_cc⁺⁺, Ξ_cc⁺, Ω_ccc)
-- 4 molecular exotics (X(3872), T_cc⁺, P_c(4457), P_c(4440))
-- 4 bottom splittings (Υ−η_b, B*−B, Bs*−Bs, Υ(2S)−Υ(1S))
-- 1 cage tetraquark (T_4c(6600) from stacking-fault tetrahedron)
-
-Worst residual: proton at 0.10%. Best: Ξ_cc⁺ at 0.009%.
-
-### Validation harness
-
-A standalone script `hadrons/probe_cosserat_graph.py` runs `predict()` against 127 PDG hadrons and classifies each as `WIN` (within 1%), `SOFT-OK` (within 3%), `WRONG` (silent failure), `REGGE-SKIP` (clean refusal), or `FORBIDDEN` (Pauli-blocked). The full report comparing predictions against PDG 2024 masses is in `hadrons/pdg_comparison.md`.
-
-The four hadron assemblers (`_asm_meson`, `_asm_baryon`, `_asm_charm_meson`, `_asm_charm_baryon`) are organised by `(J, P)` sector with uniform flavour handling within each sector. Quantum-number combinations for which no rule has been derived return `cluster='refuse: <reason>'` and zero mass rather than falling through to the nearest case. This means every mass returned has been derived by an explicit rule, and every state the code cannot derive is named.
-
-### Dependencies
-
-Python 3.8+, numpy, networkx. No other packages required.
-
-```bash
-pip install numpy networkx
-python cosserat_graph.py
-```
-
----
-
-Warp drive doesn't jump out of this framework (unfortunately). But if the vacuum really is a crystal, then the universe is (now) an engineering problem — and that's a start.
+For the brave: I was wondering if the Lattice supports some sort of long-range propagation for information — like electromagnetism and gravity, but not those. Kinks on lattice dislocation lines might be something, with heavy nuclei as "transducers" for the interface.
