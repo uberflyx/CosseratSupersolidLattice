@@ -14,13 +14,20 @@ cosserat_graph.py               # ★ Constructive graph calculator — all mass
 │   └── gamma4_scp.py           #   Quartic anharmonic correction (Ch. 11)
 ├── hadrons/                    # Ch. 9–10: mass formula, exotics, excited baryons
 │   ├── verify_fcc_geometry.py  #   FCC coordinate checks (Ch. 9)
-│   ├── excited_baryons.py      #   N(1440), N(1535), Λ(1670) masses (Ch. 12)
 │   ├── exotic_catalogue.py     #   Exotic hadron classification
 │   ├── exotic_filling_fraction.py
 │   ├── three_mechanisms.py     #   Vacuum energy mechanisms (Ch. 13)
 │   ├── probe_cosserat_graph.py #   PDG validation harness for cosserat_graph
 │   ├── pdg_comparison.md       #   Full prediction-vs-PDG comparison report
 │   └── fcc_defect_catalogue.py #   Composition catalogue of FCC defect cores
+├── spectral_mass/              #   Hadron masses from the cluster elastic spectrum
+│   ├── spectral_classifier.py  #   FCC cluster builders + O_h irrep decomposition
+│   ├── cosserat_classifier.py  #   Full Cosserat dynamical matrix
+│   ├── hadron_spectral_mass.py #   Mass law m = N m_0 − N(4−λ) m_e
+│   ├── bare_shell_irreps.py    #   Bare 13-shell spectrum by O_h irrep (reference)
+│   ├── parity_flip_rule.py     #   J^P → parent irrep map
+│   ├── retrospective_adiabatic.py # Excited-baryon adiabatic audit
+│   └── delta1600_dual_orbit.py #   Δ(1600) dual-orbit closure (+ supporting builders)
 ├── decays/                     # Ch. 12: decay rates and lifetimes
 │   ├── cosserat_decay_engine.py#   Full decay rate calculator
 │   └── test_decay_engine.py    #   Regression tests
