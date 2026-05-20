@@ -73,6 +73,25 @@ comes from the lattice geometry before any mass is consulted.
 - `delta1600_irrep_check.py` -- confirms the `Delta(1600)` mass mode is
   `T_1u`, not `T_1g`.
 
+## Hyperon resonances
+
+- `sigma_ground.py` -- confirms the `Sigma` ground mass mode is the
+  rule-selected `A_2` root (lambda = 4.624, m = 1195.85 MeV, +0.23%),
+  not a fit.  Lists every `A_2` mode of the shell-plus-four-void cluster.
+- `sigma_trace.py` -- closes `Sigma(1660)` (1/2+) by adiabatic
+  continuation of the `A_2` ground mode onto the second shell
+  (lambda = 4.624 -> 7.545, m = 1652 MeV, -0.47%).  Uses the physical
+  bond-scaling turn-on, with a check that it reduces to the canonical
+  matrix at full coupling.
+- `sigma_neg.py` -- the negative result: the gerade modes of the
+  dual-orbit cluster (the only parity-carrying option) top out near
+  1540 MeV, missing the negative-parity `Sigma` by 6 to 10 percent.
+- `sigma_desert.py` -- the FCC symmetry desert.  No inversion-symmetric
+  cluster exists between N = 21 and 27, so a negative-parity `Sigma` in
+  the 1540 to 1700 MeV gap must be a molecule.  Closes `Sigma(1670)`
+  (3/2-) as a forced `Kbar-Delta` bound state (N = 24, m = 1681 MeV,
+  +0.33%), the strange analogue of `Lambda(1405) = Kbar-N`.
+
 ## Usage
 
 Run any script from inside this directory; the modules import their
@@ -84,6 +103,9 @@ python bare_shell_irreps.py        # the bare-shell reference spectrum
 python parity_flip_rule.py         # the J^P -> parent irrep map
 python retrospective_adiabatic.py  # the excited-baryon audit
 python delta1600_dual_orbit.py     # the Delta(1600) closure
+python sigma_ground.py             # the Sigma ground mode is rule-selected
+python sigma_trace.py              # the Sigma(1660) adiabatic closure
+python sigma_desert.py             # the symmetry desert and Sigma(1670)
 ```
 
 ## Three radial-excitation mechanisms
