@@ -32,6 +32,15 @@ AUDIT STATUS:
     4 bottom splittings, 2 bottomonium P-wave fine-structure splittings
     4 genuine predictions: Bc*, Ω_cc, Ω_ccc, 2++ in J/ψ φ
 
+SUPERSEDED:
+    The hadron, charm, and bottom mass sections below use the legacy
+    node-counting formula m = N m_0 + Q m_e, where Q is an integer charge
+    fixed by separate rules.  This phenomenology is superseded by the
+    spectral-mass construction in spectral_mass/, where the correction is
+    the elastic eigenvalue of the cluster, m = N m_0 - N (4 - lambda) m_e,
+    with nothing fixed by hand.  The values here are retained for reference
+    and comparison; the spectral construction is the source of truth.
+
 Usage:
     python cosserat_calculator.py              # full report
     python cosserat_calculator.py --hadrons    # hadron table only
@@ -330,6 +339,7 @@ def full_report():
     row('m_b (bottom) = 6π²(m₀+mₑ)',  M_B, 4180, 'MeV', '§7.4')
     row('m_t (top)',                    M_T_QUARK/1e3, 172.57, 'GeV', '§11.7')
 
+    # LEGACY: m = N m_0 + Q m_e (node counting). Superseded by spectral_mass/.
     header("HADRON MASSES (node counting + Q decomposition)")
     print(f"  {'─'*92}")
     # Pseudoscalar mesons
@@ -367,6 +377,7 @@ def full_report():
     # Dibaryon
     m_ds = 34*M0 + 3*ME;                  row('d*(2380) dibaryon',  m_ds,  2380.000,'MeV', 'B.5')
 
+    # LEGACY: m = N m_0 + Q m_e (node counting). Superseded by spectral_mass/.
     header("CHARM SECTOR (K₉,₉ antibonding + FCC building blocks)")
     print(f"  N_charm = 2N_c² = {2*NC**2}  (antibonding eigenvalue of K_{{9,9}} Hamiltonian)")
     print(f"  N(meson) = Σ N_q + N_ribbon;  N(baryon) = Σ N_q + N_cluster")
@@ -450,6 +461,7 @@ def full_report():
     row('Bc* − Bc splitting [pred]', dm_Bcstar, None, 'MeV', '§10.N')
     row('Bc* mass [pred]',           m_Bcstar,  None, 'MeV', '§10.N')
 
+    # LEGACY: m = N m_0 + Q m_e (node counting). Superseded by spectral_mass/.
     header("BOTTOM SPLITTINGS (universal m₀ + ΔQ×mₑ, ΔQ < 0 = screening)")
     print(f"  {'─'*92}")
     # ── Vector-pseudoscalar splittings (bottom sector) ──

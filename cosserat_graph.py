@@ -11,6 +11,14 @@ Architecture:
 
 Every integer emerges from FCC 3D geometry.  No mass-formula integer is typed.
 
+SUPERSEDED:
+    This calculator applies the legacy node-counting formula
+    m = N m_0 + Q m_e, with the integer charge Q built from edge analysis
+    of the defect graph.  It is superseded by the spectral-mass
+    construction in spectral_mass/, where the correction is the elastic
+    eigenvalue of the cluster, m = N m_0 - N (4 - lambda) m_e.  Retained
+    for reference and for the decay and D4 modules that still import it.
+
 Usage:
     from cosserat_graph import predict, QN, catalogue
     r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=1))
@@ -1246,7 +1254,7 @@ def _predict_bottom_meson(qn, lat):
         Q_eta_b = round((_PDG_BOTTOM['eta_b'] - N_eta_b*M0)/ME)
         Q_cross = lat.N_charm*lat.N_c**2 + 1  # = 163
         Q = round((Q_eta_c + Q_eta_b)/2) + Q_cross
-        mass = N*M0 + Q*ME
+        mass = N*M0 + Q*ME  # LEGACY formula; superseded by spectral_mass/
         return Result(N=N, Q=Q, mass=mass, cluster='Bc_cross_term',
                       notes=[f'Q_cross={Q_cross}'])
 

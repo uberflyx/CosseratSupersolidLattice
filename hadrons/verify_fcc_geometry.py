@@ -310,7 +310,7 @@ charm_states = [
 ]
 all_ok = True
 for name, N, Q, m_obs in charm_states:
-    m_pred = N * m0 + Q * me
+    m_pred = N * m0 + Q * me  # LEGACY formula; superseded by spectral_mass/
     resid = abs(m_pred - m_obs) / m_obs * 100
     ok = resid < 0.01
     all_ok &= ok

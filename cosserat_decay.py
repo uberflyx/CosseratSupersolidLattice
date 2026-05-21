@@ -388,6 +388,7 @@ def molecular_decay(qn_A: QN, qn_B: QN) -> DecayResult:
             f'mode={mode}',
             f'n_bond={n_bond}, n_node={n_node}',
             f'm_A={r_A.mass:.1f}, m_B={r_B.mass:.1f}',
+            # LEGACY: node+bond binding estimate; superseded by spectral_mass/
             f'binding={n_node*M0 + n_bond*ME:.1f} MeV'
         ]
     )
