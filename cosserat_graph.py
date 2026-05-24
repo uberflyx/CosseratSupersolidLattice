@@ -73,8 +73,13 @@ class FCCLattice:
                 self.G_shell.add_edge(i,j)
 
     def _planes(self):
-        self.plane_normals=[np.array([1.,1,1]),np.array([1.,1,-1]),
-                            np.array([1.,-1,1]),np.array([-1.,1,1])]
+        # The four {111} normals of one T_d orbit (sign product +1 for each).
+        # This selects the regular tetrahedron of void faces; inversion would
+        # give the dual orbit (sign product -1).  All six void-void distances
+        # in this orbit equal sqrt(2) (the NN distance), ensuring T_d symmetry
+        # of the void-activated cluster.
+        self.plane_normals=[np.array([1.,1,1]),np.array([1.,-1,-1]),
+                            np.array([-1.,1,-1]),np.array([-1.,-1,1])]
         self.n_planes=len(self.plane_normals)
         self.plane_inplane,self.plane_above,self.plane_below=[],[],[]
         for n in self.plane_normals:

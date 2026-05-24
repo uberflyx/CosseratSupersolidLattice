@@ -318,32 +318,75 @@ def classify_topology(parent_qn: QN, daughter_specs) -> str:
 # graph features.  These are NOT per-particle lookups -- each rule applies
 # universally to all decays with that topology.
 
-_DECUPLET_L2_CACHE = {}
-def _decuplet_lambda2(n_strange):
-    """Algebraic connectivity of the decuplet cluster graph of the MASS
-    construction (Sec. void_shell_adjacency): the 13-node cuboctahedral shell
-    plus FOUR tetrahedral voids (active for every decuplet member) plus |S|
-    three-node hex caps ADDED to void faces.  This is the void-ADD rule stated
-    in the monograph; it reproduces the tabulated lambda_2 = 2.7216 (Delta),
-    1.5343 (Sigma*), 1.4494 (Xi*), 1.2488 (Omega) exactly.  (An earlier
-    void-SWAP variant, which removed one void per strange arm, did NOT match
-    the monograph's Sigma* = 1.534 and is retired.)
+_DEACT_CACHE = {}
+def _decuplet_deact_coupling(n_strange):
+    """Product coupling R for the decuplet decay (Eq. decuplet_product_formula).
+
+    Builds the DEACTIVATION GRAPH of the mass construction's void-swap cluster
+    with three structural choices, each physically motivated:
+
+        1. Correct T_d void positions (one orbit, all sign products +1).
+           Required for the T_1 mass mode to remain a clean, shell-concentrated
+           triplet under T_d symmetry.
+        2. Void-swap (each strange step replaces one void with a 3-node hex
+           cap).  Inherits the mass construction's cluster topology.
+        3. Void-void bonds excluded.  The six mutual void-void edges at the NN
+           distance stiffen the interstitial subsystem internally but do not
+           participate in the void-to-shell deactivation that drives the decay.
+
+    The coupling is the PRODUCT of eigenvalue ratios over the |S| soft cap
+    modes, each mode contributing an independent suppression factor:
+
+        R  =  prod_{k=1}^{|S|}  [lam_{k+1} / lam_{k+1}^(Delta)]
+              * (1 - |S| sigma)
+
+    Returns R (the dimensionless coupling ratio, not the amplitude).
+    Cached by n_strange.
+
+    Values (correct T_d, void-swap, no void-void bonds):
+        Delta  R = 1.0000  (lambda_2 = 2.4384, triple degenerate)
+        Sigma* R = 0.5348  (one cap mode at 1.3449)
+        Xi*    R = 0.3126  (two cap modes at 1.076, 1.839)
     """
-    if n_strange in _DECUPLET_L2_CACHE:
-        return _DECUPLET_L2_CACHE[n_strange]
+    if n_strange in _DEACT_CACHE:
+        return _DEACT_CACHE[n_strange]
     from cosserat_graph import FCCLattice, Defect
-    lat = FCCLattice()
-    d = Defect(lat); d.add_shell()
-    for vi in range(4):                      # void-ADD: four voids for every member
-        nm = f'v{vi}'; d.nodes.add(nm); d.roles[nm] = 'void'
-        d.pos[nm] = lat.void_positions[vi].copy()
-    d.has_voids = True
-    for pi in range(n_strange):
-        d.add_strange_ext(pi)
-    _, _, L = d.graph_matrices()
-    l2 = sorted(np.linalg.eigvalsh(L))[1]
-    _DECUPLET_L2_CACHE[n_strange] = l2
-    return l2
+
+    def _spectrum(nS):
+        lat = FCCLattice()
+        d = Defect(lat); d.add_shell()
+        for vi in range(4 - nS):           # void-SWAP
+            nm = f'v{vi}'; d.nodes.add(nm); d.roles[nm] = 'void'
+            d.pos[nm] = lat.void_positions[vi].copy()
+        d.has_voids = (4 - nS) > 0
+        for pi in range(nS):
+            d.add_strange_ext(pi)
+        nodes = sorted(d.nodes)
+        idx = {n: i for i, n in enumerate(nodes)}
+        _, _, L_full = d.graph_matrices()
+        A = -np.array(L_full); np.fill_diagonal(A, 0)
+        # --- exclude void-void bonds ---
+        voids = [idx[n] for n in nodes if d.roles.get(n) == 'void']
+        for i in voids:
+            for j in voids:
+                if i != j:
+                    A[i, j] = 0.0
+        D = np.diag(A.sum(axis=1))
+        L_deact = D - A
+        return sorted(np.linalg.eigvalsh(L_deact))
+
+    spec_s = _spectrum(n_strange)
+    spec_0 = _spectrum(0)
+    ev_s = [x for x in spec_s if x > 1e-9]
+    ev_0 = [x for x in spec_0 if x > 1e-9]
+
+    R = 1.0
+    for k in range(n_strange):
+        R *= ev_s[k] / ev_0[k]
+    R *= (1.0 - n_strange * SIGMA_HEX)
+
+    _DEACT_CACHE[n_strange] = R
+    return R
 
 
 def combine_VOID(parent_def, daughter_defs, parent_qn=None):
@@ -365,10 +408,8 @@ def combine_VOID(parent_def, daughter_defs, parent_qn=None):
     N_BL = 8.0           # triangular faces of the cuboctahedral shell
     g2   = N_H**2 * (N_H / N_BL)            # = 274.6, ab initio (pi N Delta)^2
     n_strange = int(round(abs(parent_qn.S))) if parent_qn is not None else 0
-    lambda_2       = _decuplet_lambda2(n_strange)
-    LAMBDA_2_DELTA = _decuplet_lambda2(0)      # 2.7216
-    shadow = (1.0 - n_strange * SIGMA_HEX)
-    val = g2 * (lambda_2 / LAMBDA_2_DELTA) * shadow
+    R = _decuplet_deact_coupling(n_strange)     # product formula
+    val = g2 * R
     if val <= 0.0:
         return None
     return math.sqrt(val)
