@@ -28,6 +28,11 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List, Dict
 
+import sys as _sys, os as _os
+_HERE = _os.path.dirname(_os.path.abspath(__file__))
+sys_root = _os.path.dirname(_HERE)
+_sys.path.insert(0, sys_root)
+
 from cosserat_graph import (
     QN, Result, Defect, FCCLattice,
     predict, predict_with_defect, predict_molecular,
