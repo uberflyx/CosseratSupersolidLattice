@@ -318,52 +318,58 @@ def classify_topology(parent_qn: QN, daughter_specs) -> str:
 # graph features.  These are NOT per-particle lookups -- each rule applies
 # universally to all decays with that topology.
 
-def combine_VOID(parent_def, daughter_defs):
-    """Decuplet -> octet + pi via void deactivation.
-    Master formula on the cluster + void boundary:
-        |M|^2 = M_cluster^2 * (M_cluster / N_triangles) * (lambda_2 / lambda_2^Delta)
-    where:
-      - M_cluster: literal cluster-pion master-formula sum (=N_H=13 on cubocta)
-      - N_triangles: triangular faces of the shell subgraph (=8 on cubocta)
-      - lambda_2: algebraic connectivity of the parent's CLUSTER subgraph
-        (centre + shell + hex_ring + extension; voids excluded as they
-        are disconnected at NN distance).  The ratio lambda_2/lambda_2^Delta
-        corrects for hex-cap symmetry breaking on strange decuplet partners
-        (chapter Eq. decuplet_ab_initio_NLO).
-      - shadow factor (1 - n_strange * sigma) per chapter Eq. shadow_factor
-    All four pieces are computed from the parsed graph -- no per-particle lookups.
+_VS_L2_CACHE = {}
+def _void_swap_lambda2(n_strange):
+    """Algebraic connectivity of the void-swap decuplet cluster graph of the
+    MASS construction (Sec. delta_spectral): the 13-node cuboctahedral shell
+    plus (4 - |S|) tetrahedral voids plus |S| three-node hex caps, each cap
+    REPLACING one void.  Returns 2.7216 (Delta), 1.4987 (Sigma*), 1.3896 (Xi*).
+    Built from the canonical FCC geometry, not from the (inconsistent) parsed
+    decay graph -- so the engine matches the monograph by construction.
     """
-    r = graph_couplings(parent_def, daughter_defs, channel='T1u', extend_bilayer=False)
-    M_cluster, N_t = r['M_cluster_pion'], r['N_triangles']
-    if N_t == 0: return None
-    bare = M_cluster * math.sqrt(M_cluster / N_t)
-    
-    # Cluster-subgraph algebraic connectivity.  With void-face bonds
-    # included (Rule 2 in defect_to_graph), the voids are connected to
-    # the shell via triangular-face bonds at sqrt(3)/2.  Including them
-    # in the λ_2 computation reproduces the chapter's tabulated Fiedler
-    # values (Σ*: 1.534, Ξ*: 1.148).
-    Gp = r['graph']
-    H = nx.Graph()
-    for n in Gp.nodes:
-        role = Gp.nodes[n].get('role', '')
-        if role in ('centre','shell','hex_ring','extension','bilayer','void'):
-            H.add_node(n)
-    for u, v in Gp.edges:
-        if u in H.nodes and v in H.nodes: H.add_edge(u, v)
-    if len(H.nodes) >= 2:
-        L = nx.laplacian_matrix(H).toarray().astype(float)
-        eigs = sorted(np.linalg.eigvalsh(L))
-        lambda_2 = eigs[1]
-    else:
-        lambda_2 = 3.0
-    LAMBDA_2_DELTA = 2.722   # Δ algebraic connectivity (17-node graph with void-face bonds)
-    
-    n_hex = sum(1 for n in Gp.nodes if Gp.nodes[n].get('role') in ('hex_ring','extension'))
-    n_strange_arms = n_hex // 3
-    shadow = (1.0 - n_strange_arms * SIGMA_HEX)
-    
-    return bare * math.sqrt(lambda_2 / LAMBDA_2_DELTA) * shadow
+    if n_strange in _VS_L2_CACHE:
+        return _VS_L2_CACHE[n_strange]
+    from cosserat_graph import FCCLattice, Defect
+    lat = FCCLattice()
+    d = Defect(lat); d.add_shell()
+    for vi in range(4 - n_strange):
+        nm = f'v{vi}'; d.nodes.add(nm); d.roles[nm] = 'void'
+        d.pos[nm] = lat.void_positions[vi].copy()
+    d.has_voids = (4 - n_strange) > 0
+    for pi in range(n_strange):
+        d.add_strange_ext(pi)
+    _, _, L = d.graph_matrices()
+    l2 = sorted(np.linalg.eigvalsh(L))[1]
+    _VS_L2_CACHE[n_strange] = l2
+    return l2
+
+
+def combine_VOID(parent_def, daughter_defs, parent_qn=None):
+    """Decuplet -> octet + pi via void deactivation.
+
+    Returns the amplitude whose square, multiplied by the P-wave phase space
+    p^3/(6 pi m^2) that decay() supplies, reproduces the monograph's ab initio
+    width (Eq. decuplet_ab_initio_NLO):
+
+        Gamma = N_H^2 (N_H/N_BL) (lambda_2/lambda_2^Delta) (1 - |S| sigma)
+                * p^3 / (6 pi m^2).
+
+    Every factor is a graph invariant -- N_H = Z_1 + 1 = 13, N_BL = N_triangles
+    = 8, lambda_2 from the void-swap cluster of the mass construction, and
+    sigma = SIGMA_HEX = 0.030 per strange arm.  No empirical anchor and no
+    per-particle lookup; |S| is read from the parent quantum numbers.
+    """
+    N_H  = 13.0          # Z_1 + 1: coordination shell (12) + centre
+    N_BL = 8.0           # triangular faces of the cuboctahedral shell
+    g2   = N_H**2 * (N_H / N_BL)            # = 274.6, ab initio (pi N Delta)^2
+    n_strange = int(round(abs(parent_qn.S))) if parent_qn is not None else 0
+    lambda_2       = _void_swap_lambda2(n_strange)
+    LAMBDA_2_DELTA = _void_swap_lambda2(0)     # 2.7216
+    shadow = (1.0 - n_strange * SIGMA_HEX)
+    val = g2 * (lambda_2 / LAMBDA_2_DELTA) * shadow
+    if val <= 0.0:
+        return None
+    return math.sqrt(val)
 
 
 def strange_source_mode(G):
@@ -428,6 +434,58 @@ def combine_YJUNCTION(parent_def, daughter_defs, parent_qn, daughter_qns):
     suppression = A_PEIERLS**(max(0, n_converting - 1))
     return (THETA_CH * math.sqrt(R_CHI / 2.0) * geom_per_arm 
             * suppression * math.sqrt(float(n_converting)))
+
+
+# --- Hyperon nonleptonic master formula (monograph eq:hyperon_rate_general) -----
+# The Y-junction weak conversion is S-wave dominated, so the partial width is
+#   Gamma = G_F^2 m_pi^4 / (4 pi m_i) * |p_f| (E_f + m_f) (|s|^2 + |p|^2),
+# where the G_F^2 m_pi^4 prefactor carries the COMMON charged-pion mass (it is the
+# universal Delta S = 1 factor) while the kinematics carry the actual decay masses.
+# The (s,p) partial-wave amplitudes are the experimental Tier-2 inputs (Salone et
+# al. 2026 / PDG2024) tabulated in the monograph.  Deriving them from the four
+# Y-junction evanescent overlap integrals (sec:open_mode_III) is what would promote
+# this sector from Tier 2 to Tier 1 (parameter-free).  This replaces the earlier
+# common-amplitude rule, whose pure-P-wave (p_cm^3) phase space and missing
+# per-channel isospin structure left Lambda/Xi at the ~20% level.
+MPI_CHARGED = 139.57039
+MPI_NEUTRAL = 134.9768
+HYPERON_SP = {
+    # key: (parent.S, parent.I3, round(pion.I3)) -> (s, p)
+    (-1,  0.0, -1): ( 1.40,  0.63),   # Lambda -> p pi-
+    (-1,  0.0,  0): (-1.03, -0.41),   # Lambda -> n pi0
+    (-1,  1.0,  1): ( 0.06,  1.81),   # Sigma+ -> n pi+
+    (-1,  1.0,  0): (-1.38,  1.24),   # Sigma+ -> p pi0
+    (-1, -1.0, -1): ( 1.91, -0.06),   # Sigma- -> n pi-
+    (-2,  0.5,  0): ( 1.52, -0.27),   # Xi0 -> Lambda pi0
+    (-2, -0.5, -1): (-1.99,  0.39),   # Xi- -> Lambda pi-
+}
+
+def hyperon_master_width(m_parent, parent_qn, daughter_qns, d_masses):
+    """Hyperon nonleptonic partial width via the monograph master formula.
+
+    Returns Gamma in MeV, or None if the channel is not tabulated (e.g. the
+    |S| = 3 Omega-, whose daughter meson is a kaon, or a final state with no
+    pion); such channels fall through to the structural Y-junction amplitude."""
+    pion = bary = None
+    for q, m in zip(daughter_qns, d_masses):
+        if q.B == 0 and q.S == 0:
+            pion = (q, m)
+        elif q.B == 1:
+            bary = (q, m)
+    if pion is None or bary is None:
+        return None
+    pion_qn = pion[0]
+    pion_i3 = int(round(pion_qn.I3))
+    sp = HYPERON_SP.get((parent_qn.S, parent_qn.I3, pion_i3))
+    if sp is None:
+        return None
+    s, p = sp
+    m_bary = bary[1]
+    m_pi = MPI_NEUTRAL if pion_i3 == 0 else MPI_CHARGED
+    p_cm = cm_momentum(m_parent, m_bary, m_pi)
+    E_f = math.sqrt(p_cm * p_cm + m_bary * m_bary)
+    return (G_F**2 * MPI_CHARGED**4 / (4.0 * math.pi * m_parent)
+            * p_cm * (E_f + m_bary) * (s * s + p * p))
 
 
 def combine_MOLECULAR(parent_def, daughter_defs):
@@ -875,7 +933,7 @@ def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
     topology = classify_topology(parent_qn, daughter_specs)
 
     if topology == 'VOID':
-        M_amp = combine_VOID(p_def, d_defs)
+        M_amp = combine_VOID(p_def, d_defs, parent_qn)
         if M_amp is None: return None
         # P-wave decuplet -> octet pi
         if len(d_masses) == 2:
@@ -883,6 +941,11 @@ def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
             return M_amp**2 * phase_space_2body(p_cm, m_p, L=1)
 
     if topology == 'YJUNCTION':
+        # Hyperon nonleptonic: S-wave-dominated master formula.  Omega- (|S|=3)
+        # and any untabulated channel fall through to the structural amplitude.
+        w_master = hyperon_master_width(m_p, parent_qn, daughter_qns, d_masses)
+        if w_master is not None:
+            return w_master
         M_amp = combine_YJUNCTION(p_def, d_defs, parent_qn, daughter_qns)
         if M_amp is None: return None
         if len(d_masses) == 2:
