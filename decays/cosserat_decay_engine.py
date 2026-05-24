@@ -318,29 +318,31 @@ def classify_topology(parent_qn: QN, daughter_specs) -> str:
 # graph features.  These are NOT per-particle lookups -- each rule applies
 # universally to all decays with that topology.
 
-_VS_L2_CACHE = {}
-def _void_swap_lambda2(n_strange):
-    """Algebraic connectivity of the void-swap decuplet cluster graph of the
-    MASS construction (Sec. delta_spectral): the 13-node cuboctahedral shell
-    plus (4 - |S|) tetrahedral voids plus |S| three-node hex caps, each cap
-    REPLACING one void.  Returns 2.7216 (Delta), 1.4987 (Sigma*), 1.3896 (Xi*).
-    Built from the canonical FCC geometry, not from the (inconsistent) parsed
-    decay graph -- so the engine matches the monograph by construction.
+_DECUPLET_L2_CACHE = {}
+def _decuplet_lambda2(n_strange):
+    """Algebraic connectivity of the decuplet cluster graph of the MASS
+    construction (Sec. void_shell_adjacency): the 13-node cuboctahedral shell
+    plus FOUR tetrahedral voids (active for every decuplet member) plus |S|
+    three-node hex caps ADDED to void faces.  This is the void-ADD rule stated
+    in the monograph; it reproduces the tabulated lambda_2 = 2.7216 (Delta),
+    1.5343 (Sigma*), 1.4494 (Xi*), 1.2488 (Omega) exactly.  (An earlier
+    void-SWAP variant, which removed one void per strange arm, did NOT match
+    the monograph's Sigma* = 1.534 and is retired.)
     """
-    if n_strange in _VS_L2_CACHE:
-        return _VS_L2_CACHE[n_strange]
+    if n_strange in _DECUPLET_L2_CACHE:
+        return _DECUPLET_L2_CACHE[n_strange]
     from cosserat_graph import FCCLattice, Defect
     lat = FCCLattice()
     d = Defect(lat); d.add_shell()
-    for vi in range(4 - n_strange):
+    for vi in range(4):                      # void-ADD: four voids for every member
         nm = f'v{vi}'; d.nodes.add(nm); d.roles[nm] = 'void'
         d.pos[nm] = lat.void_positions[vi].copy()
-    d.has_voids = (4 - n_strange) > 0
+    d.has_voids = True
     for pi in range(n_strange):
         d.add_strange_ext(pi)
     _, _, L = d.graph_matrices()
     l2 = sorted(np.linalg.eigvalsh(L))[1]
-    _VS_L2_CACHE[n_strange] = l2
+    _DECUPLET_L2_CACHE[n_strange] = l2
     return l2
 
 
@@ -363,8 +365,8 @@ def combine_VOID(parent_def, daughter_defs, parent_qn=None):
     N_BL = 8.0           # triangular faces of the cuboctahedral shell
     g2   = N_H**2 * (N_H / N_BL)            # = 274.6, ab initio (pi N Delta)^2
     n_strange = int(round(abs(parent_qn.S))) if parent_qn is not None else 0
-    lambda_2       = _void_swap_lambda2(n_strange)
-    LAMBDA_2_DELTA = _void_swap_lambda2(0)     # 2.7216
+    lambda_2       = _decuplet_lambda2(n_strange)
+    LAMBDA_2_DELTA = _decuplet_lambda2(0)      # 2.7216
     shadow = (1.0 - n_strange * SIGMA_HEX)
     val = g2 * (lambda_2 / LAMBDA_2_DELTA) * shadow
     if val <= 0.0:
