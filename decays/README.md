@@ -26,7 +26,7 @@ Each carries a SUPERSEDED banner. Kept so the reasoning is not lost.
 | File | What it explored | Why superseded |
 |------|------------------|----------------|
 | `synth_test.py` | Decay as parent→daughter spectral-mode overlap across the Fiedler cut; proton stability by absence of a lighter daughter. | Structural test only; the engine does this and gives absolute widths. |
-| `cosserat_vertex.py` | Rotation (φφu) cubic vertex for the baryon sector; transverse void emission. | Analytic vertex; engine uses the literal node sum, which is calibration-free. |
+| `cosserat_vertex.py` | Rotation (φφu) cubic vertex for the baryon sector; on-shell pion projection (ℓ=r_e), P-wave selection rule. | Analytic vertex; engine uses the literal node sum, which is calibration-free. |
 | `gamma3_vertex.py` | Displacement cubic vertex; ρ→ππ P-wave selection rule. | Same — analytic counterpart of the engine's sum. |
 | `decay_width.py` | Outgoing-pion projection at p* via ℓ = r_e. | Folded into the engine's phase space. |
 | `tier2_complex_mass.py` | Mass = Re, width = Im of one complex eigenvalue. | Channel-blind widths; conceptual only. |
