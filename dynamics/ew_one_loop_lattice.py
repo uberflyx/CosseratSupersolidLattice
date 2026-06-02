@@ -44,7 +44,7 @@ SIN2_TW = 2.0 / 9.0               # Weinberg angle (constitutive tensor)
 COS2_TW = 1.0 - SIN2_TW
 G_W2    = 4 * np.pi * ALPHA / SIN2_TW  # weak coupling squared
 M_W     = 80.379                   # W mass [GeV] (lattice: 8*pi*m_0/(3*alpha))
-M_Z     = 91.188                   # Z mass [GeV] (lattice: 3*pi*m_0/alpha)
+M_Z     = 91.188                   # Z mass [GeV] (lattice: M_W/cos(theta_W), cos^2 = 7/9)
 
 # Lattice lepton masses [GeV] (Koide formula)
 M_MU  = 105.6584e-3

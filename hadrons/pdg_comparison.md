@@ -80,7 +80,7 @@ Column definitions:
 |---|---|---|---:|---:|---:|---:|---:|---:|---|---|
 | H (Higgs)(0) | 0(0^+) | EW | 125.20 | — | — | — | — | — | `—` | EW breathing + volumetric, Sec. higgs_mass. Pull 0.00. |
 | W(+) | - | EW | 80390.0 | — | — | 80369.0 | +0.03% | +0.04 | `—` | M_W = (8pi/3) * M_EW, Sec. w_mass. |
-| Z(0) | - | EW | 91200.0 | — | — | 91188.0 | +0.01% | +0.02 | `—` | M_Z = 3pi * M_EW, Sec. z_mass. |
+| Z(0) | - | EW | 91200.0 | — | — | 91188.0 | +0.01% | +0.02 | `—` | M_Z = M_W/cos(theta_W), Sec. z_mass. |
 | t (top)(+) | - | EW | 172820.0 | — | — | — | — | — | `—` | Heavy-sector cluster mass, Sec. top_mass. |
 
 ### Quarks

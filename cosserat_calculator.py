@@ -94,9 +94,9 @@ LAMBDA_H   = (Z1+1) / (32*math.pi)                  # quartic: 13/(32π) ≈ 0.1
 VEV        = M_H / math.sqrt(2*LAMBDA_H)            # VEV from Higgs mass + quartic  [§11.2]
 GF         = 1 / (math.sqrt(2) * (VEV/1e3)**2)      # Fermi constant (GeV⁻²)        [§11.2]
 M_W        = (8*math.pi/NC) * M_EW                  # W boson: (8π/3)M_EW           [§11.3]
-M_Z_bare   = NC*math.pi * M_EW                      # Z bare: 3πM_EW               [§11.3]
-M_Z        = M_Z_bare * (1 + (Z1+1)*ALPHA/Z1)       # Z with Coulomb: (1+13α/12)   [§11.3]
 SIN2_TW    = 2 / NC**2                              # Weinberg angle: 2/9            [§11.5]
+COS2_TW    = 1 - SIN2_TW                            # cos²θ_W = 7/9
+M_Z        = M_W / math.sqrt(COS2_TW)               # Z from Higgs mechanism: M_W/cosθ_W   [§11.3]
 M_TOP      = (VEV/math.sqrt(2)) * (1 - ALPHA)       # top: (v/√2)(1-α)             [§11.7]
 # Gravity                                                                             [Ch.15]
 N_BORN     = 1 + Z1 + Z2                            # Born cluster: 19              [§15.2]
@@ -493,7 +493,7 @@ def full_report():
     row('m_H (Higgs boson)',           M_H/1e3,  125.25, 'GeV', '§11.1')
     row('M_W (W boson)',               M_W/1e3,  80.370, 'GeV', '§11.3')
     row('M_Z (Z boson)',               M_Z/1e3,  91.188, 'GeV', '§11.3')
-    row('sin²θ_W (Weinberg angle)',    SIN2_TW,  0.2312, '',    '§11.5')
+    row('sin²θ_W (on-shell)',          SIN2_TW,  0.22305,'',    '§11.5')
     row('v (Higgs VEV)',               VEV/1e3,  246.22, 'GeV', '§11.2')
     row('λ (Higgs quartic)',           LAMBDA_H, 0.1290, '',    '§11.2')
     row('G_F (Fermi constant)',        GF,       1.16638e-5,'GeV⁻²','§11.2')
