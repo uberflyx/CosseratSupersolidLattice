@@ -66,14 +66,19 @@ wave, and the discrete period is locked by the nonlinear matching across a movin
 edge where the independent lapse grows.  A single real field on the constraint
 surface has no such growing lapse, so it can only focus continuously.
 
-A Delta CANDIDATE (flag, not a result).  Price-Pullin fit the oscillatory region
-with a flat-space frequency omega ~ 1.85, whose log-period 2 pi/omega = 3.40
-reproduces the GR scalar value Delta = 3.4439.  The lattice's dimensionless
-squared shear-wave speed c_T^2/c^2 = 1.8760 matches that omega to ~1.4%, giving a
-candidate Delta_lattice = 2 pi (pi - 2)/(pi - 1) = 3.35.  Since their omega is
-FITTED to reproduce Choptuik (omega ~ 2 pi/Delta by construction), this is one
-near-coincidence of two order-unity numbers, not an independent derivation; it is
-recorded as a quantity to test once the two-function collapse is run.
+What period the lattice predicts.  The echoing period is not a free target.  The
+full anharmonic Cosserat action reduces to the Einstein-Hilbert action by the
+Deser uniqueness theorem (see the EFE-from-Cosserat section), and the
+gravitational microrotation branch is gapless, propagating at c.  So a
+two-function collapse run with the lattice's anisotropic response is the
+Einstein-massless-field collapse Choptuik solved, and its echoing period is the
+eigenvalue that problem returns, Delta = 3.4439.  The lattice predicts the
+standard period as a consistency requirement, not a shifted one.  Caveat on
+notation: the ratio (pi-1)/(pi-2) = 1.876 that appears in the solver is
+mu_bar/mu, the long-range SHEAR-sector modulus ratio used in the fine-structure
+derivation; it is NOT the gravitational wave speed and must not be read as a c_T
+that shifts Delta.  It enters here only as an internal normalisation of the
+wave-speed units, and the continuous-vs-discrete verdict is independent of it.
 
 Units: dimensionless throughout (lengths in units of the initial pulse scale,
 speeds in units of c).  The lattice spacing elsewhere in the monograph is
@@ -86,9 +91,13 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 # --------------------------------------------------------------------------
-# Lattice constants (dimensionless).  c_T^2/c^2 is the long-range effective
-# shear modulus mu_bar = mu + kappa_c/2 over the bare modulus mu, with the
-# Cosserat coupling kappa_c/mu = 2/(pi-2) fixed by the monograph.
+# Internal wave-speed normalisation (dimensionless).  CT2 is set to the
+# long-range shear-sector modulus ratio mu_bar/mu = (mu + kappa_c/2)/mu with
+# kappa_c/mu = 2/(pi-2) from the monograph.  This is ONLY a units choice for
+# the solver: the continuous-vs-discrete (CSS/DSS) verdict is independent of
+# the absolute speed.  Physically the gravitational microrotation branch is
+# gapless and propagates at c, so mu_bar/mu must NOT be read as a c_T for
+# gravity; it is the shear-sector ratio that enters the alpha derivation.
 # --------------------------------------------------------------------------
 PI = np.pi
 KAPPA_OVER_MU = 2.0 / (PI - 2.0)
@@ -231,23 +240,24 @@ def run_law_control():
 
 
 # ==========================================================================
-# The Delta candidate (flag, not a result).
+# What period the lattice predicts.
 # ==========================================================================
-def report_delta_candidate():
-    omega_pp = 1.85                                # Price-Pullin fitted frequency
-    delta_gr = 3.4439                              # Choptuik (Gundlach) value
-    ct2 = CT2
-    delta_lat = 2.0 * PI / ct2                     # = 2 pi (pi-2)/(pi-1)
-    print("\nDelta candidate (FLAG, not a derivation):")
-    print(f"    Price-Pullin fitted frequency      omega   = {omega_pp:.4f}")
-    print(f"    its log-period 2 pi/omega          = {2*PI/omega_pp:.4f}  "
-          f"(reproduces Choptuik Delta = {delta_gr})")
-    print(f"    lattice c_T^2/c^2 = (pi-1)/(pi-2)  = {ct2:.4f}  "
-          f"(matches omega to {abs(ct2-omega_pp)/omega_pp*100:.1f}%)")
-    print(f"    => candidate Delta_lattice = 2 pi (pi-2)/(pi-1) = {delta_lat:.4f}  "
-          f"({(delta_lat-delta_gr)/delta_gr*100:+.1f}% vs GR scalar)")
-    print("    caution: omega is fitted to reproduce Choptuik, so this is ONE")
-    print("    near-coincidence of two order-unity numbers, not two checks.")
+def report_predicted_period():
+    delta_gr = 3.4439                              # Choptuik (Gundlach) eigenvalue
+    print("\nWhat period the lattice predicts:")
+    print("    The full anharmonic Cosserat action reduces to Einstein-Hilbert")
+    print("    by the Deser uniqueness theorem (see the EFE-from-Cosserat section),")
+    print("    and the gravitational microrotation branch is gapless, propagating")
+    print("    at c. So the all-orders two-function collapse IS the Einstein-")
+    print("    massless-field collapse Choptuik solved, and its echoing period is")
+    print(f"    the eigenvalue that problem returns, Delta = {delta_gr}.")
+    print("    The lattice does not predict a shifted period; it predicts the")
+    print("    standard one, as a consistency requirement. The two-function")
+    print("    collapse must (a) produce the echo and (b) return Delta ~ 3.44.")
+    print("    NOTE: the modulus ratio (pi-1)/(pi-2) = 1.876 is mu_bar/mu, the")
+    print("    long-range SHEAR-sector modulus ratio used in the alpha derivation,")
+    print("    NOT the gravitational wave speed. It must not be read as a c_T that")
+    print("    shifts Delta.")
 
 
 if __name__ == "__main__":
@@ -257,7 +267,7 @@ if __name__ == "__main__":
     check_scale_invariance()
     run_css_sweep()
     run_law_control()
-    report_delta_candidate()
+    report_predicted_period()
     print("\n" + "=" * 72)
     print("CONCLUSION: scalar lattice collapse is CRITICAL but CONTINUOUSLY")
     print("self-similar (single focus, no echo).  Discrete self-similarity")
