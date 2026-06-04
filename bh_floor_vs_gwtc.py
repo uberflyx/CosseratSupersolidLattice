@@ -199,24 +199,25 @@ axM.fill_between(m, 1e-3, pocket, color="#c0392b", alpha=0.10, zorder=2)
 axM.axvline(floor_lo, color="#c0392b", lw=1.2, ls="--", zorder=3)
 axM.axvline(floor_hi, color="#c0392b", lw=1.0, ls=":", zorder=3)
 
-# Annotate the observed 35 M_sun over-density on the total curve.
-i35 = np.argmin(np.abs(m - 35.0))
-axM.plot(35.0, total[i35], "v", color="#1b2a4a", ms=9, zorder=6)
-axM.annotate(r"observed $35\,M_\odot$ peak", xy=(35.0, total[i35]),
-             xytext=(60, 0.34), fontsize=9, color="#1b2a4a", ha="left",
-             arrowprops=dict(arrowstyle="->", color="#1b2a4a", lw=1.0))
+# Observed GWTC-4 over-densities (population features) at 10, 20 and 35 M_sun.
+od_x = np.array([10.0, 20.0, 35.0])
+od_y = np.array([total[np.argmin(np.abs(m - x))] for x in od_x]) * 1.22
+axM.scatter(od_x, od_y, marker="v", s=55, color="#1b2a4a", zorder=6,
+            label=r"GWTC-4 over-densities (10, 20, 35 $M_\odot$)")
 
 # Story annotations.
-axM.annotate("stellar peak\n(channel A)", xy=(9.5, 0.95), xytext=(5.6, 0.30),
-             fontsize=8.4, color="#2a7f7f", ha="left",
+axM.annotate("stellar peak\n(channel A)", xy=(9.5, 0.90), xytext=(5.5, 0.26),
+             fontsize=8.3, color="#2a7f7f", ha="left",
              arrowprops=dict(arrowstyle="->", color="#2a7f7f", lw=0.9))
-axM.annotate(r"survival floor $M_{\min}=28$–$48\,M_\odot$" "\n(parameter-free)",
-             xy=(floor_lo, 0.52), xytext=(15.0, 0.52), fontsize=8.6,
-             color="#c0392b", va="center",
+axM.annotate(r"survival floor  $M_{\min} = 28$ to $48\,M_\odot$"
+             "\n(parameter-free; the QCD-epoch"
+             "\nprimordial-black-hole scale)",
+             xy=(floor_lo, 0.40), xytext=(11.5, 0.74), fontsize=8.4,
+             color="#c0392b", ha="left", va="center",
              arrowprops=dict(arrowstyle="->", color="#c0392b", lw=0.9))
-axM.annotate("void-tracking tail\nfills the gap",
-             xy=(100, total[np.argmin(np.abs(m - 100))]),
-             xytext=(58, 0.028), fontsize=8.4, color="#c0392b", ha="left",
+axM.annotate("void-tracking tail:\nheavier seeds at larger voids",
+             xy=(105, total[np.argmin(np.abs(m - 105))]),
+             xytext=(52, 0.025), fontsize=8.3, color="#c0392b", ha="left",
              arrowprops=dict(arrowstyle="->", color="#c0392b", lw=0.9))
 
 axM.set_xscale("log")
