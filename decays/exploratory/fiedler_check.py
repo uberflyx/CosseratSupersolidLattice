@@ -21,7 +21,7 @@ _HERE = _os.path.dirname(_os.path.abspath(__file__))
 _ROOT = _os.path.dirname(_os.path.dirname(_HERE))
 _sys.path[:0] = [_ROOT, _os.path.join(_ROOT, 'spectral_mass')]
 import numpy as np
-from cosserat_graph import FCCLattice, Defect
+from cosserat_graph_legacy import FCCLattice, Defect
 
 lat = FCCLattice()
 

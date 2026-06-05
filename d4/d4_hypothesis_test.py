@@ -23,7 +23,7 @@ Usage:
     python d4_hypothesis_test.py              # run all tests
     python d4_hypothesis_test.py --plot       # also produce figures
 
-Dependencies: numpy, scipy, matplotlib (optional), networkx, cosserat_graph
+Dependencies: numpy, scipy, matplotlib (optional), networkx, cosserat_graph_legacy
 """
 
 import sys, os, math
@@ -32,7 +32,7 @@ from scipy.stats import spearmanr, pearsonr
 import networkx as nx
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from cosserat_graph import predict_with_defect, QN, ALPHA, ME, M0
+from cosserat_graph_legacy import predict_with_defect, QN, ALPHA, ME, M0
 
 from layer_entropy_catalogue import (
     assign_layers, layer_entropy, layer_variance,

@@ -41,15 +41,15 @@ Usage:
 
 Dependencies:
     numpy, scipy (for Spearman correlation), matplotlib (optional, for plot)
-    cosserat_graph (from parent directory)
+    cosserat_graph_legacy (from parent directory)
 """
 
 import sys, os, math
 import numpy as np
 
-# Add parent directory to path for cosserat_graph import
+# Add parent directory to path for cosserat_graph_legacy import
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from cosserat_graph import predict_with_defect, QN, ALPHA, ME, M0
+from cosserat_graph_legacy import predict_with_defect, QN, ALPHA, ME, M0
 
 # =========================================================================
 # LAYER ASSIGNMENT

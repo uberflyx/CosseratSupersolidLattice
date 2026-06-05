@@ -3,8 +3,8 @@
 cosserat_decay.py — Decay engine for the Cosserat supersolid lattice framework.
 
 Computes decay widths and stability classifications from the defect graph
-constructed by cosserat_graph.py.  No physics is duplicated: all lattice
-constants, assembly logic, and Q computations live in cosserat_graph.
+constructed by cosserat_graph_legacy.py.  No physics is duplicated: all lattice
+constants, assembly logic, and Q computations live in cosserat_graph_legacy.
 
 Tier 1 (pure graph theory):
     - Laplacian spectrum → Fiedler value λ₂
@@ -33,7 +33,7 @@ _HERE = _os.path.dirname(_os.path.abspath(__file__))
 sys_root = _os.path.dirname(_HERE)
 _sys.path.insert(0, sys_root)
 
-from cosserat_graph import (
+from cosserat_graph_legacy import (
     QN, Result, Defect, FCCLattice,
     predict, predict_with_defect, predict_molecular,
     _lat, _select_docking_mode, _DOCK_MODES,

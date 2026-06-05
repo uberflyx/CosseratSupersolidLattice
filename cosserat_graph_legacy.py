@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 """
-cosserat_graph.py — Constructive Cosserat mass calculator
+cosserat_graph_legacy.py — Constructive Cosserat mass calculator (LEGACY)
 ==========================================================
 Mitchell A. Cox, University of the Witwatersrand
+
+    ***  LEGACY / PHENOMENOLOGICAL — do not build on this file.  ***
+    Renamed from cosserat_graph.py.  Kept only so the decay and D4 modules
+    that still import it keep working, and as a SKETCH of the quantum-number
+    -> cluster mapping that the first-principles rewrite re-derives.
 
 Architecture:
   Layer 1: Build the extended FCC lattice, compute all invariants
   Layer 2: Assemble defect graph from quantum numbers (light + charm)
   Layer 3: Count |V| → N, compute Q from edge analysis → mass
 
-Every integer emerges from FCC 3D geometry.  No mass-formula integer is typed.
-
-SUPERSEDED:
-    This calculator applies the legacy node-counting formula
-    m = N m_0 + Q m_e, with the integer charge Q built from edge analysis
-    of the defect graph.  It is superseded by the spectral-mass
-    construction in spectral_mass/, where the correction is the elastic
-    eigenvalue of the cluster, m = N m_0 - N (4 - lambda) m_e.  Retained
-    for reference and for the decay and D4 modules that still import it.
+SUPERSEDED on two counts:
+  (1) the mass uses the node-count formula m = N m_0 + Q m_e with an
+      edge-counted integer charge Q (phenomenological);
+  (2) the assembler's add_* rules are tuned heuristics, not a derivation of
+      the defect's cluster from its topology.
+  The successor builds the Cosserat dynamical matrix on the cluster and the
+  modal mass sum m = N m_0 - N(4 - lambda) m_e, with the static distortion u0
+  derived as the screw-winding response u0 = M^+ f rather than read by hand.
+  Note: the proton-neutron and isospin splittings are NOT a spatial-cluster
+  quantity (the 3D slice is charge-blind); they live in the compact direction
+  and remain an open problem (monograph Sec. p2open_em).
 
 Usage:
-    from cosserat_graph import predict, QN, catalogue
+    from cosserat_graph_legacy import predict, QN, catalogue
     r = predict(QN(B=1, S=0, I=0.5, I3=0.5, J=0.5, P=1))
     catalogue()   # scan all allowed states
 """

@@ -9,7 +9,7 @@ decay framework (Sec. unified_decay_framework of the dynamics chapter):
 
 Architecture:
     decay(parent_qn, *daughter_qns)
-        -> defect_to_graph(...)        # cosserat_graph parses parent + daughters
+        -> defect_to_graph(...)        # cosserat_graph_legacy parses parent + daughters
         -> graph_couplings(...)        # literal master-formula sums per active mode
         -> classify_topology(...)      # graph features identify the channel topology
         -> combine_amplitude(...)      # structural rule per topology (5 total)
@@ -28,7 +28,7 @@ Status:
                    reproducing chapter Eq. delta_ab_initio
     Hyperon weak: Y-junction T1g amplitude from hex_ring source overlap
 
-Foundation: cosserat_graph.predict_with_defect (parent / daughter graphs)
+Foundation: cosserat_graph_legacy.predict_with_defect (parent / daughter graphs)
             cosserat_calculator (constants from FCC geometry)
 """
 
@@ -42,7 +42,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 sys.path.insert(0, _ROOT)
 
-from cosserat_graph import QN, predict_with_defect, _lat, _ELL
+from cosserat_graph_legacy import QN, predict_with_defect, _lat, _ELL
 from cosserat_calculator import (
     ALPHA, ME, M0, NC, Z1, F_PI, M_PION, SIN2_TW
 )
@@ -350,7 +350,7 @@ def _decuplet_deact_coupling(n_strange):
     """
     if n_strange in _DEACT_CACHE:
         return _DEACT_CACHE[n_strange]
-    from cosserat_graph import FCCLattice, Defect
+    from cosserat_graph_legacy import FCCLattice, Defect
 
     def _spectrum(nS):
         lat = FCCLattice()
@@ -536,14 +536,14 @@ def combine_MOLECULAR(parent_def, daughter_defs):
     Master formula at zero separation:
         |M| = n_bonds * m_e + n_shared_nodes * m_0/pi
     The bond/node counts come from the dibaryon assembler in
-    cosserat_graph (graph attribute).
+    cosserat_graph_legacy (graph attribute).
     """
     # The dibaryon assembler returns mass directly; the bond/node counts
     # need to be extracted from the cluster string.  This is a v1
     # implementation handling the d*(2380) and P_c(4457) explicitly
     # via the chapter's bond counts; full graph-detection of boundary
-    # bonds requires extending cosserat_graph's dibaryon module.
-    return None  # placeholder; molecular needs cosserat_graph extension
+    # bonds requires extending cosserat_graph_legacy's dibaryon module.
+    return None  # placeholder; molecular needs cosserat_graph_legacy extension
 
 
 def combine_PSLEPTONIC(parent_qn, daughter_specs, m_parent):
@@ -837,7 +837,7 @@ def combine_MOLECULAR(n_bonds: int, n_shared_nodes: int):
     Master formula at zero separation:
         Gamma = 2 * (n_bonds * m_e + n_shared * m_0 / pi)
     n_bonds and n_shared come from the graph's boundary structure
-    (the dibaryon assembler in cosserat_graph carries these counts;
+    (the dibaryon assembler in cosserat_graph_legacy carries these counts;
     for now they're passed explicitly from the chapter's derivations).
     """
     return 2.0 * (n_bonds * ME + n_shared_nodes * M0 / math.pi)
@@ -1027,7 +1027,7 @@ def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
         return combine_WEAK_3PS(p_def, parent_qn, daughter_qns, m_p, d_masses)
 
     if topology == 'MOLECULAR':
-        # Dibaryon bond/node counts -- cosserat_graph's dibaryon module
+        # Dibaryon bond/node counts -- cosserat_graph_legacy's dibaryon module
         # would need extending to emit boundary structure; for now
         # tabulate known exotics from the chapter's derivations.
         # These counts ARE graph invariants of the specific dibaryon
@@ -1145,7 +1145,7 @@ def regression():
         ('J/psi -> e+ e-',        v(QN(B=0,S=0,I=0,I3=0,J=1,n_charm=2,level=1),
                                      'e', 'e'),
                                     5.55e-3, 'MeV', 'VLEPTONIC'),
-        # Upsilon -> ee: pending cosserat_graph bottom-cluster assembly
+        # Upsilon -> ee: pending cosserat_graph_legacy bottom-cluster assembly
         # (d is None for n_bottom=2, so f_V node-count scaling fails)
 
         # Mode III: weak hadronic

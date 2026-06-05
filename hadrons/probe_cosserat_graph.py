@@ -1,4 +1,4 @@
-"""PDG validation harness for cosserat_graph.predict().
+"""PDG validation harness for cosserat_graph_legacy.predict().
 
 Runs the predictor against 127 PDG hadrons and classifies each result:
 
@@ -28,13 +28,13 @@ import sys
 import json
 from collections import defaultdict
 
-# Make the parent (repository root containing cosserat_graph.py) importable
+# Make the parent (repository root containing cosserat_graph_legacy.py) importable
 # regardless of where the script is invoked from.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-import cosserat_graph as cg
+import cosserat_graph_legacy as cg
 
 M0 = cg.M0
 ME = cg.ME
@@ -59,7 +59,7 @@ def classify(pred_mass, cluster, obs_mass):
         return 'WRONG'
 
 
-# Complete list of PDG hadrons with quantum numbers for cosserat_graph
+# Complete list of PDG hadrons with quantum numbers for cosserat_graph_legacy
 # (charge states collapsed to one row each for brevity; I3 picks a representative)
 TESTS = [
     # ============ Light unflavored mesons ============
@@ -229,7 +229,7 @@ for name, obs, qn_kwargs in TESTS:
 
 
 # Summary
-print(f"\nTested {len(results)} PDG hadrons against cosserat_graph.py predict()\n")
+print(f"\nTested {len(results)} PDG hadrons against cosserat_graph_legacy.py predict()\n")
 
 verdict_counts = defaultdict(int)
 for _, _, _, _, v, _ in results:
