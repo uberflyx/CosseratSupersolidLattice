@@ -6,7 +6,7 @@ M. A. Cox, University of the Witwatersrand (2026)
 
 The FCC Cosserat lattice has 12 phonon branches (6 displacement + 6
 microrotation, doubled by the dipolar cell).  Promoting to the D4
-lattice (compact 4th direction, circumference 3ℓ) adds 8 massive
+lattice (compact 4th direction, circumference sqrt(6) ell) adds 8 massive
 branches from SO(4)'s extra rotation generators, giving 20 total.
 
 At zero compact momentum (k₄ = 0), the 20 branches factorise into
@@ -45,6 +45,7 @@ lam      = K_over_mu * mu - 2*mu/3          # Lamé first parameter
 M_long   = lam + 2*mu + kappa_c             # longitudinal modulus
 q2       = 2 * kappa_c / gamma_c            # torsion gap squared
 ALPHA    = 1.0 / 137.035999177              # fine structure constant
+theta_ch = ALPHA**2 / (2 * np.pi)           # constitutive chirality (helical pitch)
 
 # Physical scales
 M0_MEV   = 0.51099895 / ALPHA               # node mass (MeV)
@@ -221,7 +222,7 @@ RESULTS AT THE FIRST KK LEVEL (k₄ℓ = 2π/3)
 THERMAL WINDOW
 {'='*60}
 
-  T_geom  =  23 MeV   compact direction thermally activates
+  T_geom  =  28.6 MeV  compact direction thermally activates
   T_cross ≈ {T_cross_MeV:.0f} MeV   propagation chirality = θ_ch
   T_c     = 156 MeV   stacking melts, chirality vanishes
 
