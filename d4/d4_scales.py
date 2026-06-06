@@ -52,8 +52,9 @@ ELL    = ALPHA * HBAR / (ME_KG * C)              # lattice spacing = r_e
 RHO    = M0_KG / ELL**3                          # mass density
 MU     = RHO * C**2                              # shear modulus
 
-N4     = 3                                        # compact layers (Z₃)
-L4     = N4 * ELL                                 # compact circumference
+N4     = 3                                        # compact layers (A, B, C)
+D111   = math.sqrt(2.0 / 3.0) * ELL              # close-packed interlayer spacing
+L4     = N4 * D111                                # compact circumference = sqrt(6) ell
 
 # Superfluid bulk modulus from 19-node cluster tunnelling
 CW     = (1 + 1 / math.pi) * (1 - 17 * ALPHA / 18)
@@ -67,7 +68,7 @@ G_PRED = HBAR * C * ALPHA**19 * CW / M0_KG**2
 # D4 TEMPERATURE SCALES
 # ================================================================
 T_GEOM = HBAR * C / (L4 * KB)                    # geometric temperature (K)
-M_KK   = 2 * math.pi * M0_MEV / N4              # first KK mass (MeV)
+M_KK   = math.sqrt(6.0) * M0_MEV                 # KK gap at the compact zone boundary (MeV)
 T_C    = 156.0                                    # deconfinement (MeV, HotQCD)
 LAM    = math.pi * M0_MEV                         # QCD scale (MeV)
 OMEGA_D = C * (6 * math.pi**2 / ELL**3)**(1/3)
@@ -84,8 +85,8 @@ if __name__ == '__main__':
     print()
     print("  Temperature hierarchy:")
     to_mev = lambda T_K: T_K * KB / MEV_J
-    print(f"    T_geom = ℏc/(N₄ℓ)    = {to_mev(T_GEOM):.2f} MeV")
-    print(f"    m_KK   = 2πm₀/N₄     = {M_KK:.1f} MeV")
+    print(f"    T_geom = ℏc/L₄        = {to_mev(T_GEOM):.2f} MeV")
+    print(f"    m_KK   = √6·m₀        = {M_KK:.1f} MeV")
     print(f"    T_c    (lattice QCD)  = {T_C:.0f} MeV")
     print(f"    Λ_QCD  = πm₀         = {LAM:.0f} MeV")
     print(f"    T_D    (Debye)        = {T_D:.0f} MeV")
