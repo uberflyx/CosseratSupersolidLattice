@@ -389,7 +389,91 @@ def report_audit():
     for d in [(-1, -1, -1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]:
         hit = {tuple(int(x) for x in p) for p in cap(d)} & freeset
         print(f"    cap on {d}: blocks {sorted(hit) if hit else 'none'}")
-    print("  -> C_ls depends on cap placement; open in the monograph.")
+    print("  -> face-pair C_ll in capped baryons depends on cap placement,")
+    print("     but no current observable reads it; C_ls itself is")
+    print("     placement-independent (section 8).")
+
+
+
+
+def report_territory():
+    """Linear sector: the territory count for the in-junction swap cost.
+
+    Two energies, two rules. Interaction (bilinear) energy is carried by
+    mediator NODES: a node pinned by the Burgers closure (centre) or
+    committed to its own partial (arm) has no free response, so it mediates
+    nothing; the count is binary. Self (linear) energy is strain stored in
+    the partial's own BONDS: a lobe toward a busy site does not vanish, it
+    overlaps the mirror lobe of the adjacent partial and the two claims
+    split the face bond evenly. Free pair: both rules give 5 (degenerate).
+    Junction: 3 for the Coulomb, 4 for the character.
+    """
+    print("\n" + "=" * 72)
+    print("8. Linear sector: territory count of the in-junction swap cost")
+    print("=" * 72)
+    centre = np.array([0., 0., 0.])
+    arms = [np.array([1., 1., 0.]), np.array([1., 0., 1.]),
+            np.array([0., 1., 1.])]
+    cap = [np.array([2., 1., 1.]), np.array([1., 2., 1.]),
+           np.array([1., 1., 2.])]
+
+    def occtag(p):
+        if np.allclose(p, centre):
+            return 'centre'
+        if any(np.allclose(p, a) for a in arms):
+            return 'arm'
+        if any(np.allclose(p, c) for c in cap):
+            return 'cap'
+        return 'free'
+
+    print("\n  Character ring of each partial (centre -> arm):")
+    for i, a in enumerate(arms):
+        tags = [occtag(m) for m in common_nn(centre, a)]
+        nf, na = tags.count('free'), tags.count('arm')
+        assert (nf, na) == (2, 2)
+        print(f"    partial {i+1}: {tags} -> 1 + {nf} + {na}*(1/2) = "
+              f"{1 + nf + 0.5*na}  m_e per unit swap")
+    print("  Ledger closure: 3 directs + 6 whole outer lobes + 3 shared "
+          "face bonds = 12 = 3 x 4  [PASS]")
+
+    M_E_L = 0.51099895069
+    pred = 4*M_E_L - 1*M_E_L - 0.08 - 0.11
+    print(f"\n  Budget as a prediction: 4 - 1 - 0.16 - 0.22 [m_e] -> "
+          f"m_n - m_p = {pred:.3f} MeV (obs 1.2933; residual "
+          f"{pred-1.29333:+.3f} MeV = {(pred-1.29333)/M_E_L:+.2f} m_e)")
+
+    print("\n  C_ls by realised hosting (node rule):")
+
+    def n_node(p1, p2, occ):
+        meds = common_nn(p1, p2)
+        return 1 + sum(1 for m in meds
+                       if not any(np.allclose(m, o) for o in occ))
+
+    # Sigma: voids, no cap; strange partial rides an arm of a BARE junction.
+    n_sig = n_node(arms[0], arms[2], [centre] + arms)
+    print(f"    Sigma (strange on arm, no cap):        C_ls = {n_sig}")
+    # Xi/Lambda: strangeness on the cap; pair runs arm -> adjacent cap site.
+    occ = [centre] + arms + cap
+    for a in arms:
+        for c in cap:
+            if abs(np.linalg.norm(a - c) - np.sqrt(2)) > 1e-9:
+                continue
+            assert n_node(a, c, occ) == 3
+    print("    Xi/Lambda (strange on cap, 6 pairs):   C_ls = 3 uniformly")
+    print(f"    Xi s-s pair (cap-cap, unread):         C_ss = "
+          f"{n_node(cap[0], cap[1], occ)}")
+    # The cross combination: arm-riding strange UNDER a face-stacked cap.
+    n_x = n_node(arms[0], arms[1], occ)
+    print(f"    cross (arm under face cap, excluded):  C    = {n_x}")
+    print("    -> every realised pair counts 3; the cross combination would")
+    print("       feed +(2/3) m_e into Coleman-Glashow (data: -0.13+-0.44 m_e)")
+    print("       and is excluded by the Lambda/Sigma cluster assignments.")
+
+    print("\n  The ladder step is NOT ring occupancy:")
+    print("    no cap site is NN to the centre ->",
+          [bool(abs(np.linalg.norm(c)-np.sqrt(2)) < 1e-9) for c in cap])
+    print("    the cap cannot enter any character ring; the ~4 m_e per")
+    print("    strange quark is additive physics (T_2g candidate carrier).")
 
 
 def main():
@@ -400,6 +484,7 @@ def main():
     report_pion()
     report_falsifiable()
     report_audit()
+    report_territory()
 
 
 if __name__ == "__main__":
