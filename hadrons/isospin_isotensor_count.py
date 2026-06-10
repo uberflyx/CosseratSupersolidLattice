@@ -519,9 +519,9 @@ def report_territory():
     print("    no cap site is NN to the centre ->",
           [bool(abs(np.linalg.norm(c) - np.sqrt(2)) < 1e-9) for c in CAP])
     print("    the cap cannot enter any character ring; the 3.79 m_e per")
-    print("    strange quark is additive physics in the strange structure's")
-    print("    own linear (PN) sector. The T_2g quadrupole carrier is ruled")
-    print("    out by spectral_mass/hyperon_tensor_admixture.py.")
+    print("    strange quark is additive physics carried by the D4 cross-")
+    print("    layer sheath (section 10). The T_2g quadrupole carrier is")
+    print("    ruled out by spectral_mass/hyperon_tensor_admixture.py.")
 
 
 def report_hyperon_corrections():
@@ -581,8 +581,65 @@ def report_hyperon_corrections():
     print("    -> computed (spectral_mass/hyperon_tensor_admixture.py): no")
     print("       coupling model supplies the uniform -0.25 MeV; the best")
     print("       fit at any scale is rejected at chi2 >= 19 on 3 points.")
-    print("       The step stands at 3.79 +- 0.07 m_e, three sigma below")
-    print("       four, and belongs to the strange linear (PN) sector.")
+    print("       The quadrupole carrier is retired; the counting skeleton")
+    print("       survives in the D4 cross-layer sheath (section 10).")
+
+
+def report_d4_sheath():
+    """The D4 sheath split behind the strange-ladder step.
+
+    In the four-dimensional lattice a bond's sheath holds 8 common
+    neighbours, not 4: the 4 in-slice lobes of the territory count plus
+    4 that cross to the stacking layers ahead and behind. The cross
+    ledger closes at 12 whole lobes (4 per partial, none contested),
+    mirroring the in-slice 12 = 3 + 6 + 3. A coherent strange loop mode
+    (the framework's own strange-quark derivation) activates the
+    cross-layer set when it re-phases across a swapped character, which
+    is the counting-level origin of the 4(1+n_s) ladder.
+    """
+    print("\n" + "=" * 72)
+    print("10. The D4 sheath: the cross-layer half behind the ladder step")
+    print("=" * 72)
+    import itertools as it
+    mins = [np.array(p) for p in it.product((-1, 0, 1), repeat=4)
+            if sum(abs(x) for x in p) == 2]
+    assert len(mins) == 24
+    in_sl = [v for v in mins if v[3] == 0]
+    print(f"\n  D4 kissing 24 = {len(in_sl)} in-slice + "
+          f"{24 - len(in_sl)} cross-layer")
+    O4 = np.zeros(4, int)
+    arms4 = [np.array(v) for v in
+             ((1, 1, 0, 0), (1, 0, 1, 0), (0, 1, 1, 0))]
+
+    def nn4(a, b):
+        return int(np.sum((a - b) ** 2)) == 2
+
+    def sheath4(a):
+        return [O4 + m for m in mins if nn4(O4 + m, O4) and nn4(O4 + m, a)]
+
+    in_ledger, cross_ledger = 0.0, 0.0
+    for a in arms4:
+        sh = sheath4(a)
+        sh_in = [s for s in sh if s[3] == 0]
+        sh_x = [s for s in sh if s[3] != 0]
+        w = sum(0.5 if any((s == b).all() for b in arms4) else 1.0
+                for s in sh_in)
+        in_ledger += 1 + w
+        cross_ledger += len(sh_x)
+        if (a == arms4[0]).all():
+            print(f"  bond sheath: {len(sh)} = {len(sh_in)} in-slice "
+                  f"+ {len(sh_x)} cross (2 up, 2 down)")
+    print(f"  in-slice ledger (direct + weighted lobes, 3 partials): "
+          f"{in_ledger:.0f}")
+    print(f"  cross-layer ledger (whole lobes, none contested):      "
+          f"{cross_ledger:.0f}")
+    print("\n  Light flavours are single-moment modes: the cross set is")
+    print("  dormant, and the base counts the in-slice 4. A strange quark")
+    print("  is a coherent full-ABC-period loop mode: it re-phases across")
+    print("  the swapped character once per circuit and activates the")
+    print("  cross set, 4 more per strange, equal to the base by D4")
+    print("  geometry. Counting skeleton: 4(1+n_s); the activation cost's")
+    print("  dynamical derivation stays open.")
 
 
 def main():
@@ -595,6 +652,7 @@ def main():
     report_audit()
     report_territory()
     report_hyperon_corrections()
+    report_d4_sheath()
 
 
 if __name__ == "__main__":
