@@ -111,9 +111,13 @@ Q_U, Q_D = 2.0 / 3.0, -1.0 / 3.0
 U_M_PROTON = (0.18, 0.21)
 
 # Nucleon couple-stress corrections [MeV] entering the n-p budget: the
-# spin-independent T_2g admixture (nucleon_tensor_magnitude.py) and the
-# spin-dependent magnetic difference (nucleon_magnetic_selfenergy.py,
-# with the framework ratio mu_n/mu_p = -2/3 giving -(5/9) U_M^p).
+# spin-independent T_2g admixture and the spin-dependent magnetic
+# difference (nucleon_magnetic_selfenergy.py, with the framework ratio
+# mu_n/mu_p = -2/3 giving -(5/9) U_M^p). The admixture's SIGN is model
+# robust (negative under every coupling tested); its magnitude at the
+# 0.08 level corresponds to a modest local screw-coupling modulation,
+# g = 0.24 per unit charge, in the chiral model of
+# spectral_mass/hyperon_tensor_admixture.py.
 DELTA_CS_N = 0.08
 DELTA_MAG_N = 0.11
 
@@ -514,8 +518,10 @@ def report_territory():
     print("\n  The ladder step is NOT ring occupancy:")
     print("    no cap site is NN to the centre ->",
           [bool(abs(np.linalg.norm(c) - np.sqrt(2)) < 1e-9) for c in CAP])
-    print("    the cap cannot enter any character ring; the ~4 m_e per")
-    print("    strange quark is additive physics (T_2g candidate carrier).")
+    print("    the cap cannot enter any character ring; the 3.79 m_e per")
+    print("    strange quark is additive physics in the strange structure's")
+    print("    own linear (PN) sector. The T_2g quadrupole carrier is ruled")
+    print("    out by spectral_mass/hyperon_tensor_admixture.py.")
 
 
 def report_hyperon_corrections():
@@ -567,14 +573,16 @@ def report_hyperon_corrections():
     print(f"    steps: {res['S'] - res['N']:.3f} +- {e_sn:.3f}, "
           f"{res['X'] - res['S']:.3f} +- {e_xs:.2f}")
 
-    print("\n  The fork the shell computation decides:")
+    print("\n  The fork, closed by the shell computation:")
     for B in "NSX":
         need = (res[B] - 4 * (1 + ns[B])) * M_E
-        print(f"    {B}: exact 4(1+n_s) needs Delta_cs = {need:+.3f} MeV "
-              f"per swap (nucleon computed: -{DELTA_CS_N:.2f})")
-    print("    -> Sigma and Xi require the SAME value within errors across")
-    print("       two different hostings (voids vs caps), ~3x the nucleon's")
-    print("       suppressed term; flavour-blind cs leaves step = 3.79 +- 0.07 m_e.")
+        print(f"    {B}: exact 4(1+n_s) needed Delta_cs = {need:+.3f} MeV "
+              f"per swap")
+    print("    -> computed (spectral_mass/hyperon_tensor_admixture.py): no")
+    print("       coupling model supplies the uniform -0.25 MeV; the best")
+    print("       fit at any scale is rejected at chi2 >= 19 on 3 points.")
+    print("       The step stands at 3.79 +- 0.07 m_e, three sigma below")
+    print("       four, and belongs to the strange linear (PN) sector.")
 
 
 def main():
