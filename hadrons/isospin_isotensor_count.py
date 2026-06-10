@@ -476,6 +476,55 @@ def report_territory():
     print("    strange quark is additive physics (T_2g candidate carrier).")
 
 
+
+
+def report_hyperon_corrections():
+    """Section 9: hyperon magnetic terms and the couple-stress fork.
+
+    The magnetic self-energy U_M = k mu^2 extends to the hyperons with no
+    new parameter, because the Peierls-Nabarro core profile that holds the
+    field is a lattice property, not a baryon property. k is the proton
+    calibration U_M^p / mu_p^2 with U_M^p = 0.18..0.21 MeV.
+    """
+    print("\n" + "=" * 72)
+    print("9. Hyperon magnetic terms and the couple-stress fork")
+    print("=" * 72)
+    me = 0.51099895069
+    mu = {'p': 2.79284734, 'n': -1.91304273, 'S+': 2.458, 'S-': -1.160,
+          'X0': -1.250, 'X-': -0.6507}
+    ks = (0.18/mu['p']**2, 0.21/mu['p']**2)
+    kc = sum(ks)/2
+    obs = {'N': 1.29333, 'S': 8.079, 'X': 6.85}
+    sig = {'N': 0.0, 'S': 0.076, 'X': 0.21}
+    bil = {'N': -1.0, 'S': +1.0, 'X': +2.0}
+    dmu2 = {'N': mu['n']**2-mu['p']**2, 'S': mu['S-']**2-mu['S+']**2,
+            'X': mu['X-']**2-mu['X0']**2}
+    nsw = {'N': 1, 'S': 2, 'X': 1}
+    ns = {'N': 0, 'S': 1, 'X': 2}
+    print(f"\n  k = {ks[0]:.4f}..{ks[1]:.4f} MeV/mu_N^2 (central {kc:.4f})")
+    print("  Delta_mag = k(mu_-^2 - mu_+^2):")
+    for B in 'NSX':
+        lo = min(ks[0]*dmu2[B], ks[1]*dmu2[B])
+        hi = max(ks[0]*dmu2[B], ks[1]*dmu2[B])
+        print(f"    {B}: {kc*dmu2[B]:+.4f} MeV  (band {lo:+.4f}..{hi:+.4f})")
+    print("\n  Per-swap linear cost after bilinear AND magnetic removal:")
+    res = {}
+    for B in 'NSX':
+        res[B] = (obs[B]/me - bil[B] - kc*dmu2[B]/me)/nsw[B]
+        print(f"    {B}: {res[B]:.3f} +- {sig[B]/me/nsw[B]:.3f} m_e   "
+              f"[4(1+n_s) target: {4*(1+ns[B])}]")
+    print(f"    steps: {res['S']-res['N']:.3f} +- 0.037, "
+          f"{res['X']-res['S']:.3f} +- 0.42")
+    print("\n  The fork the shell computation decides:")
+    for B in 'NSX':
+        need = (res[B] - 4*(1+ns[B]))*me
+        print(f"    {B}: exact 4(1+n_s) needs Delta_cs = {need:+.3f} MeV "
+              f"per swap (nucleon computed: -0.08)")
+    print("    -> Sigma and Xi require the SAME value within errors across")
+    print("       two different hostings (voids vs caps), ~3x the nucleon's")
+    print("       suppressed term; flavour-blind cs leaves step = 3.79+-0.04.")
+
+
 def main():
     n_junction = report_occupancy()
     report_isotensor()
@@ -485,6 +534,7 @@ def main():
     report_falsifiable()
     report_audit()
     report_territory()
+    report_hyperon_corrections()
 
 
 if __name__ == "__main__":
