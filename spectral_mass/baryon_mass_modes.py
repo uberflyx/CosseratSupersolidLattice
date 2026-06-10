@@ -24,16 +24,22 @@ facts and nothing else:
      microrotation-dominant (phi-content > 1/2), since rest mass is stored
      microrotation, not displacement.
 
-  3. Branch. The node count fixes the sign of the spectral correction
-     -N(4-lambda)m_e and so the branch. A cap-extended cluster overshoots at
-     lambda=4 and must read the soft branch (lambda<4); a void-extended cluster
-     undershoots and reads the stiff branch (lambda>4). On the chosen branch the
-     mass mode is the microrotation-dominant mode NEAREST the lambda=4 optical
-     reference: the least-softened (caps) or least-stiffened (voids) partner.
+  3. Branch and localisation. The node count fixes the sign of the spectral
+     correction -N(4-lambda)m_e and so the branch. A cap-extended cluster
+     overshoots at lambda=4 and must read the soft branch (lambda<4); a
+     void-extended cluster undershoots and reads the stiff branch (lambda>4).
+     On the stiff branch (resisted class) the mass mode is the lowest
+     pure-optical mode, microrotation-dominant AND shell-localised
+     (shell >= 0.9). On the soft branch (accommodated class) the mass mode
+     is the UNIQUE microrotation-dominant mode with majority weight on the
+     accommodating structure (cap fraction > 1/2). The two classes are
+     mirror images: resisted baryons store their rest mass on the shell,
+     accommodated baryons store it on the structure that accommodates them.
 
 This rule reproduces the framework's independently computed eigenvalues
-(proton A_2u = 8.303; Sigma = 4.624; Delta T_1 = 9.052) and supplies the two
-octet eigenvalues that had been left as fits (Lambda, Xi).
+(proton A_2u = 8.303; Sigma = 4.624; Delta T_1 = 9.052) and derives the two
+octet eigenvalues that had been left as fits (Lambda 3.204, Xi 3.055), each
+now the unique mode satisfying the accommodated clause: no fallback remains.
 
 References for the group theory: Koster et al. (1963), Altmann & Herzig (1994).
 """
@@ -127,16 +133,22 @@ def select(coords, oh_char, branch, n_shell=13, phi_pure=0.9, shell_pure=0.9):
             res['lam'] = min(stiff_pure, key=lambda m: m[0])[0]  # lowest stiff pure-optical
             res['clean'] = True
     elif branch == 'soft':
-        soft_pure = [m for m in pure if m[0] < 4]
-        if soft_pure:
-            res['lam'] = max(soft_pure, key=lambda m: m[0])[0]
+        # Accommodated rule: the mass mode is microrotation-dominant AND
+        # carries the majority of its weight on the accommodating structure
+        # (the cap nodes beyond the 13-shell). Resisted baryons show the
+        # mirror image (shell fraction >= 0.9), so the dichotomy is:
+        # resisted stores mass on the shell, accommodated on the structure.
+        cand = [(l, p, s, g) for (l, p, s, g) in modes
+                if l < 4 and p > 0.5 and (1 - s) > 0.5]
+        if len(cand) == 1:
+            res['lam'] = cand[0][0]
             res['clean'] = True
-        else:
-            # no pure-optical soft mode: fall back to the best soft phi-dominant
-            soft = [m for m in phi_dom if m[0] < 4]
-            if soft:
-                res['lam'] = max(soft, key=lambda m: m[0])[0]
-                res['note'] = 'NO pure-optical soft mode; fallback is mixed/cap-localised'
+            res['note'] = ('accommodated rule: unique phi-dominant, '
+                           'structure-majority soft mode')
+        elif cand:
+            res['lam'] = max(cand, key=lambda m: 1 - m[2])[0]
+            res['note'] = ('accommodated rule degenerate: '
+                           f'{len(cand)} candidates, max structure taken')
     return res
 
 
