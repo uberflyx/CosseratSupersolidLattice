@@ -55,10 +55,12 @@ No coupling produces the uniform enhancement. Ratios of N*d2 per swap to
 the nucleon: u_iso (+0.60, +2.35), phi_iso (-0.15, -0.02), chiral
 (-0.13, +0.24). A single-scale fit to the required (-0.136, -0.245,
 -0.276) MeV is rejected at chi^2 >= 19 on three points for every model.
-The obstruction is structural: the nucleon mode sits at the TOP of its
-channel, so level repulsion only pushes it down (sign-protected); the
-Sigma (4.624) and Xi (3.055) modes sit mid-spectrum, where contributions
-from above and below cancel, leaving admixtures that are small and of
+The obstruction is structural: the nucleon mode sits at the TOP of the
+channel its charge break couples to, so every coupled mode lies below
+it. Both members are pushed up, the harder-coupled proton further, and
+the differential is locked negative (sign-protected). The Sigma (4.624)
+and Xi (3.055) modes sit mid-spectrum, where coupled modes lie on both
+sides and contributions cancel, leaving admixtures that are small and of
 unstable sign. Anchored to the nucleon's -0.08 MeV through the chiral
 coupling (g = 0.24), the hyperon terms are below 0.02 MeV either way.
 
