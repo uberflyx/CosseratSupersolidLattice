@@ -633,11 +633,13 @@ def report_d4_sheath():
           f"{in_ledger:.0f}")
     print(f"  cross-layer ledger (whole lobes, none contested):      "
           f"{cross_ledger:.0f}")
-    print("\n  Light flavours are single-moment modes: the cross set is")
-    print("  dormant, and the base counts the in-slice 4. A strange quark")
-    print("  is a coherent full-ABC-period loop mode: it re-phases across")
-    print("  the swapped character once per circuit and activates the")
-    print("  cross set, 4 more per strange, equal to the base by D4")
+    print("\n  Light flavours are single-moment modes: a cross-layer link")
+    print("  joins the swapped arm at one instant to the same defect at")
+    print("  the next, both ends transform together under the swap, and")
+    print("  the differential cancels (dormant). A strange winding pins")
+    print("  the far end: its stacking phase advances around the loop,")
+    print("  the matched-ends cancellation breaks, and the cross set")
+    print("  activates: 4 more per strange, equal to the base by D4")
     print("  geometry. Counting skeleton: 4(1+n_s); the activation cost's")
     print("  dynamical derivation stays open.")
 
