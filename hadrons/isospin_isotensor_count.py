@@ -2,7 +2,9 @@
 """
 isospin_isotensor_count.py
 ==========================
-Isospin mass splittings from mediator-occupancy counting on the FCC lattice.
+Isospin mass splittings from occupancy and territory counting on the FCC
+lattice: the bilinear coefficient, the linear swap cost, and the octet
+ladder, with no fitted parameter anywhere.
 
 The two model-independent observables
 -------------------------------------
@@ -22,16 +24,17 @@ Both are integers in units of the electron mass:
 
 In the framework's currency, where one unit charge product across one bond
 costs exactly 1 m_e because e^2/(4 pi eps0 r_e) = m_e c^2, these are link
-counts. This script derives the 3 from mediator occupancy at the Y-junction
-and tests the consequences across the octet.
+counts.
 
-The occupancy rule
-------------------
-A nearest-neighbour pair interacts through its direct bond plus the
-common-nearest-neighbour sites on the bond's perpendicular bisector (four of
-them in FCC). A mediator site that is already occupied by another charge or
-by the junction core is not a free mediator: its bonds are the direct bonds
-of OTHER pairs, and counting them again double-counts. The rule:
+Two energies, two counting rules
+--------------------------------
+BILINEAR (interaction) energy is carried by mediator NODES. A pair
+interacts through its direct bond plus the common-nearest-neighbour sites
+on the bond's perpendicular bisector (four of them in FCC), and a mediator
+transmits only by displacing in response to the pair's field. A node pinned
+by the Burgers closure (the junction centre) or committed to a partial of
+its own (an arm) has no free response, so it mediates nothing. The count is
+binary:
 
   N_CB(pair) = 1 (direct) + number of UNOCCUPIED common-NN mediators.
 
@@ -39,20 +42,36 @@ of OTHER pairs, and counting them again double-counts. The rule:
   Y-junction pair (baryon):      centre + third arm occupy
                                  2 of the 4 mediators      -> N_CB = 3
 
-The 5 is the count that fixes m_d - m_u = 5 m_e; the 3 is the Sigma
-curvature. One rule, both integers, no fitted quantity.
+LINEAR (self) energy is strain stored in the partial's own BONDS: the
+direct bond plus the four lobes toward its mediator ring. A lobe into busy
+territory does not vanish; it overlaps the mirror lobe of the adjacent
+partial, and the two claims split the shared face bond evenly. The count
+takes halves:
 
-Consequences tested below
--------------------------
-With the bilinear coefficient fixed at C = 3 m_e per unit q_i q_j for every
-octet baryon (same junction geometry), the linear u->d character cost per
-multiplet is extracted from the observed splittings. It climbs a ladder of
-about 4 m_e per strange quark, so the strange climb lives in the LINEAR
-term, not in the bilinear coefficient. Coleman-Glashow then holds because
-the ladder is linear in strangeness while C is universal.
+  Delta(partial) = 1 (direct) + whole free lobes + (1/2) x shared lobes.
+
+  Isolated cell pair:            4 free lobes              -> Delta = 5
+  Y-junction partial:            2 free + 2 shared lobes   -> Delta = 4
+
+On a free pair the rules are degenerate at 5, which fixes m_d - m_u = 5 m_e
+and is why the quark sector never separated them. The junction splits them:
+3 for the Coulomb, 4 for the character.
+
+Results assembled below
+-----------------------
+* The Sigma curvature verifies the bilinear 3 at 0.13 percent (section 2).
+* The light-strange coefficient is C_ls = 3 in both realised hostings:
+  strange on a bare-junction arm (Sigma, voids) and strange on the hex cap
+  (Xi and Lambda); the unrealised cross combination would count 2 and feed
+  +(2/3) m_e into Coleman-Glashow, which the data disfavours (section 8).
+* The n-p budget runs forward as a prediction, 4 - 1 - 0.16 - 0.22 in m_e,
+  giving 1.343 MeV against the observed 1.2933 (section 8).
+* The hyperon magnetic terms follow with no new parameter, and the per-swap
+  ladder after bilinear and magnetic removal reads 3.73, 7.52, 11.46
+  against the targets 4, 8, 12; exact 4(1+n_s) requires a quadrupole
+  admixture near -0.25 MeV per swap in both hyperons (section 9).
 
 Inputs: CODATA m_e, PDG 2024 masses and magnetic moments, FCC geometry.
-No fitted parameters anywhere.
 
 Accompanies: M. A. Cox, "The Cosserat Supersolid" (2026).
 https://doi.org/10.5281/zenodo.18636501
@@ -66,7 +85,7 @@ from itertools import combinations, product
 # ---------------------------------------------------------------- constants
 M_E = 0.51099895069          # electron rest energy [MeV], CODATA 2022
 
-# PDG 2024 masses [MeV]
+# PDG 2024 masses [MeV] and the uncertainties the splittings inherit.
 M = {
     "p":   938.27208943, "n":   939.56542194,
     "Sig+": 1189.37,     "Sig0": 1192.642,    "Sig-": 1197.449,
@@ -75,6 +94,7 @@ M = {
     "K0":  497.611,      "K+":   493.677,
 }
 SIG_ERR = {"Sig+": 0.07, "Sig0": 0.024, "Sig-": 0.030}
+XI_ERR = {"Xi0": 0.20, "Xi-": 0.07}
 
 # PDG magnetic moments [nuclear magnetons]; Sig0 from the quark-model
 # average of its charged partners (unmeasured).
@@ -84,8 +104,32 @@ MU = {"p": 2.79284734, "n": -1.91304276,
 
 Q_U, Q_D = 2.0 / 3.0, -1.0 / 3.0
 
+# Proton magnetic self-energy band [MeV] on the Peierls-Nabarro core,
+# from the companion script nucleon_magnetic_selfenergy.py. The core
+# profile is a lattice property, so k = U_M / mu^2 calibrated here
+# extends to the hyperons with no new parameter.
+U_M_PROTON = (0.18, 0.21)
 
-# ------------------------------------------------------- FCC geometry tools
+# Nucleon couple-stress corrections [MeV] entering the n-p budget: the
+# spin-independent T_2g admixture (nucleon_tensor_magnitude.py) and the
+# spin-dependent magnetic difference (nucleon_magnetic_selfenergy.py,
+# with the framework ratio mu_n/mu_p = -2/3 giving -(5/9) U_M^p).
+DELTA_CS_N = 0.08
+DELTA_MAG_N = 0.11
+
+# ------------------------------------------------------------- FCC geometry
+# Coordinates in a/2 integer units throughout. The Y-junction: centre at
+# the origin, three arms mutually nearest neighbours on one {111} face.
+# The hex cap: the three FCC sites one layer above that face, nearest the
+# (1,1,1) axis, matching the (-1,-1,-1) inactive-direction construction of
+# the companion classifier spectral_classifier.py.
+CENTRE = np.array([0.0, 0.0, 0.0])
+ARMS = [np.array([1.0, 1.0, 0.0]), np.array([1.0, 0.0, 1.0]),
+        np.array([0.0, 1.0, 1.0])]
+CAP = [np.array([2.0, 1.0, 1.0]), np.array([1.0, 2.0, 1.0]),
+       np.array([1.0, 1.0, 2.0])]
+
+
 def is_fcc(p, tol=1e-9):
     """FCC site test in a/2 integer coordinates: integer triple, even sum."""
     p = np.asarray(p, dtype=float)
@@ -111,49 +155,62 @@ def common_nn(p1, p2, span=3):
 
 
 def n_cb(pair, occupied):
-    """Charge-active link count of a pair under the occupancy rule:
-    1 direct bond + the common-NN mediators NOT in `occupied`."""
+    """Bilinear (node-rule) link count of a pair: 1 direct bond plus the
+    common-NN mediators NOT in `occupied`. Returns (count, mediators,
+    free mediators)."""
     meds = common_nn(*pair)
     free = [m for m in meds
-            if not any(np.array_equal(m, o) for o in occupied)]
+            if not any(np.allclose(m, o) for o in occupied)]
     return 1 + len(free), meds, free
 
 
-# --------------------------------------------------- charge bilinear helper
+def occ_tag(p):
+    """Classify a site against the capped-junction cluster."""
+    if np.allclose(p, CENTRE):
+        return "centre"
+    if any(np.allclose(p, a) for a in ARMS):
+        return "arm"
+    if any(np.allclose(p, c) for c in CAP):
+        return "cap"
+    return "free"
+
+
 def pair_bilinear(charges):
     """sum_{i<j} q_i q_j for a charge list."""
     return sum(qa * qb for qa, qb in combinations(charges, 2))
 
 
+# ------------------------------------------------------------------ reports
 def report_occupancy():
     print("=" * 72)
     print("1. The occupancy rule on the two canonical geometries")
     print("=" * 72)
 
     # Isolated cell pair: a meson's two nodes, nothing else occupied.
-    a, b = np.array([0., 0., 0.]), np.array([1., 1., 0.])
+    a, b = CENTRE, ARMS[0]
     n, meds, free = n_cb((a, b), occupied=[])
-    print(f"\nIsolated cell pair {tuple(int(x) for x in a)}-{tuple(int(x) for x in b)}:")
-    print(f"  common-NN mediators: {len(meds)}, occupied: 0, free: {len(free)}")
+    print(f"\nIsolated cell pair "
+          f"{tuple(int(x) for x in a)}-{tuple(int(x) for x in b)}:")
+    print(f"  common-NN mediators: {len(meds)}, occupied: 0, "
+          f"free: {len(free)}")
     print(f"  N_CB = 1 + {len(free)} = {n}   "
           f"(the count behind m_d - m_u = 5 m_e)")
 
     # Y-junction: three arms mutually NN, centre at the origin.
-    centre = np.array([0., 0., 0.])
-    arms = [np.array([1., 1., 0.]), np.array([1., 0., 1.]),
-            np.array([0., 1., 1.])]
     print("\nY-junction (centre at origin, arms mutually NN):")
     counts = []
     for (i, j) in combinations(range(3), 2):
         k = 3 - i - j
-        occ = [centre, arms[k]]
-        n, meds, free = n_cb((arms[i], arms[j]), occupied=occ)
+        n, meds, free = n_cb((ARMS[i], ARMS[j]),
+                             occupied=[CENTRE, ARMS[k]])
         tags = []
         for m in meds:
-            if np.array_equal(m, centre):
-                tags.append(f"{tuple(int(x) for x in m)} = junction centre [occupied]")
-            elif np.array_equal(m, arms[k]):
-                tags.append(f"{tuple(int(x) for x in m)} = third arm [occupied]")
+            if np.allclose(m, CENTRE):
+                tags.append(f"{tuple(int(x) for x in m)} = "
+                            f"junction centre [occupied]")
+            elif np.allclose(m, ARMS[k]):
+                tags.append(f"{tuple(int(x) for x in m)} = "
+                            f"third arm [occupied]")
             else:
                 tags.append(f"{tuple(int(x) for x in m)} free")
         print(f"  pair {i+1}-{j+1}: mediators -> " + "; ".join(tags))
@@ -175,11 +232,12 @@ def report_isotensor():
     dpi = M["pi+"] - M["pi0"]
     print(f"\n  Sigma curvature  S+ + S- - 2 S0 = {d2:.4f} +- {err:.3f} MeV"
           f"  =  {d2 / M_E:.4f} +- {err / M_E:.3f} m_e")
-    print(f"  3 m_e = {3 * M_E:.4f} MeV  (deviation {100*(d2/(3*M_E)-1):+.2f}%,"
-          f" inside 1 sigma)")
+    print(f"  3 m_e = {3 * M_E:.4f} MeV  "
+          f"(deviation {100*(d2/(3*M_E)-1):+.2f}%, inside 1 sigma)")
     print(f"\n  Pion splitting   pi+- - pi0     = {dpi:.4f} MeV"
           f"            =  {dpi / M_E:.4f} m_e")
-    print(f"  9 m_e = {9 * M_E:.4f} MeV  (deviation {100*(dpi/(9*M_E)-1):+.2f}%)")
+    print(f"  9 m_e = {9 * M_E:.4f} MeV  "
+          f"(deviation {100*(dpi/(9*M_E)-1):+.2f}%)")
     print("\n  Both cancel the linear I_3 term exactly: the Sigma curvature by")
     print("  construction, the pion because its strong part is O((m_d-m_u)^2)")
     print("  through pi0-eta mixing, ~0.1 MeV. The pion is spin 0, so no")
@@ -194,7 +252,8 @@ def report_octet_ladder(C_units):
     print("=" * 72)
     C = C_units * M_E
 
-    # Observed splittings and their bilinear content.
+    # Observed splittings, their bilinear content, and the number of
+    # u->d swaps each one contains.
     obs = {
         "n - p":        (M["n"] - M["p"],
                          pair_bilinear([Q_U, Q_D, Q_D])
@@ -239,10 +298,9 @@ def report_magnetic_sensitivity():
     print("\n" + "=" * 72)
     print("4. Magnetic-moment sensitivity (proton-calibrated)")
     print("=" * 72)
-    # Field energy of a moment mu over the PN core radius: the companion
-    # script nucleon_magnetic_selfenergy.py gives U_M(p) ~ 0.18-0.21 MeV.
-    # Calibrate k = U_M / mu^2 on the proton and apply to the hyperons.
-    for UMp in (0.18, 0.21):
+    # Field energy of a moment mu over the PN core radius. Calibrate
+    # k = U_M / mu^2 on the proton band and apply to the Sigma curvature.
+    for UMp in U_M_PROTON:
         k = UMp / MU["p"] ** 2
         mag2nd = k * (MU["Sig+"]**2 + MU["Sig-"]**2 - 2 * MU["Sig0"]**2)
         print(f"\n  U_M(p) = {UMp:.2f} MeV  ->  k = {k:.4f} MeV/mu_N^2")
@@ -266,8 +324,8 @@ def report_pion():
     # average of (2/3,-2/3) and (1/3,-1/3). Self terms sum q^2 are EQUAL
     # (5/9 both), so they cancel in the difference and only the bilinear
     # survives -- the same structure as the Sigma curvature.
-    bil_pip = (2/3) * (1/3)
-    bil_pi0 = 0.5 * ((2/3) * (-2/3) + (1/3) * (-1/3))
+    bil_pip = (2 / 3) * (1 / 3)
+    bil_pi0 = 0.5 * ((2 / 3) * (-2 / 3) + (1 / 3) * (-1 / 3))
     dbil = bil_pip - bil_pi0
     print(f"\n  d(q1 q2) between pi+- and pi0: {dbil:.4f}  (= 1/2 exactly)")
     print(f"  observed 9 m_e  ->  implied link count N = 9 / (1/2) = 18")
@@ -300,8 +358,6 @@ def report_falsifiable():
     print("  the EM piece is counted by the same rule.")
 
 
-
-
 def report_audit():
     """Structural audit: the claims the monograph footnote makes, executed.
 
@@ -316,41 +372,41 @@ def report_audit():
     5. Cap collision: the hex-cap placement of the companion classifier
        (spectral_classifier.py) on the (-1,-1,-1) inactive direction lands one
        layer above the quark face and would occupy all six free mediators,
-       one per pair; the other three inactive directions touch none. The
-       light-strange count C_ls therefore depends on cap placement, and is
-       left open in the monograph.
+       one per pair; the other three inactive directions touch none. This
+       blocks the FACE pairs of capped baryons, which no current observable
+       reads; the light-strange coefficient itself is settled by the
+       realised hostings (section 8).
     """
     print("\n" + "=" * 72)
     print("7. Structural audit (the footnote's claims, executed)")
     print("=" * 72)
-    centre = np.array([0., 0., 0.])
-    arms = [np.array([1., 1., 0.]), np.array([1., 0., 1.]),
-            np.array([0., 1., 1.])]
-    core = {frozenset([tuple(centre), tuple(a)]) for a in arms}
+    core = {frozenset([tuple(CENTRE), tuple(a)]) for a in ARMS}
 
     def route_bonds(i, j, m):
-        return [frozenset([tuple(i), tuple(m)]), frozenset([tuple(m), tuple(j)])]
+        return [frozenset([tuple(i), tuple(m)]),
+                frozenset([tuple(m), tuple(j)])]
 
     used, ok = set(), True
     for (i, j) in combinations(range(3), 2):
         k = 3 - i - j
-        meds = common_nn(arms[i], arms[j])
-        free = [m for m in meds if not (np.array_equal(m, centre)
-                                        or np.array_equal(m, arms[k]))]
-        counted = [frozenset([tuple(arms[i]), tuple(arms[j])])]
+        meds = common_nn(ARMS[i], ARMS[j])
+        free = [m for m in meds if not (np.allclose(m, CENTRE)
+                                        or np.allclose(m, ARMS[k]))]
+        counted = [frozenset([tuple(ARMS[i]), tuple(ARMS[j])])]
         for m in free:
-            counted += route_bonds(arms[i], arms[j], m)
+            counted += route_bonds(ARMS[i], ARMS[j], m)
         for b in counted:
             ok &= b not in used
             used.add(b)
-        via_arm = set(route_bonds(arms[i], arms[j], arms[k]))
-        directs = {frozenset([tuple(arms[i]), tuple(arms[k])]),
-                   frozenset([tuple(arms[j]), tuple(arms[k])])}
-        via_ctr = set(route_bonds(arms[i], arms[j], centre))
+        via_arm = set(route_bonds(ARMS[i], ARMS[j], ARMS[k]))
+        directs = {frozenset([tuple(ARMS[i]), tuple(ARMS[k])]),
+                   frozenset([tuple(ARMS[j]), tuple(ARMS[k])])}
+        via_ctr = set(route_bonds(ARMS[i], ARMS[j], CENTRE))
         assert via_arm == directs, "third-arm route is not the other directs"
         assert via_ctr <= core, "centre route is not the core's arm bonds"
         for m in free:
-            assert np.linalg.norm(m) > np.sqrt(2) + 1e-9, "free mediator on cluster"
+            assert np.linalg.norm(m) > np.sqrt(2) + 1e-9, \
+                "free mediator on cluster"
     assert ok and not (used & core), "ledger double counts a bond"
     print(f"  ledger: {len(used)} counted bonds, mutually disjoint and "
           f"disjoint from the {len(core)} core bonds  [PASS]")
@@ -358,8 +414,8 @@ def report_audit():
     print("  all free mediators lie outside the 13-node cluster  [PASS]")
 
     R = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]], float)
-    T = np.array([2., 0., 0.])
-    c2, a2 = R @ centre + T, [R @ a + T for a in arms]
+    T = np.array([2.0, 0.0, 0.0])
+    c2, a2 = R @ CENTRE + T, [R @ a + T for a in ARMS]
     for (i, j) in combinations(range(3), 2):
         k = 3 - i - j
         meds = common_nn(a2[i], a2[j])
@@ -371,7 +427,7 @@ def report_audit():
     # Hex-cap collision, in a/2 units: 3 FCC sites on the {111} plane at
     # projection -2a/sqrt(3) along the chosen inactive direction, nearest
     # the axis (the construction of spectral_classifier.py).
-    def cap(direction):
+    def cap_sites(direction):
         d = np.array(direction, float) / np.sqrt(3)
         target = -4.0 / np.sqrt(3)
         sites = [np.array(x, float) for x in
@@ -382,22 +438,21 @@ def report_audit():
 
     freeset = {tuple(int(x) for x in m)
                for (i, j) in combinations(range(3), 2)
-               for m in common_nn(arms[i], arms[j])
-               if not (np.array_equal(m, centre)
-                       or np.array_equal(m, arms[3 - i - j]))}
-    print("  cap collision with the six free mediators, by inactive direction:")
+               for m in common_nn(ARMS[i], ARMS[j])
+               if not (np.allclose(m, CENTRE)
+                       or np.allclose(m, ARMS[3 - i - j]))}
+    print("  cap collision with the six free mediators, "
+          "by inactive direction:")
     for d in [(-1, -1, -1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]:
-        hit = {tuple(int(x) for x in p) for p in cap(d)} & freeset
+        hit = {tuple(int(x) for x in p) for p in cap_sites(d)} & freeset
         print(f"    cap on {d}: blocks {sorted(hit) if hit else 'none'}")
     print("  -> face-pair C_ll in capped baryons depends on cap placement,")
     print("     but no current observable reads it; C_ls itself is")
-    print("     placement-independent (section 8).")
-
-
+    print("     settled by the realised hostings (section 8).")
 
 
 def report_territory():
-    """Linear sector: the territory count for the in-junction swap cost.
+    """Linear sector: the territory count and the hosting-resolved C_ls.
 
     Two energies, two rules. Interaction (bilinear) energy is carried by
     mediator NODES: a node pinned by the Burgers closure (centre) or
@@ -407,63 +462,50 @@ def report_territory():
     overlaps the mirror lobe of the adjacent partial and the two claims
     split the face bond evenly. Free pair: both rules give 5 (degenerate).
     Junction: 3 for the Coulomb, 4 for the character.
+
+    The same node rule, applied to where the octet actually hosts its
+    strange charge, settles the light-strange coefficient: arm-riding on
+    the bare Sigma junction and cap-riding on the Xi and Lambda both
+    count 3.
     """
     print("\n" + "=" * 72)
-    print("8. Linear sector: territory count of the in-junction swap cost")
+    print("8. Linear sector: territory count and hosting-resolved C_ls")
     print("=" * 72)
-    centre = np.array([0., 0., 0.])
-    arms = [np.array([1., 1., 0.]), np.array([1., 0., 1.]),
-            np.array([0., 1., 1.])]
-    cap = [np.array([2., 1., 1.]), np.array([1., 2., 1.]),
-           np.array([1., 1., 2.])]
-
-    def occtag(p):
-        if np.allclose(p, centre):
-            return 'centre'
-        if any(np.allclose(p, a) for a in arms):
-            return 'arm'
-        if any(np.allclose(p, c) for c in cap):
-            return 'cap'
-        return 'free'
 
     print("\n  Character ring of each partial (centre -> arm):")
-    for i, a in enumerate(arms):
-        tags = [occtag(m) for m in common_nn(centre, a)]
-        nf, na = tags.count('free'), tags.count('arm')
+    for i, a in enumerate(ARMS):
+        tags = [occ_tag(m) for m in common_nn(CENTRE, a)]
+        nf, na = tags.count("free"), tags.count("arm")
         assert (nf, na) == (2, 2)
         print(f"    partial {i+1}: {tags} -> 1 + {nf} + {na}*(1/2) = "
-              f"{1 + nf + 0.5*na}  m_e per unit swap")
+              f"{1 + nf + 0.5 * na}  m_e per unit swap")
     print("  Ledger closure: 3 directs + 6 whole outer lobes + 3 shared "
           "face bonds = 12 = 3 x 4  [PASS]")
 
-    M_E_L = 0.51099895069
-    pred = 4*M_E_L - 1*M_E_L - 0.08 - 0.11
-    print(f"\n  Budget as a prediction: 4 - 1 - 0.16 - 0.22 [m_e] -> "
-          f"m_n - m_p = {pred:.3f} MeV (obs 1.2933; residual "
-          f"{pred-1.29333:+.3f} MeV = {(pred-1.29333)/M_E_L:+.2f} m_e)")
+    pred = 4 * M_E - 1 * M_E - DELTA_CS_N - DELTA_MAG_N
+    obs_np = M["n"] - M["p"]
+    print(f"\n  Budget as a prediction: 4 - 1 - {DELTA_CS_N / M_E:.2f} - "
+          f"{DELTA_MAG_N / M_E:.2f} [m_e] -> "
+          f"m_n - m_p = {pred:.3f} MeV (obs {obs_np:.4f}; residual "
+          f"{pred - obs_np:+.3f} MeV = {(pred - obs_np) / M_E:+.2f} m_e)")
 
     print("\n  C_ls by realised hosting (node rule):")
-
-    def n_node(p1, p2, occ):
-        meds = common_nn(p1, p2)
-        return 1 + sum(1 for m in meds
-                       if not any(np.allclose(m, o) for o in occ))
-
     # Sigma: voids, no cap; strange partial rides an arm of a BARE junction.
-    n_sig = n_node(arms[0], arms[2], [centre] + arms)
+    n_sig, _, _ = n_cb((ARMS[0], ARMS[2]), occupied=[CENTRE] + ARMS)
     print(f"    Sigma (strange on arm, no cap):        C_ls = {n_sig}")
     # Xi/Lambda: strangeness on the cap; pair runs arm -> adjacent cap site.
-    occ = [centre] + arms + cap
-    for a in arms:
-        for c in cap:
+    occ = [CENTRE] + ARMS + CAP
+    for a in ARMS:
+        for c in CAP:
             if abs(np.linalg.norm(a - c) - np.sqrt(2)) > 1e-9:
                 continue
-            assert n_node(a, c, occ) == 3
+            n, _, _ = n_cb((a, c), occupied=occ)
+            assert n == 3
     print("    Xi/Lambda (strange on cap, 6 pairs):   C_ls = 3 uniformly")
-    print(f"    Xi s-s pair (cap-cap, unread):         C_ss = "
-          f"{n_node(cap[0], cap[1], occ)}")
+    n_ss, _, _ = n_cb((CAP[0], CAP[1]), occupied=occ)
+    print(f"    Xi s-s pair (cap-cap, unread):         C_ss = {n_ss}")
     # The cross combination: arm-riding strange UNDER a face-stacked cap.
-    n_x = n_node(arms[0], arms[1], occ)
+    n_x, _, _ = n_cb((ARMS[0], ARMS[1]), occupied=occ)
     print(f"    cross (arm under face cap, excluded):  C    = {n_x}")
     print("    -> every realised pair counts 3; the cross combination would")
     print("       feed +(2/3) m_e into Coleman-Glashow (data: -0.13+-0.44 m_e)")
@@ -471,58 +513,68 @@ def report_territory():
 
     print("\n  The ladder step is NOT ring occupancy:")
     print("    no cap site is NN to the centre ->",
-          [bool(abs(np.linalg.norm(c)-np.sqrt(2)) < 1e-9) for c in cap])
+          [bool(abs(np.linalg.norm(c) - np.sqrt(2)) < 1e-9) for c in CAP])
     print("    the cap cannot enter any character ring; the ~4 m_e per")
     print("    strange quark is additive physics (T_2g candidate carrier).")
 
 
-
-
 def report_hyperon_corrections():
-    """Section 9: hyperon magnetic terms and the couple-stress fork.
+    """Hyperon magnetic terms and the couple-stress fork.
 
     The magnetic self-energy U_M = k mu^2 extends to the hyperons with no
     new parameter, because the Peierls-Nabarro core profile that holds the
     field is a lattice property, not a baryon property. k is the proton
-    calibration U_M^p / mu_p^2 with U_M^p = 0.18..0.21 MeV.
+    calibration U_M^p / mu_p^2 over the U_M_PROTON band.
     """
     print("\n" + "=" * 72)
     print("9. Hyperon magnetic terms and the couple-stress fork")
     print("=" * 72)
-    me = 0.51099895069
-    mu = {'p': 2.79284734, 'n': -1.91304273, 'S+': 2.458, 'S-': -1.160,
-          'X0': -1.250, 'X-': -0.6507}
-    ks = (0.18/mu['p']**2, 0.21/mu['p']**2)
-    kc = sum(ks)/2
-    obs = {'N': 1.29333, 'S': 8.079, 'X': 6.85}
-    sig = {'N': 0.0, 'S': 0.076, 'X': 0.21}
-    bil = {'N': -1.0, 'S': +1.0, 'X': +2.0}
-    dmu2 = {'N': mu['n']**2-mu['p']**2, 'S': mu['S-']**2-mu['S+']**2,
-            'X': mu['X-']**2-mu['X0']**2}
-    nsw = {'N': 1, 'S': 2, 'X': 1}
-    ns = {'N': 0, 'S': 1, 'X': 2}
+    ks = tuple(u / MU["p"] ** 2 for u in U_M_PROTON)
+    kc = sum(ks) / 2
+
+    # Splittings [MeV], their errors, bilinear content [m_e] at
+    # C_ll = C_ls = 3, u->d swaps per splitting, and strange spectators.
+    obs = {"N": M["n"] - M["p"],
+           "S": M["Sig-"] - M["Sig+"],
+           "X": M["Xi-"] - M["Xi0"]}
+    sig = {"N": 0.0,
+           "S": np.hypot(SIG_ERR["Sig-"], SIG_ERR["Sig+"]),
+           "X": np.hypot(XI_ERR["Xi-"], XI_ERR["Xi0"])}
+    bil = {"N": -1.0, "S": +1.0, "X": +2.0}
+    dmu2 = {"N": MU["n"]**2 - MU["p"]**2,
+            "S": MU["Sig-"]**2 - MU["Sig+"]**2,
+            "X": MU["Xi-"]**2 - MU["Xi0"]**2}
+    nsw = {"N": 1, "S": 2, "X": 1}
+    ns = {"N": 0, "S": 1, "X": 2}
+
     print(f"\n  k = {ks[0]:.4f}..{ks[1]:.4f} MeV/mu_N^2 (central {kc:.4f})")
     print("  Delta_mag = k(mu_-^2 - mu_+^2):")
-    for B in 'NSX':
-        lo = min(ks[0]*dmu2[B], ks[1]*dmu2[B])
-        hi = max(ks[0]*dmu2[B], ks[1]*dmu2[B])
-        print(f"    {B}: {kc*dmu2[B]:+.4f} MeV  (band {lo:+.4f}..{hi:+.4f})")
+    for B in "NSX":
+        lo = min(ks[0] * dmu2[B], ks[1] * dmu2[B])
+        hi = max(ks[0] * dmu2[B], ks[1] * dmu2[B])
+        print(f"    {B}: {kc * dmu2[B]:+.4f} MeV  "
+              f"(band {lo:+.4f}..{hi:+.4f})")
+
     print("\n  Per-swap linear cost after bilinear AND magnetic removal:")
-    res = {}
-    for B in 'NSX':
-        res[B] = (obs[B]/me - bil[B] - kc*dmu2[B]/me)/nsw[B]
-        print(f"    {B}: {res[B]:.3f} +- {sig[B]/me/nsw[B]:.3f} m_e   "
-              f"[4(1+n_s) target: {4*(1+ns[B])}]")
-    print(f"    steps: {res['S']-res['N']:.3f} +- 0.037, "
-          f"{res['X']-res['S']:.3f} +- 0.42")
+    res, err = {}, {}
+    for B in "NSX":
+        res[B] = (obs[B] / M_E - bil[B] - kc * dmu2[B] / M_E) / nsw[B]
+        err[B] = sig[B] / M_E / nsw[B]
+        print(f"    {B}: {res[B]:.3f} +- {err[B]:.3f} m_e   "
+              f"[4(1+n_s) target: {4 * (1 + ns[B])}]")
+    e_sn = np.hypot(err["S"], err["N"])
+    e_xs = np.hypot(err["X"], err["S"])
+    print(f"    steps: {res['S'] - res['N']:.3f} +- {e_sn:.3f}, "
+          f"{res['X'] - res['S']:.3f} +- {e_xs:.2f}")
+
     print("\n  The fork the shell computation decides:")
-    for B in 'NSX':
-        need = (res[B] - 4*(1+ns[B]))*me
+    for B in "NSX":
+        need = (res[B] - 4 * (1 + ns[B])) * M_E
         print(f"    {B}: exact 4(1+n_s) needs Delta_cs = {need:+.3f} MeV "
-              f"per swap (nucleon computed: -0.08)")
+              f"per swap (nucleon computed: -{DELTA_CS_N:.2f})")
     print("    -> Sigma and Xi require the SAME value within errors across")
     print("       two different hostings (voids vs caps), ~3x the nucleon's")
-    print("       suppressed term; flavour-blind cs leaves step = 3.79+-0.04.")
+    print("       suppressed term; flavour-blind cs leaves step = 3.79 +- 0.07 m_e.")
 
 
 def main():
