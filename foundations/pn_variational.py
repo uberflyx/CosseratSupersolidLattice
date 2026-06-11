@@ -445,9 +445,9 @@ def main():
         tag = " <-- 1/pi" if abs(N2 - 1/np.pi) < 0.002 else ""
         print(f"  {N2:10.6f}  {w:12.8f}  {wd:12.8f}  {a0_inv:14.4f}{tag}")
 
-    # ── STAGE 3: the plateau of w(N^2)/d and its maximum ─────────────
+    # ── STAGE 3: the maximum of w(N^2)/d and its neighbourhood ───────
 
-    print(f"\n\nSTAGE 3: Variational plateau of w/d [§3.3]")
+    print(f"\n\nSTAGE 3: Variational maximum of w/d [§3.3]")
     print(sep2)
 
     target_wd = np.pi / 4
@@ -466,7 +466,7 @@ def main():
     print(f"  (w/d)_max     = {wd_max:.10f}  at N^2 = {N2_max:.6f}")
     print(f"  pi/4          = {np.pi/4:.10f}  (max exceeds by {(wd_max/(np.pi/4)-1)*100:+.3f}%)")
     print(f"  w/d >= pi/4 band: N^2 in [{band_lo:.4f}, {band_hi:.4f}]")
-    print(f"  1/pi          = {1/np.pi:.6f}  (inside the band, on the flat top)")
+    print(f"  1/pi          = {1/np.pi:.6f}  (inside the band, beside the maximum)")
 
     # At N^2 = 1/pi exactly
     w_rolling     = find_w(1/np.pi, mu, ell, ell_c)
@@ -564,14 +564,15 @@ def main():
               f"  {inv_t:>18.6f}  {ppb:>+13.1f} ppb{tag}")
 
     # Sensitivity derivative at the rolling point: tiny, because 1/pi
-    # sits on the flat top of w(N^2)/d.
+    # sits beside the maximum of w(N^2)/d (slope nearly zero, leading
+    # dependence quadratic).
     dN2 = 1e-6
     wd_p = find_w(1/np.pi + dN2, mu, ell, ell_c) / D_OVER_ELL
     wd_m = find_w(1/np.pi - dN2, mu, ell, ell_c) / D_OVER_ELL
     dwd_dN2 = (wd_p - wd_m) / (2*dN2)
     dalpha_inv_dN2 = 2*np.pi * np.exp(2*np.pi*wd_rolling) * dwd_dN2
 
-    print(f"\n  Sensitivity at N^2 = 1/pi (on the plateau):")
+    print(f"\n  Sensitivity at N^2 = 1/pi (beside the maximum):")
     print(f"    d(w/d)/dN^2        = {dwd_dN2:.6f}")
     print(f"    d(T^-1)/d(N^2)     = {dalpha_inv_dN2:.2f}")
     print(f"    1% error in N^2 -> delta(T^-1) = "
