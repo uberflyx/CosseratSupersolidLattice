@@ -12,10 +12,11 @@ Physics overview
 A screw dislocation in an FCC Cosserat lattice tunnels through the
 Peierls–Nabarro (PN) barrier.  The tunnelling amplitude
 
-    T_PN = exp(−2π w/ℓ)
+    T_PN = exp(−2π w/d)
 
-where w is the equilibrium core half-width, is a dimensionless number
-fixed entirely by the FCC Cosserat geometry.
+where w is the equilibrium core half-width and d = ℓ/√3 the period of
+the misfit potential (the Shockley partial hop on {111}), is a
+dimensionless number fixed entirely by the FCC Cosserat geometry.
 
 The core width is set by the balance between elastic self-energy (which
 spreads the core) and the lattice misfit potential (which narrows it).
@@ -69,8 +70,12 @@ M_E  = 9.109_383_7015e-31   # kg   (CODATA 2022)
 
 # FCC {111} slip geometry
 # d = ℓ/√3 is the Shockley partial Burgers vector magnitude |b_p|,
-# i.e. the periodicity of the misfit potential on the {111} net (§4.2).
-D_OVER_ELL = 1.0 / np.sqrt(3.0)
+# i.e. the PERIOD of the misfit potential on the {111} net; it enters the
+# tunnelling exponent T = exp(-2πw/d) and nothing else (§4.1).
+# h111 = ℓ√(2/3) is the {111} interplanar spacing; it enters the misfit
+# STIFFNESS Γ = μ_true/h111 on the RHS of the equilibrium (§4.2).
+D_OVER_ELL    = 1.0 / np.sqrt(3.0)
+H111_OVER_ELL = np.sqrt(2.0 / 3.0)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -133,37 +138,39 @@ def r_from_N2(N2):
 #  §2.2 + Appendix A — Anti-plane Cosserat kernel integral
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-#  The PN equilibrium [Eq. 13] requires the kernel integral
+#  The variational PN equilibrium requires the restoring-force integral
 #
-#      I(w) = ∫₀^∞ K̂(k) exp(−2kw) dk
+#      I(w) = ∫₀^∞ (K̂(k)/k) exp(−2kw) dk
+#           = (μ_tot/2) ∫₀^∞ (k²+p²)/(k²+q²) exp(−2kw) dk
 #
-#  This splits via partial fractions (Appendix A) into two standard
-#  forms involving Ci and Si special functions.
+#  (dE_el/dw of the arctan profile carries K̂/k, not K̂).  Partial
+#  fractions split it into two standard forms with Ci and Si.
 
 def _I2_exact(q, w):
     """
-    ∫₀^∞ k/(k²+q²) exp(−2kw) dk via Si, Ci.  [Appendix A, Eq. A2]
+    ∫₀^∞ exp(−2kw)/(k²+q²) dk via Si, Ci.  [Appendix A]
 
     For z = 2qw:
-        I₂ = −cos(z) Ci(z) + sin(z)(π/2 − Si(z))
+        I₂ = [Ci(z) sin(z) + (π/2 − Si(z)) cos(z)] / q
     """
     if q < 1e-15:
         return np.inf
     z = 2.0 * q * w
     Si_z, Ci_z = sici(z)
-    return -np.cos(z) * Ci_z + np.sin(z) * (np.pi/2 - Si_z)
+    return (Ci_z * np.sin(z) + (np.pi/2 - Si_z) * np.cos(z)) / q
 
 
 def kernel_integral(w, N2, mu=1.0, ell_c=0.5):
     """
-    Analytical evaluation of the PN kernel integral [Appendix A, Eq. A3].
+    Analytical evaluation of the PN restoring integral ∫(K̂/k)e^{-2kw}dk.
+    Cauchy limit: μ/(4w), reproducing the textbook screw width h/2.
     """
     if N2 < 1e-15:
-        return mu / (8 * w**2)
+        return mu / (4 * w)
 
     P     = cosserat_params(N2, mu, ell_c)
     Delta = P["p2"] - P["q2"]
-    I1    = 1.0 / (4 * w**2)
+    I1    = 1.0 / (2 * w)
     I2    = _I2_exact(P["q"], w)
     return (P["mu_tot"] / 2) * (I1 + Delta * I2)
 
@@ -173,14 +180,12 @@ def kernel_integral_numerical(w, N2, mu=1.0, ell_c=0.5):
     Numerical verification via direct quadrature (cross-check of Si/Ci).
     """
     if N2 < 1e-15:
-        return mu / (8 * w**2)
+        return mu / (4 * w)
 
     P = cosserat_params(N2, mu, ell_c)
 
     def integrand(k):
-        if k < 1e-15:
-            return 0.0
-        return (P["mu_tot"]/2) * k * (k**2 + P["p2"]) / (k**2 + P["q2"]) \
+        return (P["mu_tot"]/2) * (k**2 + P["p2"]) / (k**2 + P["q2"]) \
                * np.exp(-2*k*w)
 
     result, _ = quad(integrand, 0, max(50/w, 500), limit=500, epsrel=1e-12)
@@ -191,31 +196,41 @@ def kernel_integral_numerical(w, N2, mu=1.0, ell_c=0.5):
 #  §4.2 — PN equilibrium for the core width w
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
-#  The PN equilibrium [Eq. 13] equates the kernel integral to the
-#  maximum restoring force of the sinusoidal lattice potential:
+#  The variational PN equilibrium (dE_el/dw + dE_mis/dw = 0; the misfit
+#  period cancels, the Burgers vector cancels):
 #
-#      I(w) = μ b / (4d)
+#      ∫₀^∞ (K̂(k)/k) e^{−2kw} dk = μ_true / (2 h111)
 #
-#  where b = ℓ (Burgers vector) and d = ℓ/√3 (Shockley partial
-#  Burgers vector magnitude on {111}).
+#  where μ_true = μ̄ = μ + κ_c/2 is the relaxed (true) shear modulus that
+#  sets the Frenkel misfit curvature, and h111 = ℓ√(2/3) is the {111}
+#  interplanar spacing.  The hop period d = ℓ/√3 enters only the
+#  tunnelling exponent T = exp(−2πw/d).
+#  Cauchy check: μ/(4w) = μ/(2 h111)  →  w = h111/2,  w/d = 1/√2.
 
-def find_w(N2, mu=1.0, ell=1.0, ell_c=0.5, d_over_ell=D_OVER_ELL):
+def find_w(N2, mu=1.0, ell=1.0, ell_c=0.5, h111_over_ell=H111_OVER_ELL):
     """
-    Solve the PN equilibrium for the core half-width w.
-    Returns w/ℓ (dimensionless).
+    Solve the variational PN equilibrium for the core half-width w.
+    Returns w/ℓ (dimensionless).  The tunnelling exponent uses
+    w/d = (w/ℓ)/D_OVER_ELL.
     """
-    b   = ell
-    d   = d_over_ell * ell
-    RHS = mu * b / (4 * d)
+    h111   = h111_over_ell * ell
+    P      = cosserat_params(N2, mu, ell_c)
+    mu_bar = P["mu_bar"] if N2 >= 1e-15 else mu
+    RHS    = mu_bar / (2 * h111)
 
     def residual(w):
         return kernel_integral(w, N2, mu, ell_c) - RHS
 
     try:
-        w_sol = brentq(residual, 0.01*ell, 20*ell, xtol=1e-15, rtol=1e-15)
+        w_sol = brentq(residual, 0.005*ell, 40*ell, xtol=1e-15, rtol=1e-15)
         return w_sol / ell
     except ValueError:
         return np.nan
+
+
+def w_over_d(N2, **kw):
+    """Core width in units of the misfit period: the tunnelling ratio."""
+    return find_w(N2, **kw) / D_OVER_ELL
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -415,53 +430,59 @@ def main():
     print(f"\n\nSTAGE 2: Equilibrium core width w/ell vs N^2 [§4.2, Eq. 13]")
     print(sep2)
 
-    RHS = mu * ell / (4 * D_OVER_ELL * ell)
-    print(f"  RHS = mu*b/(4*d) = {RHS:.8f}")
-    print(f"  d/ell = 1/sqrt(3) = {D_OVER_ELL:.8f}\n")
-    print(f"  {'N^2':>10s}  {'w/ell':>12s}  {'T_0^-1':>14s}  {'T_0^-1 - 2':>16s}")
+    P0 = cosserat_params(1/np.pi, mu, ell_c)
+    print(f"  RHS = mu_bar/(2*h111) = {P0['mu_bar']/(2*H111_OVER_ELL):.8f}   (at N^2 = 1/pi)")
+    print(f"  d/ell = 1/sqrt(3) = {D_OVER_ELL:.8f},  h111/ell = sqrt(2/3) = {H111_OVER_ELL:.8f}\n")
+    print(f"  {'N^2':>10s}  {'w/ell':>12s}  {'w/d':>12s}  {'T_0^-1':>14s}")
     print(f"  {'-'*56}")
 
     for N2 in [0.001, 0.10, 0.20, 0.25, 0.30, 1/np.pi, 1/3, 0.35, 0.40, 0.45, 0.49]:
         w = find_w(N2, mu, ell, ell_c)
         if np.isnan(w):
             continue
-        a0_inv = np.exp(2*np.pi*w)
+        wd = w / D_OVER_ELL
+        a0_inv = np.exp(2*np.pi*wd)
         tag = " <-- 1/pi" if abs(N2 - 1/np.pi) < 0.002 else ""
-        print(f"  {N2:10.6f}  {w:12.8f}  {a0_inv:14.4f}  {a0_inv-2:16.4f}{tag}")
+        print(f"  {N2:10.6f}  {w:12.8f}  {wd:12.8f}  {a0_inv:14.4f}{tag}")
 
-    # ── STAGE 3: N^2 that gives w/ell = pi/4 exactly ────────────────
+    # ── STAGE 3: the plateau of w(N^2)/d and its maximum ─────────────
 
-    print(f"\n\nSTAGE 3: Variational optimum N^2* [§3.3, Eq. 10]")
+    print(f"\n\nSTAGE 3: Variational plateau of w/d [§3.3]")
     print(sep2)
 
-    target_w = np.pi / 4
+    target_wd = np.pi / 4
 
-    def _res_N2(N2):
-        return find_w(N2, mu, ell, ell_c) - target_w
+    def _wd(N2):
+        return find_w(N2, mu, ell, ell_c) / D_OVER_ELL
 
-    N2_star = brentq(_res_N2, 0.1, 0.49, xtol=1e-14, rtol=1e-14)
-    w_star  = find_w(N2_star, mu, ell, ell_c)
-    r_star  = r_from_N2(N2_star)
+    from scipy.optimize import minimize_scalar
+    res     = minimize_scalar(lambda n2: -_wd(n2), bounds=(0.15, 0.47),
+                              method='bounded', options={'xatol': 1e-12})
+    N2_max  = res.x
+    wd_max  = -res.fun
+    band_lo = brentq(lambda n2: _wd(n2) - target_wd, 0.20, N2_max, xtol=1e-12)
+    band_hi = brentq(lambda n2: _wd(n2) - target_wd, N2_max, 0.47, xtol=1e-12)
 
-    print(f"  N^2*          = {N2_star:.10f}")
-    print(f"  1/pi          = {1/np.pi:.10f}")
-    print(f"  Offset        = {(N2_star - 1/np.pi)/(1/np.pi)*100:+.4f}%")
-    print(f"  w*/ell        = {w_star:.10f}")
-    print(f"  pi/4          = {np.pi/4:.10f}")
-    print(f"  r* = k_t/k_n  = {r_star:.8f}")
+    print(f"  (w/d)_max     = {wd_max:.10f}  at N^2 = {N2_max:.6f}")
+    print(f"  pi/4          = {np.pi/4:.10f}  (max exceeds by {(wd_max/(np.pi/4)-1)*100:+.3f}%)")
+    print(f"  w/d >= pi/4 band: N^2 in [{band_lo:.4f}, {band_hi:.4f}]")
+    print(f"  1/pi          = {1/np.pi:.6f}  (inside the band, on the flat top)")
 
     # At N^2 = 1/pi exactly
-    w_rolling    = find_w(1/np.pi, mu, ell, ell_c)
-    bare_rolling = np.exp(2*np.pi*w_rolling)
+    w_rolling     = find_w(1/np.pi, mu, ell, ell_c)
+    wd_rolling    = w_rolling / D_OVER_ELL
+    bare_rolling  = np.exp(2*np.pi*wd_rolling)
     bare_analytic = np.exp(np.pi**2/2)
 
     print(f"\n  At N^2 = 1/pi exactly:")
     print(f"    w/ell       = {w_rolling:.10f}")
+    print(f"    w/d         = {wd_rolling:.10f}")
     print(f"    pi/4        = {np.pi/4:.10f}")
-    print(f"    deviation   = {(w_rolling - np.pi/4)/(np.pi/4)*100:+.4f}%")
+    print(f"    deviation   = {(wd_rolling - np.pi/4)/(np.pi/4)*100:+.4f}%")
     print(f"    T_0^-1      = {bare_rolling:.8f}")
     print(f"    exp(pi^2/2) = {bare_analytic:.8f}")
-    print(f"    deviation   = {(bare_rolling - bare_analytic)/bare_analytic*100:+.6f}%")
+    print(f"    deviation   = {(bare_rolling - bare_analytic)/bare_analytic*100:+.4f}%")
+    print(f"    Cauchy check: w/d(0) = {find_w(1e-16,mu,ell,ell_c)/D_OVER_ELL:.10f}  (1/sqrt2 = {1/np.sqrt(2):.10f})")
 
     # ── STAGE 4: Self-consistent solution ────────────────────────────
 
@@ -480,7 +501,7 @@ def main():
     res_an_ppb  = (inv_an - ALPHA_INV_EXP) / ALPHA_INV_EXP * 1e9
     res_an_sig  = (inv_an - ALPHA_INV_EXP) / ALPHA_UNC
 
-    print(f"  (a) Using variational bare (N^2=1/pi -> w/ell={w_rolling:.8f}):")
+    print(f"  (a) Using variational bare (N^2=1/pi -> w/d={wd_rolling:.8f}):")
     print(f"      T_0^-1     = {bare_rolling:.8f}")
     print(f"      T_PN^-1    = {inv_var:.12f}")
     print(f"      CODATA     = {ALPHA_INV_EXP:.9f} +/- {ALPHA_UNC}")
@@ -519,7 +540,7 @@ def main():
     print(f"\n\nSTAGE 7: N^2 sensitivity scan")
     print(sep2)
 
-    print(f"  {'N^2':>10s}  {'w/ell':>10s}  {'bare^-1':>12s}"
+    print(f"  {'N^2':>10s}  {'w/d':>10s}  {'bare^-1':>12s}"
           f"  {'T_PN^-1':>18s}  {'Residual':>14s}")
     print(f"  {'-'*68}")
 
@@ -530,7 +551,8 @@ def main():
         w_t = find_w(N2_trial, mu, ell, ell_c)
         if np.isnan(w_t):
             continue
-        bare_t = np.exp(2*np.pi*w_t)
+        wd_t   = w_t / D_OVER_ELL
+        bare_t = np.exp(2*np.pi*wd_t)
         try:
             a_t   = solve_alpha(bare_t)
             inv_t = 1.0/a_t
@@ -538,22 +560,23 @@ def main():
             continue
         ppb = (inv_t - ALPHA_INV_EXP) / ALPHA_INV_EXP * 1e9
         tag = " <-- 1/pi" if abs(N2_trial - 1/np.pi) < 0.006 else ""
-        print(f"  {N2_trial:>10.5f}  {w_t:>10.6f}  {bare_t:>12.4f}"
+        print(f"  {N2_trial:>10.5f}  {wd_t:>10.6f}  {bare_t:>12.4f}"
               f"  {inv_t:>18.6f}  {ppb:>+13.1f} ppb{tag}")
 
-    # Sensitivity derivative
-    dN2 = 1e-7
-    w_p = find_w(N2_star + dN2, mu, ell, ell_c)
-    w_m = find_w(N2_star - dN2, mu, ell, ell_c)
-    dw_dN2 = (w_p - w_m) / (2*dN2)
-    dalpha_inv_dN2 = 2*np.pi * np.exp(2*np.pi*target_w) * dw_dN2
+    # Sensitivity derivative at the rolling point: tiny, because 1/pi
+    # sits on the flat top of w(N^2)/d.
+    dN2 = 1e-6
+    wd_p = find_w(1/np.pi + dN2, mu, ell, ell_c) / D_OVER_ELL
+    wd_m = find_w(1/np.pi - dN2, mu, ell, ell_c) / D_OVER_ELL
+    dwd_dN2 = (wd_p - wd_m) / (2*dN2)
+    dalpha_inv_dN2 = 2*np.pi * np.exp(2*np.pi*wd_rolling) * dwd_dN2
 
-    print(f"\n  Sensitivity at N^2*:")
-    print(f"    dw/dN^2            = {dw_dN2:.6f}")
-    print(f"    d(T^-1)/d(N^2)    = {dalpha_inv_dN2:.2f}")
+    print(f"\n  Sensitivity at N^2 = 1/pi (on the plateau):")
+    print(f"    d(w/d)/dN^2        = {dwd_dN2:.6f}")
+    print(f"    d(T^-1)/d(N^2)     = {dalpha_inv_dN2:.2f}")
     print(f"    1% error in N^2 -> delta(T^-1) = "
-          f"{0.01*N2_star*dalpha_inv_dN2:.2f}"
-          f"  ({0.01*N2_star*dalpha_inv_dN2/ALPHA_INV_EXP*100:.2f}%)")
+          f"{0.01*(1/np.pi)*abs(dalpha_inv_dN2):.3f}"
+          f"  ({0.01*(1/np.pi)*abs(dalpha_inv_dN2)/ALPHA_INV_EXP*100:.4f}%)")
 
     # ── STAGE 8: Compression → G [§7, Eq. 25] ──────────────────────
 
@@ -605,9 +628,9 @@ def main():
     print(f"{'SUMMARY':^72s}")
     print(sep)
     print(f"  Rolling constraint:  N^2 = 1/pi = {1/np.pi:.8f}   [§3.1]")
-    print(f"  Variational optimum: N^2*       = {N2_star:.8f}"
-          f"  (offset {(N2_star-1/np.pi)/(1/np.pi)*100:+.3f}%)   [§3.3]")
-    print(f"  Core width at 1/pi: w/ell       = {w_rolling:.8f}"
+    print(f"  Plateau maximum:    (w/d)_max   = {wd_max:.8f}"
+          f"  at N^2 = {N2_max:.5f}   [§3.3]")
+    print(f"  Core width at 1/pi: w/d         = {wd_rolling:.8f}"
           f"  (pi/4 = {np.pi/4:.8f})")
     print(f"  Bare amplitude:     T_0^-1      = {bare_rolling:.6f}"
           f"  (exp(pi^2/2) = {bare_analytic:.6f})")
