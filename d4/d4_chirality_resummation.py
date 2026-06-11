@@ -54,7 +54,10 @@ THETA_CH = ALPHA**2 / (2 * np.pi)      # constitutive chirality
 # The compact loop is THREE sites of circumference sqrt(6)*ell (the D4 result).
 # Its first Kaluza-Klein momentum is therefore k4 = 2*pi/(sqrt(6)*ell).
 K4_KK    = 2 * np.pi / (np.sqrt(6) * ell)   # first KK momentum, k4*ell = 2.566
-M_KK_MEV = np.sqrt(3) * M0_MEV              # first KK mass, sqrt(3) m0 = 121 MeV
+M_KK_MEV = 1.5 * np.sqrt(2) * M0_MEV        # first winding rung on the 3-layer chain:
+# omega = (2c/d111)|sin(k4 d111/2)| at k4 d111 = 2pi/3 with d111 = 2 ell/sqrt(6)
+# => E1 = sqrt(6) sin(pi/3) m0 = (3/sqrt2) m0 = 148.5 MeV (NOT sqrt3 m0: that used
+# spacing ell; NOT sqrt6 m0: that is the band top k4 d111 = pi, not an allowed momentum)
 T_GEOM   = HBARC / (np.sqrt(6) * ELL_FM)    # window opens, = 28.6 MeV
 T_C      = 156.1                            # deconfinement (window closes)
 

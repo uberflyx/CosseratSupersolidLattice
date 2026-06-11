@@ -147,7 +147,7 @@ print(f"  V₀ = {V0:.4f}  (calibrated to α = {ALPHA:.8f})\n")
 # EIGENVALUE FLOW WITH k₄
 # ═══════════════════════════════════════════════════════════
 
-k4_max = 2 * np.pi / (3 * ell)
+k4_max = 2 * np.pi / (np.sqrt(6) * ell)   # first rung: k4*ell = 2pi/sqrt6 = 2.565 (k4*d111 = 2pi/3)
 k4_vals = np.linspace(0, k4_max, 15)
 
 print(f"{'k₄ℓ':>7}  {'|λ|_CG':>12}  {'|λ|_DF':>12}  {'Δλ/α %':>8}  "
@@ -191,19 +191,19 @@ v_kk = evecs_kk[:, idx_kk] / np.linalg.norm(evecs_kk[:, idx_kk])
 phase_kk = np.angle(v_kk[4] / v_kk[0]) / np.pi
 
 # Crossover temperature: when Bose-Einstein occupation of the first
-# KK mode (mass m_KK = √3 m₀ ≈ 121 MeV) is high enough that
+# KK mode (mass m_KK = (3/√2) m₀ ≈ 148.5 MeV) is high enough that
 # θ_D4 × f_BE = θ_ch.  At the KK level, θ_eff/θ_ch ≈ 1.62,
 # so f_BE = 1/1.62 ≈ 0.62, giving T_cross = m_KK / ln(1+1/0.62).
 theta_ratio_kk = split_kk / 100  # fractional splitting ≈ 0.0117
 # More careful: use the eigenvector leakage ratio
 # θ_eff/θ₀ at KK level from the |v_mix|² data
-m_KK_MeV = np.sqrt(3) * M0_MEV
+m_KK_MeV = 1.5 * np.sqrt(2) * M0_MEV  # chain rung (3/sqrt2) m0 = 148.5 MeV, see resummation script
 f_cross = theta_ch / (abs(v_kk[4])**2 * ALPHA)  # rough
 T_cross_MeV = m_KK_MeV / np.log(1 + 1/0.62)  # from f_BE = 0.62
 
 print(f"""
 {'='*60}
-RESULTS AT THE FIRST KK LEVEL (k₄ℓ = 2π/3)
+RESULTS AT THE FIRST KK LEVEL (k₄ℓ = 2π/√6, i.e. k₄d₁₁₁ = 2π/3)
 {'='*60}
 
   EM tunnelling drop:      {drop:.1f}%  (α → {lam_cg_kk/ALPHA:.3f}α)
