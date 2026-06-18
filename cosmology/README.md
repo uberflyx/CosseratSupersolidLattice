@@ -9,6 +9,7 @@ Scripts for the cosmological predictions of the Cosserat supersolid lattice.
 | `gw_spectrum_crystallisation.py` | Gravitational wave spectrum from the vacuum phase transition (fluid → FCC crystal). Sound-wave mechanism with all four thermodynamic parameters derived from lattice mechanics. Peak at ~354 nHz (testable by SKA). |
 | `potts_fcc_mc.py` | Monte Carlo simulation of the 3-state Potts model on FCC, verifying the deconfinement temperature T_c = 156.1 MeV from the Polyakov loop mechanism. |
 | `crystallisation_baryogenesis.py` | Order-of-magnitude estimate of the cosmic baryon asymmetry from the vacuum-lattice crystallisation transition. Geometric baryon-number violation (frozen stacking winding), first-order out-of-equilibrium, CP from compact-direction propagation chirality. Reports the CP-bias bracket, the required transition efficiency, and the radiation-era epoch (~24 us). |
+| `vacuum_line_web.py` | Monte Carlo percolation of the partial-dislocation line network left by the random Z3 stacking choice at crystallisation (Kibble / Vachaspati-Vilenkin construction run natively on the framework's 3-state order parameter). Traces the line network of a random Z3 field on a periodic lattice, sorts strings into spanning vs finite loops, and measures the infinite-string fraction and the loop-size law. Generates the line-sector chapter's web figure. |
 
 ## Key results
 
@@ -42,3 +43,14 @@ of ~10^-6 to ~10^-1, depending on the (open) resummation power of alpha. The sig
 is a definite prediction: matter over antimatter, fixed by the stacking handedness
 and correlated with the sign of the heavy-ion chiral-magnetic charge correlator.
 The freeze-in is a QCD-epoch event at t ~ 24 us.
+
+### Vacuum line web
+The partial-dislocation lines written by the random Z3 stacking choice at the
+freeze percolate. A single connected, system-spanning string carries about
+three-quarters of all line length (infinite-string fraction settling toward the
+0.75-0.80 Vachaspati-Vilenkin band as the box grows), with the remainder in
+finite loops whose sizes follow the random-walk law n(l) ~ l^{-5/2}. Percolation
+probability is 1 at every size tested, and the result is robust to lattice and
+discretisation. This is a second cosmic fossil from the same freeze as the
+grain-boundary walls; whether the longest lines track the cosmic-web filaments
+is an open conjecture.
