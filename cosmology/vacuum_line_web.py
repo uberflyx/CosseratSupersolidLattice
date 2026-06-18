@@ -27,6 +27,17 @@ RESULT:
     lattice and discretisation, so the FCC refinement would shift the exact
     percentage but not the percolation verdict.
 
+    The lines also sit exactly on the edges of the stacking-domain foam. A line
+    threads a plaquette only where the Z3 registry winds A->B->C->A, which is
+    impossible unless all three labels border the plaquette; so every line lies
+    on a triple-junction edge where three stacking domains (and three fault
+    sheets) meet. The script confirms this: 100% of line plaquettes touch all
+    three labels, and about two-thirds of the triple-junction edges carry a
+    net-wound line (the line web is the charged subset of the edge skeleton).
+    In the foam-to-cosmic-web dictionary (cells=voids, faces=walls, edges=
+    filaments, vertices=nodes) the line web is the filament skeleton, provided
+    the stacking domains are grain-scale rather than microscopic.
+
 OUTPUT:
     figures/vacuum_line_web.pdf  (two panels)
       (a) a 3D snapshot of the line network: the spanning cluster (the web) in
@@ -161,6 +172,51 @@ def infinite_fraction(L, n_real, seed):
         finfs.append(inf / tot if tot else 0.0)
     return np.mean(finfs), np.std(finfs), perc / n_real
 
+
+# ----------------------------------------------------------------------
+# Triple-junction coincidence: do the lines lie on the edges of the
+# stacking-domain foam? A line threads a plaquette where the Z3 registry
+# winds A->B->C->A; a full winding is impossible unless all three labels
+# (A, B, C) border the plaquette, i.e. unless the plaquette sits on the
+# edge where three stacking domains meet (a triple junction). This routine
+# checks that directly, both directions:
+#   (1) of all line plaquettes, the fraction bordered by all 3 labels;
+#   (2) of all triple-junction edges, the fraction that carry a net line.
+# ----------------------------------------------------------------------
+def _plaquette_cells(axis, i, j, k, L):
+    """The four cells touching the plaquette normal to `axis` at (i, j, k)."""
+    if axis == 0:      # y-z plane
+        offs = [(0, 0, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1)]
+    elif axis == 1:    # z-x plane
+        offs = [(0, 0, 0), (0, 0, 1), (1, 0, 1), (1, 0, 0)]
+    else:              # x-y plane
+        offs = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+    return [((i + di) % L, (j + dj) % L, (k + dk) % L) for di, dj, dk in offs]
+
+
+def triple_junction_coincidence(L, rng):
+    """Return (frac_lines_on_triple, frac_triple_with_line) for one Z3 field."""
+    phi = rng.integers(0, 3, size=(L, L, L))
+    qx, qy, qz = face_charges(phi, L)
+    q = {0: qx, 1: qy, 2: qz}
+    n_lines = n_lines_on_triple = 0
+    n_triple = n_triple_with_line = 0
+    for axis in range(3):
+        for i in range(L):
+            for j in range(L):
+                for k in range(L):
+                    labels = {int(phi[c]) for c in _plaquette_cells(axis, i, j, k, L)}
+                    is_triple = (len(labels) == 3)
+                    has_line = (q[axis][i, j, k] != 0)
+                    if has_line:
+                        n_lines += 1
+                        n_lines_on_triple += is_triple
+                    if is_triple:
+                        n_triple += 1
+                        n_triple_with_line += has_line
+    return (n_lines_on_triple / n_lines if n_lines else float("nan"),
+            n_triple_with_line / n_triple if n_triple else float("nan"))
+
 # ----------------------------------------------------------------------
 # Build the figure.
 # ----------------------------------------------------------------------
@@ -261,3 +317,13 @@ print("\n--- key numbers ---")
 for L, m, s, p in zip(Ls, means, sds, percs):
     print(f"  L={L:>2}: infinite-string fraction = {m:.3f} +/- {s:.3f}, "
           f"percolation probability = {p:.2f}")
+
+# Triple-junction coincidence: lines lie on the edges of the stacking foam.
+print("\n--- triple-junction coincidence (lines on the stacking-foam edges) ---")
+tj_rng = np.random.default_rng(20240617)
+for L in [8, 12, 16, 24]:
+    f_line_on_tj, f_tj_with_line = triple_junction_coincidence(L, tj_rng)
+    print(f"  L={L:>2}: lines on a 3-domain edge = {f_line_on_tj:.3f}   "
+          f"3-domain edges carrying a line = {f_tj_with_line:.3f}")
+print("  (the first is exactly 1: a line REQUIRES all three stacking labels;")
+print("   the second ~2/3: the line web is the charged subset of the edge skeleton)")
