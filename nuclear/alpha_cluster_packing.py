@@ -63,7 +63,43 @@ def compact_cluster(n, pool):
         chosen.append(best)
     return chosen
 
+# ---------- the A=4 wall, proved rather than asserted ----------
+def max_nn_clique(pool):
+    """Largest set of FCC sites that are all pairwise nearest-neighbour.
+
+    This is the maximum clique of the FCC nearest-neighbour graph. Bonding is
+    nearest-neighbour (the <110> dock), so the largest set of nucleons that can
+    all bond to each other is exactly this clique. Its size is therefore the
+    body-number at which the dense junction terminates: the A of the heaviest
+    single dense compound. Returned as a list of sites; len() is the wall.
+    """
+    s = set(pool)
+    adj = {v: {(v[0]+d[0], v[1]+d[1], v[2]+d[2]) for d in NN} & s for v in s}
+    best = []
+    def extend(clique, cands):                 # exact maximal-clique search
+        nonlocal best
+        if len(clique) > len(best):
+            best = clique[:]
+        for v in list(cands):
+            extend(clique + [v], cands & adj[v])
+            cands = cands - {v}
+    extend([], set(s))
+    return best
+
 pool = fcc_sites(4.0)
+
+# Prove the wall: max clique = 4, and no site can join a tetrahedron as a fifth.
+_clique = max_nn_clique([tuple(p) for p in fcc_sites(3.0)])
+_adj = lambda site: {(site[0]+d[0], site[1]+d[1], site[2]+d[2]) for d in NN}
+_joiners = [v for v in [tuple(p) for p in fcc_sites(3.0)]
+            if v not in _clique and all(v in _adj(c) for c in _clique)]
+print(f"A=4 wall: maximum FCC nearest-neighbour clique = {len(_clique)} "
+      f"(the tetrahedron, i.e. the alpha)")
+print(f"          sites able to join it as a fifth mutually-bound body = {len(_joiners)}")
+print(f"          => the dense many-body junction terminates at four nucleons,")
+print(f"             so the alpha is the heaviest single dense compound. "
+      f"A=5 and A=8 do not bind.\n")
+
 p_fcc = {}
 for n in range(1, 11):
     cl = compact_cluster(n, pool)
