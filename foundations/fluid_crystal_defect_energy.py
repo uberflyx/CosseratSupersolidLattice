@@ -102,3 +102,62 @@ print("    exceeds gravity by ~1e45   (the framework's 'full strength')")
 print("  The 125-order gap between them is why 'insignificant' is only ever")
 print("  true of the radiative channel. The reactive channel dominates.")
 print("=" * 70)
+
+
+# ===========================================================================
+# COMPACT vs EXTENDED: why the electron is light but a vortex knot is heavy
+# ===========================================================================
+# A follow-on question: the electron is a vortex too, yet it weighs alpha*m0,
+# so why does a vortex KNOT weigh the full line tension (tens of TeV for the
+# big frozen loops)? The answer is size, not a change of accounting.
+#
+#   * The ELECTRON is pinned to a COMPACT core ~1 lattice spacing across. Its
+#     self-energy is the field energy gathered at that ONE scale ell = r_e,
+#     which is the Coulomb energy cut off at the classical electron radius:
+#         E_e = e^2 / r_e = alpha * hbar c / ell = alpha * m0 c^2.
+#     No room between core and edge for a large logarithm to grow.
+#
+#   * A KNOT is an EXTENDED loop, many spacings around. Its self-energy is the
+#     line tension summed along its whole length L ~ 2 pi b ell, with a log
+#     ln(R/xi) ~ ln(b) that GROWS with the loop:
+#         E_knot ~ (f_s pi) ln(b) * (m0 c^2 / ell) * (2 pi b ell)
+#                = 2 pi^2 f_s b ln(b) * m0 c^2.
+#
+# Same rule -- the finite field energy at the object's own size -- returns a
+# light number for the compact electron and a heavy one for the extended loop.
+# The electron's alpha-lightness is a fact about COMPACT cores, not a licence
+# to discount a defect's field energy, so it does NOT carry to the knot.
+
+import numpy as _np
+
+m_e_MeV = 0.51099895069        # electron mass [MeV] (CODATA)
+m0_MeV = m_e_MeV / alpha       # node mass m0 = m_e/alpha ~ 70.03 MeV
+
+def electron_selfenergy_in_m0():
+    """Electron self-energy at the compact core scale, in units of m0 c^2."""
+    return alpha            # e^2/r_e = alpha hbar c/ell = alpha m0 c^2
+
+def knot_mass_in_m0(b, f_s=0.8):
+    """Extended-loop mass in units of m0 c^2, for loop size b = R/ell."""
+    return 2.0 * _np.pi**2 * f_s * b * _np.log(b)
+
+print()
+print("=" * 70)
+print("COMPACT (electron) vs EXTENDED (knot): light vs heavy is about SIZE")
+print("=" * 70)
+print(f"  electron: compact core, E = alpha m0        = {electron_selfenergy_in_m0():.5f} m0")
+print(f"            = {electron_selfenergy_in_m0()*m0_MeV:.3f} MeV  (the measured electron mass)")
+print()
+print(f"  {'loop size b':>12s} {'mass [m0]':>12s} {'mass [GeV]':>12s} {'x electron':>12s}")
+for b in [30, 300, 3000, 9.2e4]:      # large-loop regime where the asymptotic holds
+    m_m0 = knot_mass_in_m0(b)
+    m_GeV = m_m0 * m0_MeV / 1e3
+    print(f"  {b:12.0f} {m_m0:12.1f} {m_GeV:12.3g} {m_m0/alpha:12.3g}")
+print("-" * 70)
+print("  (The row formula is the LARGE-loop asymptotic 2 pi^2 f_s b ln b; the")
+print("  smallest rings of core size sit near ~1 GeV from the careful core")
+print("  treatment in knot_sector_mass_sigma.py, still ~2000x the electron.)")
+print("  The big frozen loops (b ~ 1e5) land in the tens of TeV. The knots are")
+print("  a genuinely heavy sector; the electron's lightness is special to a")
+print("  compact, charged, Peierls-Nabarro-pinned core, not a general rule.")
+print("=" * 70)
