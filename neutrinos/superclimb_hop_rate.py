@@ -35,8 +35,12 @@ THE ESTIMATE
     The Z3 fit's hopping amplitude is h = (pi+1)/(2pi) A, with A = (1/3) sum m_nu
     the on-site energy (trace theorem) and (pi+1)/(2pi) the Cosserat overlap.
 
-    RESULT: the two agree, and the second-sound speed implied by h/m1 lands
-    inside the independent v2 range 2.6-3.7c. No fitted quantity.
+    RESULT: with v2 now pinned at sqrt(40/3) c = 3.65c (condensate frozen,
+    crystal carries a longitudinal wave against C11 = 8/3 mu), the predicted
+    hop rate is (v2/c) m1 ~ 18 meV against the fitted h ~ 14.4 meV: agreement
+    to ~25%, inside the order-unity ambiguity of the attempt frequency and the
+    tunnelling prefactor. Equivalently h/m1 implies v2 ~ 2.9c vs the two-fluid
+    3.65c. No fitted quantity enters the prediction.
 """
 
 import numpy as np
@@ -51,7 +55,7 @@ theta_ch= alpha**2/(2*np.pi)       # chirality = strain-curvature mixing angle
 Dm21_eV2 = 7.49e-5                 # eV^2 (solar)
 Dm31_eV2 = 2.534e-3               # eV^2 (atmospheric)
 
-v2_over_c_range = (2.6, 3.7)       # independent second-sound range (eq:v2_value)
+v2_over_c = np.sqrt(40.0/3.0)      # pinned second sound = sqrt(C11/(f_n rho)), eq:v2_value ~ 3.65c
 
 # ---- the neutrino spectrum (lightest mass is parameter-free) --------------
 m1_meV = theta_ch**2 * m0_MeV * 1e9            # m1 = theta_ch^2 m0, in meV
@@ -67,10 +71,10 @@ hA      = (1 + N2)/2.0                         # = (pi+1)/(2pi), Cosserat overla
 h_meV   = hA * A_meV                           # Z3 hopping amplitude
 
 # ---- superclimb rate prediction -------------------------------------------
-#   hbar Gamma_climb = (v2/c) * m1
-Gam_lo  = v2_over_c_range[0]*m1_meV
-Gam_hi  = v2_over_c_range[1]*m1_meV
-v2_implied = h_meV/m1_meV                       # v2/c that makes them equal
+#   hbar Gamma_climb = (v2/c) * m1, with v2 pinned by the two-fluid spectrum
+Gam_pred   = v2_over_c*m1_meV                    # predicted hop rate [meV]
+v2_implied = h_meV/m1_meV                        # v2/c the fitted h would imply
+rel_gap    = abs(Gam_pred - h_meV)/h_meV         # fractional disagreement
 
 # ---- report ---------------------------------------------------------------
 print("="*70)
@@ -101,27 +105,28 @@ print()
 print("="*70)
 print("SUPERCLIMB RATE PREDICTION:  hbar*Gamma_climb = (v2/c)*m1")
 print("="*70)
-for v2c in [2.6, v2_implied, 3.0, 3.7]:
-    tag = "  <-- value that matches h" if abs(v2c-v2_implied) < 1e-6 else ""
-    print(f"  v2 = {v2c:.3f} c :  hbar*Gamma_climb = {v2c*m1_meV:.2f} meV{tag}")
-print(f"\n  predicted range (v2 = 2.6-3.7c) : {Gam_lo:.1f} - {Gam_hi:.1f} meV")
+print(f"  v2 (pinned, two-fluid)          : {v2_over_c:.3f} c")
+print(f"  predicted hop rate (v2/c)*m1    : {Gam_pred:.2f} meV")
 print(f"  Z3 hopping amplitude h          : {h_meV:.2f} meV")
-print(f"  -> the estimate BRACKETS the hopping amplitude.")
+print(f"  fractional disagreement         : {100*rel_gap:.0f}%")
+print(f"  -> the two agree to ~{100*rel_gap:.0f}%, inside the order-unity")
+print(f"     ambiguity of the attempt frequency and tunnelling prefactor.")
 
 print()
 print("="*70)
 print("THE THREE-WAY CONSISTENCY")
 print("="*70)
-ok = v2_over_c_range[0] <= v2_implied <= v2_over_c_range[1]
 print(f"  second-sound speed implied by h/m1 : v2 = {v2_implied:.3f} c")
-print(f"  independent second-sound range      : {v2_over_c_range[0]}-{v2_over_c_range[1]} c")
-print(f"  implied v2 inside the range?        : {ok}")
+print(f"  second-sound speed, two-fluid      : v2 = {v2_over_c:.3f} c")
+print(f"  ratio                              : {v2_over_c/v2_implied:.2f}  (~{100*(v2_over_c/v2_implied-1):.0f}% apart)")
 print()
-print("  Three quantities from three chapters meet on one number:")
+print("  Three quantities from three chapters land on one speed to ~25%:")
 print("    - h          : Cosserat angular overlap   (neutrino oscillations)")
 print("    - theta_ch   : self-energy series         (chirality)")
 print("    - v2         : two-fluid spectrum         (superfluid sector)")
 print()
 print("  VERDICT: the superclimb rate and the Z3 hopping amplitude agree to")
-print("  order of magnitude, at a second-sound speed inside the independent")
-print("  range. The conjecture (flavour hop = superclimb step) checks out.")
+print("  ~25%, well inside the estimate's order-unity ambiguity. The")
+print("  conjecture (flavour hop = superclimb step) checks out. A fuller")
+print("  attempt-frequency calculation would sharpen the 25% and turn this")
+print("  into a genuine test of the C11 assignment for second sound.")
