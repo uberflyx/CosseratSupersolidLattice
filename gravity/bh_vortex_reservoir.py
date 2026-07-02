@@ -165,3 +165,43 @@ print("  carrying ~1e-4 of the spin; accreting holes add a live tangle of")
 print("  ~1e-12 of the mass-energy. The universe's free vortices exist,")
 print("  and they are all inside or beside black holes -- fuel that only")
 print("  a forge, not a harvest, can practically replace.")
+
+# ---------------------------------------------------------------------------
+# 5. THE ACCUMULATED COSMIC BACKGROUND (added after review).
+#    "It's been a while": does 13.8 Gyr of leakage refill the sector?
+#    Three shields, each computed at the BaBar ceiling sigma_shed = 1 fb.
+# ---------------------------------------------------------------------------
+print("5. THE ACCUMULATED COSMIC RING BACKGROUND")
+# (a) The early universe cannot contribute: thermal collisions need the
+#     Boltzmann tail above E_1, and capture eats survivors.
+T_geom_MeV = 28.59
+E1_MeV = E1_J / J_per_MeV
+boltz = np.exp(-E1_MeV / T_geom_MeV)
+print(f"   (a) thermal shield: e^(-E1/T_geom) = {boltz:.0e} at the warmest")
+print(f"       post-crystallisation moment, then capture; the early universe")
+print(f"       makes nothing. Production begins with astrophysics.")
+# (b) Galaxy-wide forge: cosmic rays on the ISM outproduce single coronae.
+#     MODEL INPUTS: CR luminosity 1e34 W/galaxy above ~GeV, mean CR proton
+#     energy ~3 GeV, interaction probability ~0.5 per CR lifetime,
+#     sigma_pp ~ 30 mb.
+L_CR = 1e34; E_CR = 3e0 * 1.602e-10; P_int = 0.5
+sigma_pp = 30e-31
+N_dot_CR = (L_CR/E_CR) * P_int * (sigma_shed/sigma_pp)
+print(f"   (b) cosmic-ray forge: ~{N_dot_CR:.0e} rings/s per Milky-Way-like")
+print(f"       galaxy at the ceiling, comparable to its microquasars summed.")
+# (c) Accumulation and dilution. Rings self-propel at ~0.5c, far above any
+#     escape speed, so they free-stream into the IGM (optically thin,
+#     tau ~ 1e-4 per Gpc) and simply pile up.
+t_H = 4.35e17
+N_acc = (N_dot_CR + 3e28) * t_H          # per galaxy per Hubble time
+V_gal_share = 3e69                        # m^3 per L* galaxy (comoving share)
+rho_rings = N_acc * (E1_J/c**2) / V_gal_share
+rho_DM = 2.3e-27                          # kg/m^3 cosmic mean
+print(f"   (c) accumulated count: ~{N_acc:.0e} rings per galaxy since the")
+print(f"       first accretors; mass fraction rho_rings/rho_DM = "
+      f"{rho_rings/rho_DM:.0e} at the ceiling.")
+print(f"   VERDICT: the sky is not strictly empty; it holds a faint,")
+print(f"   growing, semi-relativistic ring background, ~1e-26 of the dark")
+print(f"   matter at the current ceiling and linear in sigma_shed. The")
+print(f"   emptiness verdict is safe by twenty-five orders; the background")
+print(f"   is a messenger population, not a matter component.")
