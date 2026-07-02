@@ -112,7 +112,12 @@ def ring_v(R):  return (kappa / (4*np.pi*R)) * (np.log(8*R/xi) - 1.0)
 
 # Radius reproducing the monograph's E1:
 from scipy.optimize import brentq
-R0 = brentq(lambda R: ring_E(R) - E1, 1.01*xi/8*np.e**2, 100*xi)
+from scipy.optimize import brentq as _bq
+# Solve dimensionlessly: x (ln 8x - 2) = E1/(rho_s kappa^2 ell / 2); _bq's
+# absolute xtol (2e-12) dwarfs a femtometre root, so never solve in metres.
+_rhs = E1/(0.5*rho_s*kappa**2*ell)
+R0 = ell*_bq(lambda x: x*(np.log(8*x*ell/xi) - 2) - _rhs, 1.0, 5.0)
+
 print(line)
 print("ATOM (bead = ring linked on a wire)")
 print(f"  mass E1                  : {E1/GeV:.3f} GeV   radius R0 = {R0/ell:.2f} ell")
