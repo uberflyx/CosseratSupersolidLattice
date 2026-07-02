@@ -19,10 +19,17 @@ derivation that gives 5/3 and 8/3 in the open-charm sector.
 STATUS.  The ribbon mode weights under two heavy termini are not yet
 computed, so the ribbon is quoted at the reference eigenvalue lambda = 4
 (leading order), as in the open-charm table.  For each state this script
-also reports the eigenvalue the closure requires; the required values
-rise monotonically with excitation (soft for the pseudoscalar ground
-state, near reference for the vector, stiff for the radials), which is
-the signature any derived selection must reproduce.
+also reports the RIBBON eigenvalue the closure requires through the
+assembly's ribbon term N_R (4 - lambda) m_e.  Reachability: on the hex
+cap the term lowers the mass by at most 4 N_R m_e = 14.3 MeV, so the
+eta_c's -27 MeV gap cannot be spectral; it is electromagnetic in order,
+and together with the J/psi's +15.8 MeV it composes the +43 MeV
+quarkonium hyperfine excess exactly.  Across the P wave the required
+eigenvalue rises with J (1.51 -> 5.31 -> 7.37 -> 11.68), an eigenvalue
+ladder within the shell spectrum's actual range.  The two parameter-free
+pinning limits (termini clamped; termini mass-loaded at the strain ratio
+18) were tested and FAIL to reproduce these targets (nearest values miss
+by 10-15 percent), so the core-ribbon coupling needs proper treatment.
 
 DERIVED CONTRAST.  Because the dressing is absent, the quarkonium
 hyperfine step is Delta N = 1 (one ribbon node), while the open-charm
@@ -53,10 +60,15 @@ def main():
     for name, jpc, nr, obs, err in STATES:
         N = 36 + nr
         lo = N * M_0
-        # required eigenvalue: obs = N m0 - N (4 - l) m_e
-        lam = 4 - (lo - obs) / (N * M_E)
+        # required RIBBON eigenvalue, per the assembly's ribbon term:
+        # obs = 36 m0 + N_R m0 - N_R (4 - l) m_e
+        lam = 4 - (lo - obs) / (nr * M_E)
+        # reachability: the ribbon term lowers the mass by at most
+        # N_R * 4 * m_e (at lambda = 0); a larger downward gap cannot
+        # be spectral and is electromagnetic in order.
+        col = "  ---(EM)" if lam < 0 else f"{lam:9.2f}"
         print(f"{name:12s} {nr:4d} {N:3d} {lo:9.1f} {obs:9.2f} "
-              f"{100*(lo-obs)/obs:+6.2f}% {lam:10.2f}")
+              f"{100*(lo-obs)/obs:+6.2f}% {col}")
     print("\nHyperfine contrast (parameter-free):")
     print(f"  quarkonium DN = 1 (no dressing): LO {M_0:.1f}  "
           f"obs J/psi-eta_c = 112.8, Upsilon-eta_b = 61.7")
