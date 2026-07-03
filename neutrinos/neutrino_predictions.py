@@ -10,10 +10,11 @@ and propagates theoretical uncertainties via Monte Carlo.
 
 No experimental neutrino data are used as input.  The sole measured
 quantity is the electron mass m_e.  The fine-structure constant alpha is
-derived from FCC Cosserat geometry (monograph Ch. 4).
+derived from FCC Cosserat geometry (monograph, alpha derivation).
 
-See monograph Secs. 4.7 (chirality derivation and error budget)
-and Ch. 13 (Z3 cyclic Hamiltonian, mixing angles) for full derivations.
+See the monograph's chirality derivation and neutrino error budget, and
+its Neutrinos chapter (Z3 cyclic Hamiltonian, mixing angles), for full
+derivations.
 """
 
 import numpy as np
@@ -22,7 +23,7 @@ import numpy as np
 # INPUTS
 # ══════════════════════════════════════════════════════════════
 
-# Fine-structure constant (derived from FCC Cosserat geometry, monograph Ch. 4)
+# Fine-structure constant (derived from FCC Cosserat geometry; see the monograph)
 alpha = 1.0 / 137.035999177
 
 # Electron mass (CODATA 2022) — the framework's sole dimensional input
@@ -43,7 +44,7 @@ N2      = 1.0 / np.pi                  # Cosserat coupling number (rolling conta
 
 
 # ══════════════════════════════════════════════════════════════
-# NEUTRINO-SECTOR PARAMETERS (all derived, monograph Sec. 4.7)
+# NEUTRINO-SECTOR PARAMETERS (all derived; see the monograph's error budget)
 # ══════════════════════════════════════════════════════════════
 
 # Lattice chirality: theta_ch = alpha^2 / (2*pi)
@@ -114,7 +115,7 @@ pull_31 = (Dm31_sq - Dm31_exp) / Dm31_err
 # propagated ± on each observable.
 #
 # The uncertainties are estimates of uncalculated higher-order
-# corrections (monograph Sec. 4.7), not experimental errors.
+# corrections (see the monograph error budget), not experimental errors.
 # ══════════════════════════════════════════════════════════════
 
 N_samples  = 200_000
@@ -193,13 +194,13 @@ print(f"  Dm^2_31:  pred {Dm31_sq:.4e},  NuFit {Dm31_exp:.4e} +/- {Dm31_err:.2e}
 print(f"            pull = {pull_31:+.2f} sigma")
 print(f"  Combined chi^2 = {pull_21**2 + pull_31**2:.3f}  (2 dof)")
 
-print(f"\n--- Mixing angles (monograph Ch. 13-14) ---")
-print(f"  sin^2(theta_12) = 0.310   (pull +0.1 sigma vs JUNO)")
-print(f"  sin^2(theta_23) = 0.556   (pull -0.3 sigma vs NuFit 6.0)")
-print(f"  sin^2(theta_13) = 0.0222  (pull +0.0 sigma vs NuFit 6.0)")
-print(f"  delta_CP         = 183 deg (pull +0.3 sigma vs NuFit 6.0)")
+print(f"\n--- Mixing angles (exponentiated generator; see pmns_construction.py) ---")
+print(f"  sin^2(theta_12) = 0.3148  (pull +0.6 sigma vs JUNO)")
+print(f"  sin^2(theta_23) = 0.5549  (pull -0.4 sigma vs NuFit 6.0)")
+print(f"  sin^2(theta_13) = 0.02230 (pull +0.6 sigma vs NuFit 6.0)")
+print(f"  delta_CP        = 182 deg (pull +0.3 sigma vs NuFit 6.0)")
 
-print(f"\n--- Error budget (monograph Sec. 4.7) ---")
+print(f"\n--- Error budget ---")
 print(f"  dm1/m1 = {dm1_rel*100:.1f}%  [O(alpha) corrections to theta_ch]")
 print(f"  ddelta/delta = {ddelta_rel*100:.2f}%  [NLO screening ambiguity]")
 print(f"  drho/rho = {drho_rel*100:.2f}%  [h/A derivation precision]")
