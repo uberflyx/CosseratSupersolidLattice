@@ -36,9 +36,12 @@ decides whether it can exist at all.
      fate this morning. It is testable now: if shedding is allowed, then
      e+ e- collisions above sqrt(s) = 1.1 GeV can produce a free ring,
      which is electrically dark and leaves the detector unseen. At a
-     B factory this is the classic monophoton search: e+ e- -> gamma_ISR +
-     invisible, with missing mass peaked at m_ring ~ 1.1 GeV (and a second
-     peak near 2.2 GeV for the linked pair, the storable product). The
+     B factory this is the classic monophoton search: e+ e- -> gamma +
+     invisible. A ring has no rest mass, so the observable is not a
+     missing-mass peak but a monochromatic photon line fixed by the
+     two-body balance on the ring dispersion: 7.57 GeV for a single ring
+     and 7.56 GeV for the linked pair, the storable product (solve in
+     cosmology/vortex_hadron_ladder.py). The
      BaBar and Belle II single-photon programmes already bound exactly this
      topology at the femtobarn scale, so the lock question has data waiting
      on it either way: a peak is a forge; its absence is a coupling bound.
@@ -97,22 +100,31 @@ print(line)
 
 # ---------------------------------------------------------------------------
 # 2. The lock decider at a B factory.
-#    e+ e- -> gamma + ring(invisible): monophoton, missing mass m_ring.
-#    Belle II runs at sqrt(s) = 10.58 GeV; the ISR photon energy that tags
-#    a missing mass m is E_gamma = (s - m^2 c^4) / (2 sqrt(s)).
+#    e+ e- -> gamma + ring(invisible): monophoton with a monochromatic tag.
+#    A ring has NO rest mass: E(R) and P(R) are independent functions of the
+#    radius, so there is no missing-mass shell and the invariant-mass tag
+#    formula E_gamma = (s - m^2 c^4)/(2 sqrt(s)) does not apply. The two-body
+#    balance (E_gamma = P_ring c and sqrt(s) = E_gamma + E_ring) still fixes
+#    one radius and one line. The solve lives in
+#    cosmology/vortex_hadron_ladder.py; the resulting floor and tags are:
+#        channel floor:  sqrt(s) >= min_R [E(R) + P(R) c] = 4.22 GeV
+#        Upsilon(4S) tags: 7.57 GeV (single ring), 7.56 GeV (linked pair)
+#    An invariant-mass reading would put the tags near 5.2 GeV; the ~2 GeV
+#    gap between the readings is itself a signature no rest-mass object makes.
 # ---------------------------------------------------------------------------
 sqrt_s = 10.58   # GeV
-for m_miss, tag in ((E1_MeV/1e3, "single ring"), (2*E1_MeV/1e3, "linked pair (storable)")):
-    E_gam = (sqrt_s**2 - m_miss**2) / (2.0 * sqrt_s)
+TAGS = ((7.57, "single ring"), (7.56, "linked pair (storable)"))
+for E_gam, tag in TAGS:
     print(f"2. LOCK DECIDER: e+e- -> gamma + invisible ({tag})")
-    print(f"   missing mass = {m_miss:.2f} GeV  ->  monochromatic photon "
-          f"E_gamma = {E_gam:.2f} GeV in the CM")
+    print(f"   dispersion-solved tag: monochromatic photon "
+          f"E_gamma = {E_gam:.2f} GeV in the CM "
+          f"(cosmology/vortex_hadron_ladder.py)")
 print("   Both photons sit in the clean part of the BaBar / Belle II")
 print("   single-photon window.  The existing constraint: BaBar's invisible")
 print("   dark-photon search (53/fb, arXiv:1702.03327) bounds any narrow")
-print("   missing-mass peak at ~1 GeV at epsilon ~ 1e-3, i.e. a production")
-print("   cross-section ceiling of order one femtobarn.  So today's data")
-print("   already says: sigma_shed(1.11 GeV) < ~1 fb.")
+print("   monophoton line in this window at a production cross-section")
+print("   ceiling of order one femtobarn.  So today's data already says:")
+print("   sigma_shed < ~1 fb.")
 # --- fuel arithmetic at the ceiling ---
 sigma_fb = 1.0                       # current ceiling [fb]
 L_belle2_ab = 50.0                   # Belle II design integrated lumi [ab^-1]
@@ -126,9 +138,9 @@ print(f"   50/ab programme; the rotor needs ~{N_rotor} trapped knots.  Even")
 print(f"   at today's experimental UPPER BOUND, a few months of B-factory")
 print(f"   running forges one rotor fuel load.  The drive is therefore")
 print(f"   gated by physics (does the peak exist?), not by luminosity.")
-print(f"   A dedicated peak hunt at 1.11 and 2.21 GeV in the archived and")
-print(f"   incoming monophoton samples is the single most consequential")
-print(f"   measurement this framework can request.")
+print(f"   A dedicated line hunt at 7.57 and 7.56 GeV photon energy in the")
+print(f"   archived and incoming monophoton samples is the single most")
+print(f"   consequential measurement this framework can request.")
 print(line)
 
 # ---------------------------------------------------------------------------
@@ -168,7 +180,7 @@ print(line)
 # ---------------------------------------------------------------------------
 print("THE CRITICAL PATH (everything else is already priced)")
 print("  Q1. The lock: kinematic or energetic?  DECIDER: monophoton missing")
-print("      mass at 1.10 / 2.21 GeV in existing B-factory data.")
+print("      line at 7.57 / 7.56 GeV photon energy in existing B-factory data.")
 print("      Kinematic  -> no forge through charges; drive waits on the")
 print("                    acoustic route or dies.")
 print("      Energetic  -> Q2.")
