@@ -9,17 +9,25 @@ second sound couples to a process through its MONOPOLE CONTENT, the net
 fractional change in defect (node) count, and that ordinary stellar burning
 is chiral-suppressed (eps ~ theta_ch). The next question the framework can
 now pose: the LOUDEST clean monopole source is annihilation, which removes
-defects outright (delta-rho/rho -> -1). Two epochs run annihilation at full
-per-event strength -- cosmological e+e- annihilation (t ~ 1 s, T ~ m_e) and
-the supernova core. This script asks what second-sound energy each sheds and
-confronts it with the tightest existing bound on each.
+defects and empties the cells they held. But the per-event strength depends
+on WHAT annihilates. Baryonic annihilation removes nodes outright
+(delta-rho/rho -> -1, full strength, GeV scale). Light-lepton annihilation
+(e+e- -> gamma gamma) merges two screw dislocations into transverse shear
+waves (photons); both the incoming defects and the outgoing photons are pure
+shear (div u = 0 at linear order), so the monopole content is a small
+higher-order leak, NOT of order one. This script treats three arenas: the
+LABORATORY (per-event e+e- branching vs the positronium invisible-decay
+searches), and two cosmological/astrophysical bulk episodes.
 
 KEY PHYSICS (and the reason the answer is not catastrophic):
   A process radiates second sound through the RATE of monopole change, not
-  its accumulated value. A single annihilation event has eps_event ~ 1, but
-  what a bulk medium radiates coherently is set by how fast the net node
-  count changes compared with the mode frequency it can drive. The emitted
-  power per unit volume scales as
+  its accumulated value. A single BARYONIC annihilation event has
+  eps_event ~ 1; a single LIGHT-LEPTON event has eps_event << 1, capped by
+  energy conservation (2 m_e c^2 cannot pay for a full-cell compression that
+  costs ~m_0 c^2) and pinned by the positronium searches to ~1.5e-5 per cell
+  (LABORATORY block below). For the bulk episodes, what a medium radiates
+  coherently is set by how fast the NET node count changes compared with the
+  mode frequency it can drive. The emitted power per unit volume scales as
         P/V ~ K_sf * (d/dt [delta-rho/rho])^2 / (rho c v2)     (dimensional)
   i.e. it is quadratic in the monopole RATE. Slow (equilibrium) annihilation
   is quiet; fast (out-of-equilibrium, shock) annihilation is loud.
@@ -59,6 +67,39 @@ v2     = 3.65*c
 m0     = 0.51099895069e6/alpha*e/c**2      # node mass, kg
 rho_L  = 0.8*m0/ell**3                      # superfluid density of the lattice
 K_sf   = c**4/(G*ell**2)
+
+print("="*72)
+print("LABORATORY: per-event e+e- second-sound branching vs positronium bounds")
+print("="*72)
+# Emission law E_2nd = (1/2) C11 (drho/rho)^2 V, C11 = (8/3) mu, over one cell
+# V = ell^3. Using mu ell^3 = m0 c^2 and m0 = m_e/alpha, the per-event branching
+# into second sound (energy over the 2 m_e c^2 released) is
+#       Br_2nd = E_2nd / (2 m_e c^2) = (2 / 3 alpha) (drho/rho)^2.
+coeff = 2.0/(3.0*alpha)                       # Br_2nd = coeff * (drho/rho)^2
+print(f"  Br_2nd = (2/3 alpha) (drho/rho)^2 = {coeff:.1f} * (drho/rho)^2")
+# (1) Energy-conservation ceiling: Br_2nd <= 1 forbids the full-strength value.
+drho_ceiling = np.sqrt(1.0/coeff)
+print(f"  energy-conservation ceiling: Br<=1 => drho/rho <= {drho_ceiling:.3f}")
+print(f"    -> a single e+e- pair CANNOT reach drho/rho ~ 1 (full strength);")
+print(f"       full-cell compression costs (4/3) m0 c^2 = "
+      f"{4/3*0.51099895069/alpha:.1f} MeV >> 2 m_e c^2 = 1.022 MeV.")
+# (2) Badertscher 2007 (Phys. Rev. D 75, 032004) invisible-decay limits.
+Br_oPs    = 4.2e-7                             # Br(o-Ps -> invisible), 90% CL
+Br_direct = 2.1e-8                             # Br(e+e- -> invisible), 90% CL
+drho_oPs    = np.sqrt(Br_oPs/coeff)
+drho_direct = np.sqrt(Br_direct/coeff)
+print(f"  Badertscher o-Ps    bound Br<{Br_oPs:.1e} => drho/rho < {drho_oPs:.2e}")
+print(f"  Badertscher direct  bound Br<{Br_direct:.1e} => drho/rho < {drho_direct:.2e}")
+print(f"    -> tightest lab limit on the annihilation monopole content:")
+print(f"       drho/rho <~ {drho_direct:.1e} per cell (cf. 7Be beta bound ~1e-3).")
+# (3) If the leak is the chiral amplitude theta_ch, predict the branching.
+Br_chiral = coeff*theta**2
+print(f"  IF the leak is chiral (drho/rho ~ theta_ch = {theta:.2e}):")
+print(f"       Br_2nd = {Br_chiral:.2e}, a factor {Br_direct/Br_chiral:.1f} below")
+print(f"       the current direct bound -- a next-generation target (Vigo 2018).")
+print("  Note: the annihilation monopole content is not yet derived from first")
+print("  principles; theta_ch is a plausible identification, flagged not asserted.")
+print()
 
 print("="*72)
 print("EPISODE 1: cosmological e+e- annihilation (t ~ 1 s, T ~ m_e c^2)")
