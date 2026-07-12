@@ -162,7 +162,7 @@ print("  cascade + capture). Inside, the melt breaks the rolling lock for")
 print("  free: Schwarzschild interiors relax to empty in ~Myr; Kerr")
 print("  interiors permanently hold a ~1e19-line quantised Feynman array")
 print("  carrying ~1e-4 of the spin; accreting holes add a live tangle of")
-print("  ~1e-12 of the mass-energy. The universe's free vortices exist,")
+print("  ~1e-19 of the mass-energy. The universe's free vortices exist,")
 print("  and they are all inside or beside black holes -- fuel that only")
 print("  a forge, not a harvest, can practically replace.")
 
