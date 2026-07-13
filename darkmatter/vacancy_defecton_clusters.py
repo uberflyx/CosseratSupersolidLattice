@@ -193,12 +193,6 @@ def rayleigh_channel():
     print()
 
 
-if __name__ == "__main__":
-    defecton_band()
-    cluster_bindings()
-    coalescence_luminosity()
-    rayleigh_channel()
-    ignition_crossing()
 
 
 # ----------------------------------------------------------------------
@@ -273,3 +267,61 @@ def ignition_crossing():
                         ncs.add(k * (k + 1) // 2)
                         break
     print(f"thermodynamic crossing n_c^eq across sweep: {sorted(ncs)}")
+
+
+# ----------------------------------------------------------------------
+# 6. Trigger cross-section and population depletion
+# ----------------------------------------------------------------------
+def trigger_and_depletion():
+    """Athermal trigger of void collapse by an impinging matter defect.
+
+    Regime A (fault-cancelling path): threshold is line-tension-limited,
+    tau_c ~ mu b_p/(2 pi R); a screw of Burgers vector ell delivers that
+    stress out to r_c = sqrt(3) R, so sigma = 3 pi R^2.
+    Regime B (open-fault path): tau_c ~ gamma_USF/b_p, core-on impact
+    only, sigma = pi R^2.  Both are geometric.
+    """
+    v0 = ELL_CM ** 3 / np.sqrt(2.0)          # FCC volume per site [cm^3]
+    barn = 1e-24                              # [cm^2]
+    print("=== Trigger cross-section (athermal, both regimes) ===")
+    for n in (6, 21, 55, 78):
+        R = (3.0 * n * v0 / (4.0 * np.pi)) ** (1.0 / 3.0)
+        sA = 3.0 * np.pi * R * R
+        sB = np.pi * R * R
+        print(f"n={n:3d}: R = {R/ELL_CM:4.2f} ell, sigma = "
+              f"{sB/barn:4.2f}-{sA/barn:4.2f} barn")
+
+    # Depletion timescales, sigma ~ 1 barn, v_rel ~ 250 km/s
+    sigma, v = 1e-24, 2.5e7
+    print("\nDepletion time 1/(n_H sigma v), sigma = 1 barn:")
+    for name, nH in (("halo gas", 1e-4), ("warm ISM", 0.5),
+                     ("atomic gas", 1.0), ("molecular cloud", 1e3),
+                     ("CMZ", 1e4)):
+        t = 1.0 / (nH * sigma * v)
+        print(f"  {name:16s} n_H={nH:8.1e} cm^-3 -> {t/3.15e16:10.3g} Gyr")
+
+    # Relic vacancy site fraction: clustering cannot happen by chance
+    n_vac = 0.4 / M0_MEV * 1e3                # local DM number density [cm^-3]
+    c_v = n_vac * v0
+    print(f"\nvacancy site fraction c_v = {c_v:.1e} "
+          f"(chance adjacency ~ 12 c_v = {12*c_v:.0e}: never)")
+
+    # Cap on the surviving cluster mass fraction f_c from the observed
+    # GC GeV excess (~1e37 erg/s ~ 6e39 GeV/s), r < 1.5 kpc, n_H ~ 10.
+    L_obs = 6e39                              # [GeV/s]
+    V = 4.0 / 3.0 * np.pi * (1.5 * 3.086e21) ** 3
+    M_cl, E_burst = 0.7, 0.5                  # [GeV], n ~ 21 cluster
+    for name, rho in (("halo-tracing (rho_DM ~ 1 GeV/cm^3)", 1.0),
+                      ("comoving-uniform (mean rho_DM)", 1.4e-6)):
+        rate_den = (rho / M_cl) * 10.0 * sigma * v      # per f_c [cm^-3 s^-1]
+        f_cap = L_obs / (rate_den * E_burst * V)
+        print(f"  f_c cap, {name}: {f_cap:.0e}")
+
+
+if __name__ == "__main__":
+    defecton_band()
+    cluster_bindings()
+    coalescence_luminosity()
+    rayleigh_channel()
+    ignition_crossing()
+    trigger_and_depletion()
