@@ -198,3 +198,78 @@ if __name__ == "__main__":
     cluster_bindings()
     coalescence_luminosity()
     rayleigh_channel()
+    ignition_crossing()
+
+
+# ----------------------------------------------------------------------
+# 5. Void-versus-tetrahedron crossing (ignition energetics)
+# ----------------------------------------------------------------------
+def grow_cluster(n, seed=0):
+    """Greedy max-bond compact FCC cluster; returns internal bond count B."""
+    rng = np.random.default_rng(seed)
+    dirs = [d for d in itertools.product((-1, 0, 1), repeat=3)
+            if sum(x * x for x in d) == 2]
+    cluster = {(0, 0, 0)}
+    B = 0
+    while len(cluster) < n:
+        cand = {}
+        for p in cluster:
+            for d in dirs:
+                q = (p[0] + d[0], p[1] + d[1], p[2] + d[2])
+                if q not in cluster:
+                    cand[q] = cand.get(q, 0) + 1
+        best = max(cand.values())
+        picks = [q for q, v in cand.items() if v == best]
+        cen = np.mean([list(p) for p in cluster], axis=0)
+        picks.sort(key=lambda q: (np.sum((np.array(q) - cen) ** 2),
+                                  rng.random()))
+        cluster.add(picks[0])
+        B += best
+    return B
+
+
+def void_energy(n):
+    """Broken-bond formation energy [MeV] of the best compact n-void found."""
+    B = max(grow_cluster(n, s) for s in range(6))
+    return (6 * n - B) * (M0_MEV / 6.0)
+
+
+def sft_energy(k, r0=0.5, c_core=1.0, gamma_isf=0.0):
+    """Stacking-fault tetrahedron energy [MeV] for platelet edge k sites.
+
+    n = k(k+1)/2 vacancies, edge length L = (k-1) ell.  Faces are
+    colour-closed (self-screening), so the area term carries only the
+    residual fault energy gamma_isf [m0/ell^2], near zero.  Edges are
+    six stair-rods, b = ell/3, nu = 1/2, giving a line prefactor
+    sqrt(2) mu ell^2 b^2-scaled = sqrt(2) m0 / (18 pi) per ell.
+    """
+    L = k - 1
+    if L < 1:
+        return None
+    pre = np.sqrt(2.0) * M0_MEV / (18.0 * np.pi)
+    line = 6.0 * L * pre * (np.log(L / r0) + c_core)
+    fault = np.sqrt(3.0) * L * L * gamma_isf * M0_MEV
+    return line + fault
+
+
+def ignition_crossing():
+    print("=== Void vs stacking-fault tetrahedron (ignition) ===")
+    print(f"{'k':>3} {'n':>4} {'E_void':>8} {'E_SFT':>8} {'burst':>8} "
+          f"{'burst frac':>10}")
+    for k in range(2, 13):
+        n = k * (k + 1) // 2
+        ev = void_energy(n)
+        es = sft_energy(k)
+        print(f"{k:>3} {n:>4} {ev:8.1f} {es:8.1f} {ev - es:8.1f} "
+              f"{(ev - es) / ev:10.1%}")
+    # Crossing sweep: robustness against core cutoff, core constant,
+    # and residual fault energy.
+    ncs = set()
+    for r0 in (0.25, 0.5, 1.0):
+        for c in (0.0, 1.0, 2.0):
+            for g in (0.0, 0.01, 0.05):
+                for k in range(2, 13):
+                    if sft_energy(k, r0, c, g) < void_energy(k * (k + 1) // 2):
+                        ncs.add(k * (k + 1) // 2)
+                        break
+    print(f"thermodynamic crossing n_c^eq across sweep: {sorted(ncs)}")
