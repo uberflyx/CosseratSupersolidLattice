@@ -59,9 +59,19 @@ D4_STEP = 1 / math.sqrt(2)          # compact component of a temporal root
 L_RING = 3 * D4_STEP                # compact circumference (root metric)
 
 ALPHA_INV = 137.035999              # for the bare PN overlap w/d
-W_OVER_D = math.log(ALPHA_INV) / (2 * math.pi)   # = 0.78308
-C_EFF = 0.0074                      # strain-weighted overlap difference
-                                    # (monograph, Koide quartic section)
+LOG_A = math.log(ALPHA_INV)         # ln(1/alpha) = 4.92024
+W_OVER_D = LOG_A / (2 * math.pi)    # = 0.78308
+
+# C_eff: strain-weighted overlap difference, exact closed form in alpha.
+# The core's peak strain is eps_p = b/(2 pi w) = 1/ln(1/alpha) since the
+# hop transfers one Shockley partial (b = d).  The self element samples
+# the core's own strain intensity; the transfer element samples the
+# symmetrised branch mean (eps_A^2 + eps_B^2)/2, forced by the localised
+# valley configurations of the tight-binding ansatz.  All integrals are
+# elementary Lorentzian moments (residues); the difference collapses to
+#   C_eff = pi^2 (7 pi^2 + 11 L^2) / (16 L^2 (pi^2 + L^2)^2),  L = ln(1/alpha).
+C_EFF = (math.pi**2 * (7 * math.pi**2 + 11 * LOG_A**2)
+         / (16 * LOG_A**2 * (math.pi**2 + LOG_A**2)**2))   # = 0.0073585
 
 def morse(r):
     """Morse pair potential, V''(1) = 1, minimum at r = 1."""
@@ -276,10 +286,32 @@ def koide_chain(sigma, sums_d4, ndim=3):
 #  MAIN
 # ════════════════════════════════════════════════════════════════════
 
+def ceff_verify(n=200000):
+    """Quadrature check of the closed-form C_eff and the rejected
+    alternative constructions (coherent-average and saddle-field)."""
+    delta = 2 * math.pi / LOG_A
+    eps_p2 = 1 / LOG_A**2
+    x = np.linspace(-40, 40, n)
+    Lo = 1 / (1 + x**2)
+    Ls = 1 / (1 + (x - delta)**2)
+    Lm = 1 / (1 + (x - delta / 2)**2)
+    den = np.trapezoid(Lo * Ls, x)
+    mean_branch = np.trapezoid(Lo * Ls * (Lo**2 + Ls**2) / 2, x) / den
+    coh_avg = np.trapezoid(Lo * Ls * ((Lo + Ls) / 2)**2, x) / den
+    saddle = np.trapezoid(Lo * Ls * Lm**2, x) / den
+    return {"C_quad": (0.625 - mean_branch) * eps_p2,
+            "C_coherent": (0.625 - coh_avg) * eps_p2,
+            "C_saddle": (0.625 - saddle) * eps_p2}
+
 if __name__ == "__main__":
     print("=" * 72)
     print("  THE KOIDE AMPLITUDE FROM THE MOTT POINT (zero free parameters)")
     print("=" * 72)
+
+    v = ceff_verify()
+    print(f"\n  C_eff closed form = {C_EFF:.8f}  (quadrature: {v['C_quad']:.8f})")
+    print(f"  rejected constructions: coherent-average {v['C_coherent']:.6f}, "
+          f"saddle-field {v['C_saddle']:.6f}")
 
     roots = d4_roots()
     sums = eta4_sums(roots)
@@ -341,7 +373,7 @@ if __name__ == "__main__":
     print(f"  At the Mott-hbar solve: the quartic correction covers "
           f"{r['eta4']/eta_req*100:.0f}% of the bare gap;")
     print(f"  the FCC-normalised quartic is gamma4 = {r['g4_fcc']:.1f} "
-          f"(monograph prediction: 17.5).")
+          f"(FCC-bookkeeping requirement: 18.0).")
 
     print(f"\n{'-' * 72}\n  APPENDIX: exact-derivative SCP table (replaces fitted table)\n{'-' * 72}")
     print(f"  {'s':>5s}{'d_eff':>8s}{'V2eff':>8s}{'g3eff':>8s}{'g4eff':>8s}{'g4/g3^2':>9s}")
