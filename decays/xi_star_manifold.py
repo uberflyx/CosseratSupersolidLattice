@@ -159,3 +159,35 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def delta_reference_decomposition():
+    """The Delta-side decomposition the monograph's Fiedler-manifold section
+    names as the missing step. The cap-exchange rotation splits the
+    threefold-degenerate lambda_2 = 2.4384 space into 1 even + 2 odd; the
+    even (symmetric) piece keeps the degenerate eigenvalue, so the reference
+    does not move. The even-only reading of the Xi* product then overshoots
+    (suppression 0.754 against the 0.441 the data requires, with the LO
+    product at 0.333): the closure needs the vertex matrix element, not a
+    further eigenvalue combination."""
+    import numpy as np
+    nodes, idx, roles, L = build_deactivation_graph(0)
+    w, v = np.linalg.eigh(L)
+    trip = [k for k in range(len(w)) if abs(w[k] - 2.4384) < 1e-3]
+    lat = FCCLattice(); d = Defect(lat); d.add_shell()
+    for vi in range(4):
+        nm = f'v{vi}'; d.nodes.add(nm); d.roles[nm] = 'void'
+        d.pos[nm] = lat.void_positions[vi].copy()
+    n0 = lat.plane_normals[0]/np.linalg.norm(lat.plane_normals[0])
+    n1 = lat.plane_normals[1]/np.linalg.norm(lat.plane_normals[1])
+    ax = (n0 + n1); ax = ax/np.linalg.norm(ax)
+    P = np.zeros((len(nodes), len(nodes)))
+    for n in nodes:
+        r = 2*np.dot(d.pos[n], ax)*ax - d.pos[n]
+        m = next(k for k in nodes if np.allclose(d.pos[k], r, atol=1e-8))
+        P[idx[m], idx[n]] = 1.0
+    assert np.allclose(P @ L, L @ P)
+    sub = v[:, trip]
+    M = sub.T @ P @ sub
+    ev = np.linalg.eigvalsh((M + M.T)/2)
+    return ev  # parities of the triplet branches: [-1, -1, +1]
