@@ -11,7 +11,7 @@ cosserat_graph.py               # ★ Constructive graph calculator — all mass
 │   ├── oh_irrep_overlaps.py    #   O_h irrep overlaps (Ch. 4)
 │   ├── cosserat_transfer_matrix.py # Transfer matrix eigenvalues (Ch. 4)
 │   ├── cosserat_dw.py          #   Debye-Waller factor (Ch. 3)
-│   └── gamma4_scp.py           #   Quartic anharmonic correction (Ch. 11)
+│   └── koide_sigma_mott.py     #   Koide amplitude and quartic from the Mott point
 ├── hadrons/                    # Ch. 9–10: mass formula, exotics, excited baryons
 │   ├── verify_fcc_geometry.py  #   FCC coordinate checks (Ch. 9)
 │   ├── exotic_catalogue.py     #   Exotic hadron classification
