@@ -10,9 +10,10 @@ decays/cosserat_decay_engine.py already builds this graph and uses its
 two lowest nonzero eigenvalues (lambda_2 = 1.076, lambda_3 = 1.839) in a
 product formula for the decay width Xi* -> Xi + pi (Sec. decuplet_decays
 of the dynamics chapter).  That formula misses the observed width by
--26%, and the chapter names the reason: at |S|=2 there are two soft
-modes and a coupling built from lambda_2 alone cannot see the second
-(Sec. fiedler_manifold).
+about a quarter (-24% with the Clebsch-Gordan-weighted channel sum and
+the corrected shadow factor sigma = 0.0087), and the chapter names the
+reason: at |S|=2 there are two soft modes and a coupling built from
+lambda_2 alone cannot see the second (Sec. fiedler_manifold).
 
 This script answers a question the eigenvalues alone cannot: what do the
 two soft eigenVECTORS actually look like, and does the leading formula

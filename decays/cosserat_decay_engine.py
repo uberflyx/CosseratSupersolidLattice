@@ -52,7 +52,7 @@ HBAR_S    = 6.582119569e-22                  # MeV.s
 F_K       = F_PI * 2.0**0.25                 # Sec. fK_fpi
 THETA_CH  = ALPHA**2 / (2 * math.pi)         # Sec. theta_ch
 R_CHI     = 50.8                             # Sec. chiral_enhancement
-W_PN      = 0.783 * _ELL                     # PN core half-width
+W_PN      = (0.783/math.sqrt(3.0)) * _ELL    # PN core half-width w = 0.783 d = 0.452 l, d = l/sqrt(3) the misfit period
 A_PEIERLS = (2*math.pi - 1) / (2*math.pi)    # microrotation surviving per Peierls step
 V_COND    = 246190.0                         # Higgs vev
 G_F       = 1.0 / (math.sqrt(2.0) * V_COND**2)
@@ -74,7 +74,12 @@ F_BS      = 230.3 / _SQRT2     # Bs0 (b sbar) decay constant
 G_A       = 1.279
 F_D_RATIO = 9.0/16.0
 F_N       = 1.6887
-SIGMA_HEX = (1.0/6.0) * math.exp(-4.0/(3.0*0.783))
+# Hex-cap shadow per strange arm: the cap's evanescent tail (decay length =
+# the PN core half-width w = 0.452 l) crosses the cap-to-void face-centroid
+# separation.  Face centroids sit at sqrt(2/3) l along T_d normals differing
+# in two signs, so the separation is sqrt(2/3) l * |(0,2,2)|/sqrt(3) = 4 l/3
+# exactly; spread over the cap's 6 ring nodes.
+SIGMA_HEX = (1.0/6.0) * math.exp(-(4.0/3.0)/(0.783/math.sqrt(3.0)))
 M_MU      = 105.6583755
 M_TAU     = 1776.86
 M_W       = 80369.0
@@ -343,10 +348,10 @@ def _decuplet_deact_coupling(n_strange):
     Returns R (the dimensionless coupling ratio, not the amplitude).
     Cached by n_strange.
 
-    Values (correct T_d, void-swap, no void-void bonds):
+    Values (correct T_d, void-swap, no void-void bonds; sigma = 0.0087):
         Delta  R = 1.0000  (lambda_2 = 2.4384, triple degenerate)
-        Sigma* R = 0.5348  (one cap mode at 1.3449)
-        Xi*    R = 0.3126  (two cap modes at 1.076, 1.839)
+        Sigma* R = 0.5467  (one cap mode at 1.3449)
+        Xi*    R = 0.3270  (two cap modes at 1.076, 1.839)
     """
     if n_strange in _DEACT_CACHE:
         return _DEACT_CACHE[n_strange]
@@ -401,8 +406,11 @@ def combine_VOID(parent_def, daughter_defs, parent_qn=None):
 
     Every factor is a graph invariant -- N_H = Z_1 + 1 = 13, N_BL = N_triangles
     = 8, lambda_2 from the void-swap cluster of the mass construction, and
-    sigma = SIGMA_HEX = 0.030 per strange arm.  No empirical anchor and no
-    per-particle lookup; |S| is read from the parent quantum numbers.
+    sigma = SIGMA_HEX = 0.0087 per strange arm.  No empirical anchor and no
+    per-particle lookup; |S| is read from the parent quantum numbers.  The
+    deactivation coupling is isospin-blind, so for an I = 1/2 parent (Xi*)
+    the width sums the two charge channels with squared Clebsch-Gordan
+    weights (handled in decay(), from the engine's own charge-state masses).
     """
     N_H  = 13.0          # Z_1 + 1: coordination shell (12) + centre
     N_BL = 8.0           # triangular faces of the cuboctahedral shell
@@ -943,6 +951,31 @@ def phase_space_2body(p_cm, M, L=0):
     return p_cm**(2*L+1) / (math.factorial(2*L+1) * math.pi * M*M)
 
 
+def _cg_weighted_kin_I_half(parent_qn, m_p):
+    """CG-weighted P-wave kinematic factor for an I = 1/2 decuplet parent.
+
+    For the Xi*0 the channels are Xi- pi+ (squared CG weight 2/3) and
+    Xi0 pi0 (1/3), mirrored for the Xi*-.  Both channels' masses come from
+    the engine's own charge-state predictions, keeping the width ab initio.
+    Returns sum_i c_i p_i^3/(6 pi m^2), or None if a mass fails to resolve.
+    """
+    s = 1.0 if parent_qn.I3 > 0 else -1.0
+    channels = [
+        (-0.5 * s, 1.0 * s, 2.0 / 3.0),   # Xi- pi+  for the Xi*0
+        ( 0.5 * s, 0.0,     1.0 / 3.0),   # Xi0 pi0  for the Xi*0
+    ]
+    total = 0.0
+    for b_i3, pi_i3, cg in channels:
+        rb, _, _ = predict_with_defect(QN(B=1, S=parent_qn.S, I=0.5, I3=b_i3,
+                                          J=0.5, P=+1))
+        rp, _, _ = predict_with_defect(QN(B=0, S=0, I=1, I3=pi_i3, J=0, P=-1))
+        if not rb or not rb.mass or not rp or not rp.mass:
+            return None
+        p = cm_momentum(m_p, rb.mass, rp.mass)
+        total += cg * phase_space_2body(p, m_p, L=1)
+    return total
+
+
 # ---------------------------------------------------------------- engine
 def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
     """Universal decay rate from the master formula.
@@ -978,8 +1011,18 @@ def decay(parent_qn: QN, *daughter_specs) -> Optional[float]:
     if topology == 'VOID':
         M_amp = combine_VOID(p_def, d_defs, parent_qn)
         if M_amp is None: return None
-        # P-wave decuplet -> octet pi
+        # P-wave decuplet -> octet pi.  The deactivation coupling is
+        # isospin-blind, so the width sums the daughter charge channels with
+        # squared Clebsch-Gordan weights.  Delta++ -> p pi+ and
+        # Sigma*+ -> Lambda pi+ are single channels (weight one); an I = 1/2
+        # parent (Xi*) splits 2/3 : 1/3 between channels whose p^3 differ at
+        # the twenty-percent level, so both are computed from the engine's
+        # own charge-state mass predictions.
         if len(d_masses) == 2:
+            if abs(parent_qn.I - 0.5) < 1e-9:
+                kin = _cg_weighted_kin_I_half(parent_qn, m_p)
+                if kin is not None:
+                    return M_amp**2 * kin
             p_cm = cm_momentum(m_p, d_masses[0], d_masses[1])
             return M_amp**2 * phase_space_2body(p_cm, m_p, L=1)
 
@@ -1085,7 +1128,7 @@ def regression():
 
     cases = [
         # Mode I: strong
-        ('Delta+ -> p pi+',       v(QN(B=1,S=0,I=1.5,I3=1.5,J=1.5,P=+1),
+        ('Delta++ -> p pi+',       v(QN(B=1,S=0,I=1.5,I3=1.5,J=1.5,P=+1),
                                      QN(B=1,S=0,I=0.5,I3=0.5,J=0.5,P=+1),
                                      QN(B=0,S=0,I=1,I3=1,J=0)),
                                     117.0, 'MeV', 'VOID'),
