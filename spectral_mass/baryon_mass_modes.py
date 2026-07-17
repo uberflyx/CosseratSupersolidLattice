@@ -175,9 +175,9 @@ def cluster_xi():
 # ----------------------------------------------------------------------
 BARYONS = [
     ('p,n',     lambda: cluster_coord_shell()[0], 13, 'A_2u', 'anchor',  938.918, 8.303),
-    ('Lambda',  build_lambda_cluster,             16, 'A_2g', 'soft',    1115.683, 3.295),
+    ('Lambda',  build_lambda_cluster,             16, 'A_2g', 'soft',    1115.683, 3.204),
     ('Sigma0',  cluster_delta,                    17, 'A_2g', 'stiff',   1193.15,  4.624),
-    ('Xi',      cluster_xi,                       19, 'A_2g', 'soft',    1318.29,  2.788),
+    ('Xi',      cluster_xi,                       19, 'A_2g', 'soft',    1318.29,  3.055),
     ('Delta',   cluster_delta,                    17, 'T_1g', 'triplet', 1232.0,   9.052),
 ]
 

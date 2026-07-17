@@ -325,7 +325,7 @@ def classify_topology(parent_qn: QN, daughter_specs) -> str:
 
 _DEACT_CACHE = {}
 def _decuplet_deact_coupling(n_strange):
-    """Product coupling R for the decuplet decay (Eq. decuplet_product_formula).
+    """Fiedler-ratio coupling R for the decuplet decay (Eq. decuplet_ab_initio_NLO).
 
     Builds the DEACTIVATION GRAPH of the mass construction's void-swap cluster
     with three structural choices, each physically motivated:
@@ -339,19 +339,29 @@ def _decuplet_deact_coupling(n_strange):
            distance stiffen the interstitial subsystem internally but do not
            participate in the void-to-shell deactivation that drives the decay.
 
-    The coupling is the PRODUCT of eigenvalue ratios over the |S| soft cap
-    modes, each mode contributing an independent suppression factor:
+    The coupling is the SINGLE Fiedler ratio, once, for any strangeness:
 
-        R  =  prod_{k=1}^{|S|}  [lam_{k+1} / lam_{k+1}^(Delta)]
-              * (1 - |S| sigma)
+        R  =  [lambda_2 / lambda_2^(Delta)]  *  (1 - |S| sigma)
+
+    The deactivation graph's Laplacian generates the strain transport that
+    completes the void-to-shell reorganisation, and the completion rate of
+    transport on a graph is its spectral gap, the algebraic connectivity
+    lambda_2 (Fiedler).  The emission itself is family-universal (the
+    rotation-plus-displacement vertex contraction on the Cosserat
+    eigenvectors gives 1.02/0.97 for Sigma*/Xi* relative to the Delta), so
+    the whole strangeness dependence is kinetic.  The odd (cap-exchange
+    antisymmetric) Fiedler channel is selected because the pion leaves
+    through one face: the vertex-level monopole null forces a dipole
+    source, and the single-arm source overlaps the odd mode at 0.65-0.88
+    on all three graphs.
 
     Returns R (the dimensionless coupling ratio, not the amplitude).
     Cached by n_strange.
 
     Values (correct T_d, void-swap, no void-void bonds; sigma = 0.0087):
         Delta  R = 1.0000  (lambda_2 = 2.4384, triple degenerate)
-        Sigma* R = 0.5467  (one cap mode at 1.3449)
-        Xi*    R = 0.3270  (two cap modes at 1.076, 1.839)
+        Sigma* R = 0.5467  (lambda_2 = 1.3449; ratio 0.5515 x shadow)
+        Xi*    R = 0.4335  (lambda_2 = 1.0759; ratio 0.4412 x shadow)
     """
     if n_strange in _DEACT_CACHE:
         return _DEACT_CACHE[n_strange]
@@ -385,9 +395,14 @@ def _decuplet_deact_coupling(n_strange):
     ev_s = [x for x in spec_s if x > 1e-9]
     ev_0 = [x for x in spec_0 if x > 1e-9]
 
-    R = 1.0
-    for k in range(n_strange):
-        R *= ev_s[k] / ev_0[k]
+    # Single Fiedler ratio, once, for any |S|: the decay rate is gated by
+    # the reorganisation kinetics across the cluster's cheapest cut, whose
+    # rate constant is the algebraic connectivity lambda_2 (the friction is
+    # a universal bath property and cancels in the ratio to the Delta).
+    # The pion emission is a single-face dipole event (the vertex-level
+    # monopole null forces the P-wave), so the exchange-odd Fiedler channel
+    # is selected, not forbidden.  The shadow enters once per strange arm.
+    R = (ev_s[0] / ev_0[0]) if n_strange > 0 else 1.0
     R *= (1.0 - n_strange * SIGMA_HEX)
 
     _DEACT_CACHE[n_strange] = R
@@ -416,7 +431,7 @@ def combine_VOID(parent_def, daughter_defs, parent_qn=None):
     N_BL = 8.0           # triangular faces of the cuboctahedral shell
     g2   = N_H**2 * (N_H / N_BL)            # = 274.6, ab initio (pi N Delta)^2
     n_strange = int(round(abs(parent_qn.S))) if parent_qn is not None else 0
-    R = _decuplet_deact_coupling(n_strange)     # product formula
+    R = _decuplet_deact_coupling(n_strange)     # single Fiedler ratio
     val = g2 * R
     if val <= 0.0:
         return None

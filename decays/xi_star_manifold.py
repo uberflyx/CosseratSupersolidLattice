@@ -148,7 +148,9 @@ def main():
         parity = 'odd (antisymmetric)' if abs(c0 + c1) < 1e-6 else 'even (symmetric)'
         print(f"{label} = {lam:.4f}:  c0 = {c0:+.4f}, c1 = {c1:+.4f}  -> {parity}")
 
-    print("\nDemocratic (symmetric) pion-emission source (c0, c1) = (+1, +1)/sqrt(2):")
+    print("\nDemocratic (symmetric) pion-emission source (c0, c1) = (+1, +1)/sqrt(2)")
+    print("(raw cap projection; source_parity_overlaps() below uses the")
+    print(" mean-subtracted convention quoted in the monograph):")
     for label, v in [('lambda_2 (odd)', v2), ('lambda_3 (even)', v3)]:
         c0 = cap_projection(v, idx, cap0)
         c1 = cap_projection(v, idx, cap1)
@@ -157,8 +159,58 @@ def main():
               f"{'(exactly forbidden)' if abs(overlap) < 1e-6 else ''}")
 
 
+
+
+def source_parity_overlaps():
+    """Source-parity overlaps quoted in sec:fiedler_manifold: the democratic
+    (even) source is exactly blind to the odd Fiedler mode, while the
+    physical single-arm dipole event (the pion leaves through one face,
+    forced by the vertex monopole null) overlaps it strongly on all three
+    graphs.  The odd channel is selected, not forbidden."""
+    print("\nSource-parity overlaps (sec:fiedler_manifold):")
+    # Xi*: two-cap graph, odd/even pair
+    nodes, idx, roles, L = build_deactivation_graph(2)
+    w, v = np.linalg.eigh(L)
+    k2 = int(np.argmin(np.abs(w - 1.075947)))
+    k3 = int(np.argmin(np.abs(w - 1.839207)))
+    ext = [n for n in nodes if roles.get(n) == 'extension']
+    caps = {}
+    for n in ext:
+        caps.setdefault(n.split('_')[0], []).append(n)
+    keys = sorted(caps)
+    c0 = [idx[n] for n in caps[keys[0]]]
+    c1 = [idx[n] for n in caps[keys[1]]]
+    # every source is mean-subtracted: a content-conserving rearrangement
+    # has zero projection on the constant (lambda_1) vector
+    for tag, (a, b) in (('democratic even ', (+1.0, +1.0)),
+                        ('exchange-odd    ', (+1.0, -1.0)),
+                        ('single-arm event', (+1.0, 0.0))):
+        s = np.zeros(len(nodes)); s[c0] = a; s[c1] = b
+        s -= s.mean(); s /= np.linalg.norm(s)
+        print(f"  Xi* {tag}: |<lambda_2 odd>| = {abs(s @ v[:, k2]):.4f}"
+              f"   |<lambda_3 even>| = {abs(s @ v[:, k3]):.4f}")
+    # Sigma*: one-cap graph
+    nodes, idx, roles, L = build_deactivation_graph(1)
+    w, v = np.linalg.eigh(L)
+    k2 = int(np.argmin(np.abs(w - 1.344867)))
+    ext = [idx[n] for n in nodes if roles.get(n) == 'extension']
+    s = np.zeros(len(nodes)); s[ext] = 1.0
+    s -= s.mean(); s /= np.linalg.norm(s)
+    print(f"  Sigma* single-arm : |<lambda_2>| = {abs(s @ v[:, k2]):.4f}")
+    # Delta: single-void source onto the threefold lambda_2 level
+    nodes, idx, roles, L = build_deactivation_graph(0)
+    w, v = np.linalg.eigh(L)
+    ks = [k for k in range(len(w)) if abs(w[k] - 2.438447) < 1e-3]
+    voids = [idx[n] for n in nodes if roles.get(n) == 'void']
+    s = np.zeros(len(nodes)); s[voids[0]] = 1.0
+    s -= s.mean(); s /= np.linalg.norm(s)
+    ov = np.sqrt(sum((s @ v[:, k]) ** 2 for k in ks))
+    print(f"  Delta single-void : |<lambda_2 triplet>| = {ov:.4f}")
+
+
 if __name__ == '__main__':
     main()
+    source_parity_overlaps()
 
 
 def delta_reference_decomposition():
