@@ -129,3 +129,40 @@ for label, x in [("current convention alpha^sqrt(2)", sp.sqrt(2)),
                  ("H_A dominant partials alpha^1", sp.Integer(1)),
                  ("H_A hard partial alpha^2", sp.Integer(2))]:
     print(f"  {label:38s} = {float(alpha**sp.Float(float(x))):.3e}")
+
+
+# ----------------------------------------------------------------------
+# H_B: the separable anisotropic core (the mechanically derived rule)
+# ----------------------------------------------------------------------
+# The misfit density is a Lorentzian of width w_par along the glide
+# direction (the alpha chapter's PN profile) and a Lorentzian of width
+# w_perp along the stacking normal (the compact-phase structure the {111}
+# anchor requires). The line direction contributes no localisation, so
+# only the G components perpendicular to the line couple. The Fourier
+# transform of the product of Lorentzians is the product of exponentials,
+# so the exponents ADD:
+#
+#   F(G) = exp(-|G.e112| w_par - |G.n111| w_perp) = alpha**n(G),
+#   n(G) = |G.e112| d/(2 pi) + |G.n111| d111/(2 pi),
+#
+# the Manhattan winding count of the probe against the core's two phase
+# directions. Both anchors give n = 1 exactly and symbolically; H3 is
+# ruled out mechanically because no single core shape has an isotropic
+# |k|-only transform while carrying two different widths.
+
+print("\n=== H_B: winding-count rule n(G) per partial [F = alpha^n, exact] ===")
+for name, (Gmag, Ghat) in shells.items():
+    outs = []
+    for e in partials:
+        G = (Gmag * e) if Ghat is None else (Gmag * Ghat)
+        n = sp.simplify(sp.nsimplify(
+            sp.Abs((G.T * e)[0]) * d / (2 * sp.pi)
+            + sp.Abs((G.T * n111)[0]) * d111 / (2 * sp.pi)))
+        outs.append(n)
+    print(f"  {name:9s}: {outs}")
+
+avg200 = (2 * alpha + alpha**sp.Rational(4, 3)) / 3
+print(f"\n{{200}} symmetric-average amplitude under H_B: {float(avg200):.3e} = {float(avg200/alpha):.3f} alpha")
+print("Mode IV therefore sits at the same alpha rung as Mode II, not one decade below;")
+print("the E_g channel's inability to mediate a force is untouched, since that rests on")
+print("the WKB action S_eff = ln(1/alpha)/sqrt(0.069) = 18.7, a different quantity.")
