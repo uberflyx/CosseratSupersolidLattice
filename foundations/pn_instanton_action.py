@@ -97,3 +97,30 @@ psi0_exact /= np.linalg.norm(psi0_exact)
 ov = abs(np.dot(psi0_exact, evecs[:, 0]))
 print(f"overlap of mode 0 with the exact zero mode phi': {ov:.6f}")
 print("levels sit at free-box positions: the scalar channel is reflectionless.")
+
+
+# ----------------------------------------------------------------------
+# 4. Levinson test: winding-2 background must bind exactly two modes
+# ----------------------------------------------------------------------
+# Background: two well-separated unit kinks (total winding 2),
+# phi_bg = 2*arctan((x+a)/w) + 2*arctan((x-a)/w) + 2*pi, w = 1.
+# Not an exact stationary point (same-sign kinks interact), so the two
+# collective modes sit near zero rather than at zero; the Levinson claim
+# is that the DISCRETE count below the edge is exactly 2 for winding 2.
+print("\n=== 4. Levinson test: winding number 2 ===")
+for a in [8.0, 16.0, 32.0]:
+    N2, L2 = 4096, 600.0
+    x2 = (np.arange(N2) - N2 / 2) * (2 * L2 / N2)
+    dx2 = x2[1] - x2[0]
+    k2 = np.fft.fftfreq(N2, d=dx2) * 2 * np.pi
+    F2 = np.fft.fft(np.eye(N2), axis=0)
+    Lam2 = (np.fft.ifft(np.abs(k2)[:, None] * F2, axis=0)).real
+    Lam2 = 0.5 * (Lam2 + Lam2.T)
+    phi_bg = 2 * np.arctan(x2 + a) + 2 * np.arctan(x2 - a) + 2 * np.pi
+    U2 = 0.5 * 2.0 * np.cos(phi_bg)          # gamma'' = (V0/2) cos(phi), V0 = 2/w, w = 1
+    H2 = Lam2 + np.diag(U2)
+    ev2 = np.linalg.eigh(H2)[0]
+    nb = int(np.sum(ev2 < 1.0 - 8.0 / L2))
+    print(f"  separation 2a = {2*a:5.0f}:  discrete modes below edge = {nb}"
+          f"   (lowest three: {np.round(ev2[:3], 4)})")
+print("Levinson claim for this operator class: bound count = winding number.")
