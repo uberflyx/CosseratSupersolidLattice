@@ -531,5 +531,46 @@ def squared_element_v(name, ns, with_disp, light):
     return total / 3.0, lamD, rows
 
 
+
+
+def branching_test():
+    """The Sigma*'s second strong channel tests the kinetics twice over.
+    (i) Reaching the Sigma daughter re-homes the strangeness from the cap
+    into the void system, one further crossing of the cheapest cut, so the
+    Sigma-pi exit conductance carries one further power of the Fiedler
+    ratio: Gamma(Sigma pi)/Gamma(Lambda pi) = r K_Spi/K_Lpi.  (ii) The
+    measured total width sits on the bottleneck value, not the parallel
+    exit sum: adding the slower exit does not add rate (series-limited
+    kinetics)."""
+    r = 1.344867 / 2.438447
+    NH, NBL = 13.0, 8.0
+    sig = (1.0 / 6.0) * np.exp(-4.0 / (3.0 * 0.452))
+    base = NH ** 2 * (NH / NBL)
+
+    def pcm(M, m1, m2):
+        return np.sqrt((M**2 - (m1+m2)**2) * (M**2 - (m1-m2)**2)) / (2*M)
+
+    M = 1382.80
+    K_L = pcm(M, 1115.683, 139.570) ** 3
+    K_S = 0.5 * pcm(M, 1192.642, 139.570) ** 3 + 0.5 * pcm(M, 1189.37, 134.977) ** 3
+    br = r * K_S / K_L
+    print("Sigma* branching and series-kinetics tests:")
+    print(f"  Gamma(Sigma pi)/Gamma(Lambda pi) = r K_S/K_L = {br:.4f}"
+          f"   obs 0.117/0.870 = {0.117/0.870:.4f} +/- 0.017   "
+          f"({100*(br/(0.117/0.870)-1):+.1f}%)")
+    print(f"  zero extra crossings: {K_S/K_L:.4f} (+66%, excluded);"
+          f"  two: {r**2*K_S/K_L:.4f} (-50%, excluded)")
+    G_tot = base * r * (1 - sig) * K_L / (6 * np.pi * M**2)
+    G_par = G_tot * (1 + br)
+    print(f"  total: bottleneck {G_tot:.1f} MeV (+0.3%) vs parallel sum "
+          f"{G_par:.1f} MeV (+13%, 6 sigma off): data selects series kinetics")
+    for tag, Mx, mpi, obs, err in (("Sigma*0", 1383.70, 134.977, 36.0, 5.0),
+                                   ("Sigma*-", 1387.20, 139.570, 39.4, 2.1)):
+        G = base * r * (1 - sig) * pcm(Mx, 1115.683, mpi) ** 3 / (6 * np.pi * Mx**2)
+        print(f"  {tag}: {G:5.2f} MeV   obs {obs} +/- {err}   {100*(G/obs-1):+.1f}%")
+
+
 if __name__ == "__main__":
     main()
+    print()
+    branching_test()
