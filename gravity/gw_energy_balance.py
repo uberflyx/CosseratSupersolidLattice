@@ -150,3 +150,13 @@ favg = sp.simplify(sp.expand_trig(favg))
 target = (1 + sp.Rational(73,24)*ecc**2 + sp.Rational(37,96)*ecc**4) \
          / (1 - ecc**2)**sp.Rational(7,2)
 print(f"orbit-averaged f(e) - target = {sp.simplify(favg - target)} (expect 0)")
+
+# --- (4) Polarisation budget: scalar-channel suppression ----------------------
+K_sf_over_mu = 3.0e40                     # condensate bulk / shear modulus (Sec. bulk_modulus)
+v_p = c * np.sqrt(K_sf_over_mu)           # pilot-wave speed
+supp_power = (c / v_p)**5                 # scalar/tensor radiated-power ratio bound
+print(f"\npilot-wave speed v_p = {v_p:.2e} m/s = {v_p/c:.2e} c")
+print(f"scalar-channel power suppression (c/v_p)^5 = {supp_power:.2e}")
+lam_s = v_p / (2*np.pi*100.0)             # scalar-channel near-zone scale at 100 Hz
+R_H   = c / 2.27e-18                      # Hubble radius
+print(f"scalar near-zone scale at 100 Hz: {lam_s:.2e} m  (Hubble radius {R_H:.2e} m)")
