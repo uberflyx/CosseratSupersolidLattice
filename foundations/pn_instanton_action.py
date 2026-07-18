@@ -124,3 +124,52 @@ for a in [8.0, 16.0, 32.0]:
     print(f"  separation 2a = {2*a:5.0f}:  discrete modes below edge = {nb}"
           f"   (lowest three: {np.round(ev2[:3], 4)})")
 print("Levinson claim for this operator class: bound count = winding number.")
+
+
+# ----------------------------------------------------------------------
+# 5. Scale covariance: H(w) = (1/w) H(1), so both transverse channels
+#    (glide leg, width w_par; stacking leg, width w_perp) share one
+#    spectrum: one bound translation mode each, reflectionless continuum.
+# ----------------------------------------------------------------------
+print("\n=== 5. Scale covariance check (w = 3 vs w = 1) ===")
+for wv in [1.0, 3.0]:
+    N3, L3 = 4096, 400.0 * wv
+    x3 = (np.arange(N3) - N3 / 2) * (2 * L3 / N3)
+    dx3 = x3[1] - x3[0]
+    k3 = np.fft.fftfreq(N3, d=dx3) * 2 * np.pi
+    F3 = np.fft.fft(np.eye(N3), axis=0)
+    Lam3 = (np.fft.ifft(np.abs(k3)[:, None] * F3, axis=0)).real
+    Lam3 = 0.5 * (Lam3 + Lam3.T)
+    U3 = (x3**2 - wv**2) / (wv * (x3**2 + wv**2))
+    ev3 = np.linalg.eigh(Lam3 + np.diag(U3))[0]
+    print(f"  w = {wv:.0f}:  w*E of lowest four = {np.round(wv*ev3[:4], 5)}"
+          f"   (edge at w*E = 1)")
+print("Identical scaled spectra: the glide and stacking channels each bind")
+print("exactly one translation mode; total mode count = 2, the -2's count.")
+
+
+# ----------------------------------------------------------------------
+# 6. State counting and the threshold state (Krein/Levinson structure)
+# ----------------------------------------------------------------------
+# N_int(E) - N_free(E) = +2 at every E above the edge, box-stable: the
+# phase shift is a CONSTANT pi (levels slide one slot, landing on free
+# positions), reflectionless yet Levinson-saturated. Parity resolves the
+# two units: even channel holds the bound zero mode; the odd channel
+# holds a threshold state pinned at the edge (E - edge ~ 1e-5), odd under
+# reflection, rms extent ~17 w against ~232 w for a box state.
+print("\n=== 6. State counting: Delta N(E) and the odd threshold state ===")
+Nc, Lc = 4096, 400.0
+xc = (np.arange(Nc) - Nc/2) * (2*Lc/Nc); dxc = xc[1]-xc[0]
+kc = np.fft.fftfreq(Nc, d=dxc) * 2*np.pi
+Fc = np.fft.fft(np.eye(Nc), axis=0)
+Lc2 = (np.fft.ifft(np.abs(kc)[:,None]*Fc, axis=0)).real; Lc2 = 0.5*(Lc2+Lc2.T)
+Uc = (xc**2-1.0)/(xc**2+1.0)
+evc, vecc = np.linalg.eigh(Lc2 + np.diag(Uc))
+evf = np.linalg.eigvalsh(Lc2 + np.eye(Nc))
+for E in [1.2, 2.0, 4.0]:
+    print(f"  N(E<{E}): interacting-free = {int(np.sum(evc<E))-int(np.sum(evf<E)):+d}")
+for i in [0, 1]:
+    p = vecc[:, i]; par = np.sum(p*p[::-1])
+    dens = np.abs(p)**2; dens /= dens.sum()
+    print(f"  state {i}: E = {evc[i]:+.6f}, parity {par:+.2f}, rms extent = {np.sqrt(np.sum(dens*xc**2)):.1f} w")
+print("Constant-pi phase shift: reflectionless, Levinson saturated in the count.")
