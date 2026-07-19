@@ -1,4 +1,14 @@
 """
+[SUPERSEDED 2026-07-19 by alpha_pair_action.py.] The pair-channel reading
+below OVERREACHED: it took a non-stationary snapshot of the companion
+landscape as a saddle. A clean check shows a neutral kink-antikink pair costs
+2 S_k (not one), so it enters alpha at e^{-3S} (self-energy order), not the
+constant -2, and the companion landscape has no stationary point. The -2 is
+the topological/spectral constant, not a dilute-gas resummation. Retained for
+the record; do not cite as a mechanism for the -2.
+"""
+
+"""
 The threshold companion opens the neutral pair channel: ring demonstration.
 
 Context. The alpha series alpha^{-1} = e^{S} - 2 - ... reads, in resummed
