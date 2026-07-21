@@ -71,8 +71,16 @@ def lyapunov_exponent(M):
     return c**3 / (4 * G * M)
 
 def bekenstein_hawking_entropy(M):
-    """S/k_B = A/(4l_P²) = 4πG²M²/(ħc)"""
-    return 4 * np.pi * G**2 * M**2 / (hbar * c)
+    """S/k_B = A/(4l_P²) = 4πGM²/(ħc)
+
+    Dimensional check: [G M² / (ħ c)] = (m³ kg⁻¹ s⁻²)(kg²)/(J s · m s⁻¹)
+    = (m³ kg s⁻²)/(kg m³ s⁻²) = dimensionless.  A previous version of this
+    function carried G² here, which is dimensionally inconsistent and
+    understated S by a factor G ≈ 6.7e-11 (7.0e66 instead of 1.05e77 at a
+    solar mass).  Analytical anchor: A/(4 l_P²) with A = 16πG²M²/c⁴ and
+    l_P² = ħG/c³ reduces to exactly 4πGM²/(ħc).
+    """
+    return 4 * np.pi * G * M**2 / (hbar * c)
 
 def scrambling_time(M):
     """t_s = (1/λ_L) ln(S_BH)
