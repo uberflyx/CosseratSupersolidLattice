@@ -76,8 +76,8 @@ re         = 2.8179403262             # classical electron radius [fm]
 Mpl        = 1.22091e22               # Planck mass [MeV]
 zeta3      = 1.2020569
 
-V2_OVER_C  = 4.0                      # second sound speed / c: sqrt(C11/(mu f_n))
-                                      # = sqrt((8/3)/(1/6)) exactly, f_n = 1 - f_s = 1/6
+V2_OVER_C  = 18.0**0.5              # second sound speed / c: sqrt(C11/(mu f_n))
+                                      # = sqrt(3/(1/6)) = 3 sqrt2, C11 = 3 mu on D4
 V1_OVER_C  = 1.1e20                   # first sound (pilot wave) speed / c
 ETA_B      = 6.12e-10                 # baryon-to-photon ratio
 
