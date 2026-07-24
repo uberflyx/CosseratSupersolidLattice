@@ -13,7 +13,7 @@ any v, so the free-streaming kernels generalise by k*tau -> v*k*tau alone:
 The kernel's mean vanishes exactly ((2/5)*1 - (3/5)*(2/3) = 0), which is why
 the coefficient collapses at large s: the streamer's drive averages out over
 its own crossing time. Anchor: f(c) = 0.602 vs literature 0.600.
-Headline: f(3.65c) = 0.079, suppression 7.6, dl = 0.05 at dNeff = 0.045.
+Headline: f(4c) = 0.068, suppression 8.8, dl = 0.03 at dNeff = 0.034.
 """
 import numpy as np
 from scipy.special import spherical_jn
@@ -54,9 +54,9 @@ def f_of_v(v):
 if __name__ == "__main__":
     f_nu = f_of_v(1.0)
     print(f"anchor  f(c)     = {f_nu:.4f}   (literature 0.600)")
-    f2 = f_of_v(3.65)
-    print(f"result  f(3.65c) = {f2:.4f}   suppression {f_nu/f2:.2f}")
-    dneff = 0.045
+    f2 = f_of_v(4.0)
+    print(f"result  f(4c)    = {f2:.4f}   suppression {f_nu/f2:.2f}")
+    dneff = (4/7)*(11/4)**(4/3)*(1/4)**3   # v2 = 4c exactly
     eps2 = (dneff/A_NU)/(1.0 + (3.046 + dneff)/A_NU)
     th2 = f2*eps2
     print(f"eps_2 = {eps2:.5f}  theta_2 = {th2:.3e} rad  dl = {th2/np.pi*330:.3f}")

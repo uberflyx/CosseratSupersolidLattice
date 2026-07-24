@@ -26,15 +26,15 @@ THE PHYSICS, IN THREE STEPS
    energy density u = (pi^2/30) (kT)^4 / (hbar v)^3: it scales as (c/v)^3
    relative to a photon-speed field, because a stiffer, faster mode packs
    fewer states into a given band of wavenumbers. First sound at ~1e20 c is
-   thermally empty by sixty orders. Second sound at v2 = 3.65 c holds
-   (1/3.65)^3 ~ 1/49 of a photon-speed scalar. The bonfire fills a thimble.
+   thermally empty by sixty orders. Second sound at v2 = 4 c holds
+   (1/4)^3 = 1/64 of a photon-speed scalar. The bonfire fills a thimble.
 
 3. SEAL. The contact channel is the e+- pair bath (the last abundant
    annihilating species). The mode decouples when the pair density crashes,
    which this script shows happens AFTER electron-positron annihilation has
    heated the photons. The thimble is therefore sealed at the full photon
    temperature, and the relic is
-       Delta N_eff = (4/7) (11/4)^(4/3) (c/v2)^3 = 0.045.
+       Delta N_eff = (4/7) (11/4)^(4/3) (c/v2)^3 = 0.034.
 
 LITERATURE INPUTS (verified via journal/arXiv sources)
 ------------------------------------------------------
@@ -76,7 +76,8 @@ re         = 2.8179403262             # classical electron radius [fm]
 Mpl        = 1.22091e22               # Planck mass [MeV]
 zeta3      = 1.2020569
 
-V2_OVER_C  = 3.65                     # second sound speed / c (two-fluid spectrum)
+V2_OVER_C  = 4.0                      # second sound speed / c: sqrt(C11/(mu f_n))
+                                      # = sqrt((8/3)/(1/6)) exactly, f_n = 1 - f_s = 1/6
 V1_OVER_C  = 1.1e20                   # first sound (pilot wave) speed / c
 ETA_B      = 6.12e-10                 # baryon-to-photon ratio
 
@@ -209,7 +210,7 @@ def report():
     print("\n[6] The superluminal fingerprint: acoustic phase shift")
     # Bashinsky-Seljak / Baumann+: phi = 0.191 pi R for free-streaming at c,
     # and a nonzero asymptotic shift REQUIRES v > c_s. Second sound
-    # free-streams at 3.65c after ~14 keV, i.e. throughout recombination.
+    # free-streams at 4c after ~14 keV, i.e. throughout recombination.
     Neff = 3.044
     aval = (7.0/8.0) * (4.0/11.0)**(4.0/3.0)
     R_nu = aval * Neff / (1 + aval * Neff)
@@ -218,7 +219,7 @@ def report():
     phi_x  = 0.191 * np.pi * R_x
     print(f"    neutrino benchmark: R_nu = {R_nu:.3f}, phi_nu = {phi_nu:.3f} rad (detected: Follin+ 2015)")
     print(f"    second sound (c-speed equivalent): R_x = {R_x:.5f}, phi_x = {phi_x*1e3:.2f} mrad")
-    print(f"    free-streaming speed 3.65c vs c: shift per unit density is")
+    print(f"    free-streaming speed 4c vs c: shift per unit density is")
     print(f"    ENHANCED (Bashinsky-Seljak speed dependence), so phi_x is a floor.")
     print(f"    Prediction: N_eff(phase) > N_eff(energy) by the enhancement, a")
     print(f"    splitting no speed-c relic can produce.")
