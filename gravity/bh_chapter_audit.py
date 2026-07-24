@@ -290,12 +290,16 @@ rs30 = 2 * G * 30 * Msun / c**2
 EGB = 3 * mu0 * ell * rs30**2
 Mc2 = 30 * Msun * c**2
 print(f"    E_GB = 3 mu0 ell rs^2 = {EGB:.3g} J = {EGB/Mc2:.2g} Mc^2  [tex ~1e-20 OK]")
-mid = 6 * lP**2 / (ell * rs30)
-print(f"*** middle identity 6 lP^2/(ell rs) = {mid:.3g}, vs actual ratio "
-      f"{EGB/Mc2:.3g}: WRONG by {EGB/Mc2/mid:.2g}x")
-print(f"    correct identity: E_GB/Mc^2 = 6 G rho ell rs/c^2 = "
-      f"{6*G*rho_cr*ell*rs30/c**2:.3g}")
-check("r_s/ell", 1e18, rs30 / ell, 3.2)
+# Middle identity as the chapter states it (eq:grain_boundary_energy):
+#   3 mu0 ell rs^2 = (6 G rho ell rs / c^2) * Mc^2.
+# Proof: mu0 = rho c^2, and M = rs c^2 / 2G, so the right side is
+#   6 G rho ell rs * rs c^2 / 2G = 3 rho c^2 ell rs^2.  Exact, not approximate.
+mid = 6 * G * rho_cr * ell * rs30 / c**2
+check("middle identity 6 G rho ell rs/c^2 vs E_GB/Mc^2", EGB / Mc2, mid, 1.01)
+
+# r_s/ell: the chapter quotes this for a generic horizon at rs ~ 1e4 m, not
+# for the 30 Msun merger of the preceding sentence.  Check it at its own rs.
+check("r_s/ell at rs ~ 1e4 m", 1e18, 1e4 / ell, 3.6)
 
 print()
 print("=" * 78)
