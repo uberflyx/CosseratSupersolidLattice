@@ -11,9 +11,13 @@ A. THE LIFT QUESTION (numbers for the resolution).  A dislocation must wrap the
 
 B. THE D_4 DEFECTON BAND.  Tight binding on the 24-neighbour shell with one
    amplitude t = alpha m0 c^2 (the 24 bonds are a single orbit of the lattice
-   symmetry).  Band bottom, exact-isotropy effective mass, bandwidth, ceiling
-   group velocity, and the compact (Kaluza-Klein) gap from the 6+6 crossing
-   bonds at Bloch phases 0, +-2pi/3.
+   symmetry).  Band bottom, band width, and the splitting of the three Bloch
+   values of k_4 from the 6+6 crossing bonds at phases 0, +-2pi/3.  The band
+   bottom is the rest energy.  The INERTIA is not taken from this band: twelve
+   of the twenty-four equal-time destinations sit on adjacent time slices, so
+   the dispersion belongs to the worldline register (defecton_worldline.py),
+   and the three k_4 values are Matsubara images of one particle rather than
+   a particle plus two heavier compact partners.
 
 C. CLUSTER LADDER ON THE D_4 GRAPH.  Exact maximal internal bond counts
    B_max(n) for n <= 6 by exhaustive search, checked against the Turan bound
@@ -72,13 +76,11 @@ def part_B():
     M2 = NN.T @ NN                                  # integer units, NN dist sqrt2
     iso = np.allclose(M2, M2[0, 0] * np.eye(4))
     print(f"second-moment tensor isotropic: {iso};  sum d_i d_j = {M2[0,0]} delta_ij")
-    # physical: sum |d|^2 per axis = 12 (integer) -> sum (k.d)^2 = 12 k^2 a^2,
-    # a = ell/sqrt2  ->  E = E0 + (t/2) * 6 ell^2 k^2  ->  m* = m0/(6 alpha)
-    mstar = M0 / (6 * ALPHA)
     print(f"band bottom   E_f - 24 t  ->  m_DM = m0(1 - 24a) = "
-          f"{M0*(1-24*ALPHA):.2f} MeV")
-    print(f"effective mass m* = m0/(6 alpha) = {mstar:.1f} MeV (exactly isotropic)")
-    print(f"EP ratio m*/m_g = 1/[6a(1-24a)] = {1/(6*ALPHA*(1-24*ALPHA)):.2f}")
+          f"{M0*(1-24*ALPHA):.2f} MeV  (rest energy)")
+    print("inertia: NOT from this band.  An equal-time hop to a crossing bond "
+          "is a step in\n         imaginary time, not in space; see "
+          "defecton_worldline.py for the dispersion.")
     # bandwidth: S extremes on random + structured sample (S in [-8, 24] exact)
     rng = np.random.default_rng(2)
     K = rng.uniform(-np.pi, np.pi, size=(400000, 4))
@@ -87,17 +89,13 @@ def part_B():
     S = np.cos(K @ NN.T).sum(axis=1)
     print(f"S range sampled: [{S.min():.2f}, {S.max():.2f}]  ->  bandwidth = "
           f"{(S.max()-S.min()):.0f} t = {(S.max()-S.min())*T_HOP:.2f} MeV")
-    sn = np.sin(K @ NN.T)
-    gradS = -(sn @ NN)
-    vmax = np.linalg.norm(gradS, axis=1).max()
-    v_kms = vmax * T_HOP / HBARC * (ELL_FM / np.sqrt(2)) * C_KMS
-    print(f"ceiling group velocity ~ {v_kms:,.0f} km/s (= {v_kms/C_KMS:.4f} c)")
-    # KK gap from the 6+6 crossing bonds, phases 2*pi*n/3
+    # Splitting of the three Bloch values of k_4, phases 0 and +-2 pi/3.
     gap = 12 * T_HOP * (1 - np.cos(2 * np.pi / 3))
-    print(f"compact (KK) partners at +18 t = {gap:.2f} MeV above the zero mode")
+    print(f"k_4 = +-2pi/3 branches sit +18 t = {gap:.2f} MeV above k_4 = 0 in "
+          "the band register;\n         in the worldline register these are "
+          "the three Matsubara images of one particle.")
     print(f"compactification correction to crossing hops ~ e^(-L4/w) = "
           f"{np.exp(-np.sqrt(6)/0.452):.1e}")
-    return mstar
 
 
 def part_C():
@@ -128,7 +126,7 @@ def part_C():
     for n in (5, 6):
         turan = n * (n - 1) // 2 - {5: 1, 6: 2}[n]  # max edges, clique <= 4
         bmax, arg = 0, None
-        for combo in combinations(range(n_sites), n - 1):
+        for combo in combinations(range(1, n_sites), n - 1):
             subset = (0,) + combo                    # anchor at origin, WLOG
             b = bonds(subset)
             if b > bmax:
@@ -137,7 +135,7 @@ def part_C():
                     break
         best[n] = bmax
         print(f"n = {n}: B_max = {bmax}  (Turan bound {turan})  "
-              f"example {[tuple(pts[i]) for i in arg]}")
+              f"example {[tuple(int(x) for x in pts[i]) for i in arg]}")
     eps = M0 / 12
     print(f"\nbond quantum eps = m0 c^2/12 = {eps:.3f} MeV")
     print("ladder (growth-step releases m*eps):",
@@ -216,14 +214,15 @@ def part_D(eps):
     return max(abs(v) for v in results)
 
 
-def part_EF(mstar_d4, eps, dv_max):
+def part_EF(eps, dv_max):
     print("\n" + "=" * 72)
     print("E. THE ELASTIC CHANNEL, RE-PRICED")
     print("=" * 72)
     MN = 938.918
     c0, epsd = (0.05, 0.20), (0.03, 0.10)
-    for mstar, tag in ((M0 * (1 - 24 * ALPHA), "condensate transport, m* ~ m_g"),
-                      (mstar_d4, "crystalline transport, m* = m0/6a")):
+    # One row only: the worldline register gives m* = m_g to six parts in
+    # ten thousand, so the old heavy "crystalline ceiling" bracket is gone.
+    for mstar, tag in ((M0 * (1 - 24 * ALPHA), "m* = m_g (worldline register)"),):
         mu = mstar * MN / (mstar + MN)
         for hi, name in ((0, "low "), (1, "high")):
             ceff = c0[hi] * epsd[hi] * (0.0 if hi == 0 else dv_max)
@@ -248,7 +247,7 @@ def part_EF(mstar_d4, eps, dv_max):
 
 
 if __name__ == "__main__":
-    ms = part_B()
+    part_B()
     ep = part_C()
     dv = part_D(ep)
-    part_EF(ms, ep, dv)
+    part_EF(ep, dv)
