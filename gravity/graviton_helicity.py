@@ -9,13 +9,13 @@ Two exact statements, verified symbolically:
    the propagation axis; helicity is additive; a vector supplies only 0, +-1.
    No linear branch of an elastic medium is a graviton.
 
-2. THE CARRIER. The displacement covariance Q_ij = <u_i u_j> - (1/3) d_ij <u^2>
+2. THE CARRIER. The orientation covariance Sigma_ij = <phi_i phi_j> - (1/3) d_ij <phi^2>
    (the tensor whose isotropic part is the Debye-Waller exponent) is rank-2 and
    NOT a derivative of a vector. Its transverse components Q_xx - Q_yy and Q_xy
    pick up exactly e^{-+ 2 i theta} under rotation by theta about the axis:
    helicity +-2, the two gravitational-wave polarisations h_+ and h_x.
 
-3. THE EDGE. Q_ij fluctuations are two-quantum states of the transverse branch
+3. THE EDGE. Sigma_ij fluctuations are two-quantum states of the transverse branch
    (omega = c|k| each). Two collinear quanta of helicity +1: total helicity +2
    at omega = c(k1 + k2) = c k. The spin-2 spectral weight therefore reaches
    the light cone exactly: the tensor channel is gapless because and only

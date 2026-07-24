@@ -2,7 +2,7 @@
 
 The medium has no linear helicity-2 branch (theorem, part 1). The helicity-2
 object is the second central moment of a gapless transverse field: the
-covariance Q_ij = <f_i f_j> - (1/3) delta_ij <f^2>, where f is the transverse
+covariance Sigma_ij = <f_i f_j> - (1/3) delta_ij <f^2>, where f is the transverse
 microrotation phi (the algebra is identical for any transverse vector field).
 This script proves, symbolically and numerically:
 
