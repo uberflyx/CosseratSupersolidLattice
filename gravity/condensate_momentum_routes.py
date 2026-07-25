@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 r"""
-condensate_drive_figure_of_merit.py
-=====================================
-The three ways to push on the vacuum, priced side by side.
+condensate_momentum_routes.py
+===============================
+The three channels for exchanging momentum with the vacuum, priced side by side.
 
 The framework's clock-engineering chapter establishes that the condensate's
 chemical potential mu = mu_int(rho) + (1/2) m0 v_s^2 + V_ext is the clock
 rate, so a gradient of mu is a gravitational field. That gives three
-propulsion routes, and this script prices each with the framework's own
-numbers:
+candidate channels, and this script prices each with the framework's own
+numbers. All three are closed; the pricing is what shows why.
 
-  ROUTE 1  (static compression / "warp"): hold a density slope so the craft
+  ROUTE 1  (static compression): hold a density slope so that a body
            free-falls down it. Cost: the condensate bulk modulus
            K_sf = c^4/(G ell^2) ~ 1.5e73 Pa makes the required pressure
            ~1e58 Pa. Shut. (This reproduces the monograph's own no-go.)
@@ -19,10 +19,10 @@ numbers:
            channel at v_2 = 3.65 c. Wave momentum flux F = P/v_2, i.e.
            3.65x WORSE thrust-per-watt than a photon rocket, before the
            transducer efficiency is even paid. A signalling channel, not
-           a drive.
+           a thruster.
 
   ROUTE 3  (ambient-propellant jet / "swim"): pump condensate through the
-           craft at slow speed w. The medium is the densest propellant in
+           body at slow speed w. The medium is the densest reservoir in
            physics (rho_s = f_s m0/ell^3 ~ 4.5e15 kg/m^3), is on hand
            everywhere at zero carried mass, and below the Landau velocity
            flows without loss. Standard jet mechanics:
@@ -75,19 +75,21 @@ print()
 print("ROUTE 2 - radiated second sound:")
 print(f"  wave momentum: F/P = 1/v_2 = {1/v2:.2e} N/W")
 print(f"  photon rocket:  F/P = 1/c  = {1/c:.2e} N/W  (2nd sound is 3.65x worse,")
-print("  before transducer efficiency). A signalling channel, not a drive.")
+print("  before transducer efficiency). A signalling channel, not a thruster.")
 print()
 
 # ----- ROUTE 3: ambient-propellant jet -------------------------------------
 print("ROUTE 3 - ambient-propellant jet ('swim in the medium'):")
 print(f"  {'w [m/s]':>10s} {'F/P [N/W]':>12s} {'A for 1 MN [m^2]':>18s} {'P for 1 MN [W]':>16s}")
-F_want = 1.0e6                              # hover ~100 t
+F_want = 1.0e6                              # reference force, ~100 t weight
 for w in [1e-3, 1e-6, 1e-9]:
     FP = 2.0 / w
     A  = F_want / (rho_s * w**2)
     P  = 0.5 * F_want * w
     print(f"  {w:10.0e} {FP:12.1e} {A:18.3e} {P:16.2e}")
-print(f"  At w = 1 um/s: hover a 100 t craft on {0.5*F_want*1e-6:.2f} W of jet power")
+print(f"  At w = 1 um/s: {F_want:.0e} N of momentum flux for {0.5*F_want*1e-6:.2f} W,")
+print(f"  which is why energy was never the obstacle. The grip is (see")
+print(f"  knot_closure_theorem.py: closure denies it entirely).")
 print(f"  through ~{F_want/(rho_s*1e-12):.0f} m^2 of effective intake.")
 print(f"  Photon rocket for the same 1 MN: {F_want*c:.1e} W (three hundred TW).")
 print(f"  Landau margin: w/v_2 = {1e-6/v2:.1e}  -> dissipationless by 15 orders.")

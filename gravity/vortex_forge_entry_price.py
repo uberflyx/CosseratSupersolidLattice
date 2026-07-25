@@ -1,27 +1,24 @@
 """
-The critical path to time-gradient propulsion: the vortex forge.
+The entry price of a free vacuum vortex, and the experiment that tests it.
 
-The clock-drive section (sec:clock_drive, sec:clock_actuation) has already
-priced the drive itself. The chain clock = phase = chemical potential makes a
-maintained flow gradient a gravitational field; the knot rotor turns trapped
-vacuum vortices into a sustained phase slip (one g across ten metres from
-~1,200 knots on a centimetre rotor at ordinary loads); the fabricated
-stacking-fault loop is the trap that holds a knot without untying it; and the
-ambient-propellant jet prices the hover of a hundred-tonne craft at half a
-watt. The section's named open steps were SUPPLY (the local abundance of
-free vacuum vortices) and LOADING.
+The clock chapter establishes that the chain clock = phase = chemical
+potential makes a maintained flow gradient a gravitational field, and that
+nothing available can maintain one: closure and compactness deny both
+ordinary matter and the condensate's own free objects any grip on the
+medium (knot_closure_theorem.py). What survives that verdict is the
+question of whether the free sector can be POPULATED at all, which is a
+statement about a production amplitude rather than about a device.
 
 The reconnection cascade (cosmology/knot_cascade.py, this session) has now
 answered the supply question, and the answer is no. Knots untie universally
 (Kleckner-Kauffman-Irvine 2016), the cascade delivers the primordial sector
 to plain rings within 1e-14 s, and plain rings fuse onto charged matter and
-are destroyed before nucleosynthesis. Nature stocks no fuel. Every path to
-the drive therefore passes through one gate:
+are destroyed before nucleosynthesis. Nature stocks no fuel. Any free vortex now present therefore has to have been made:
 
-    THE FORGE: manufacture free (unlocked) condensate circulation.
+    THE ENTRY PRICE: manufacture free (unlocked) condensate circulation.
 
-This script derives what the forge must pay and names the experiment that
-decides whether it can exist at all.
+This script derives what such a production event must pay and names the
+experiment that decides whether the transition runs at any rate at all.
 
   1. The fuel quantum. The smallest free object is a core-scale ring, and
      its energy is fixed by the line tension: E_1 = (8 pi^2 / 5) m0 c^2
@@ -131,13 +128,11 @@ L_belle2_ab = 50.0                   # Belle II design integrated lumi [ab^-1]
 L_year_ab = 5.0                      # optimistic per-year [ab^-1]
 N_prog = sigma_fb * L_belle2_ab * 1e3
 N_year = sigma_fb * L_year_ab * 1e3
-N_rotor = 1200                       # knots for one g on the cm rotor
-print(f"   FUEL ARITHMETIC AT THE CEILING: at sigma = {sigma_fb:.0f} fb,")
-print(f"   Belle II makes {N_year:.0f} rings/year and {N_prog:.0f} over its")
-print(f"   50/ab programme; the rotor needs ~{N_rotor} trapped knots.  Even")
-print(f"   at today's experimental UPPER BOUND, a few months of B-factory")
-print(f"   running forges one rotor fuel load.  The drive is therefore")
-print(f"   gated by physics (does the peak exist?), not by luminosity.")
+print(f"   YIELD AT THE CEILING: at sigma = {sigma_fb:.0f} fb, Belle II makes")
+print(f"   {N_year:.0f} rings/year and {N_prog:.0f} over its 50/ab programme.")
+print(f"   So the search is limited by whether the peak exists at all, not")
+print(f"   by luminosity: even the present experimental UPPER BOUND would")
+print(f"   deliver a countable sample. That is what makes it a clean test.")
 print(f"   A dedicated line hunt at 7.57 and 7.56 GeV photon energy in the")
 print(f"   archived and incoming monophoton samples is the single most")
 print(f"   consequential measurement this framework can request.")
@@ -178,20 +173,17 @@ print(line)
 # ---------------------------------------------------------------------------
 # The critical path, in order.
 # ---------------------------------------------------------------------------
-print("THE CRITICAL PATH (everything else is already priced)")
+print("WHAT THE MEASUREMENT DECIDES")
 print("  Q1. The lock: kinematic or energetic?  DECIDER: monophoton missing")
 print("      line at 7.57 / 7.56 GeV photon energy in existing B-factory data.")
-print("      Kinematic  -> no forge through charges; drive waits on the")
-print("                    acoustic route or dies.")
-print("      Energetic  -> Q2.")
-print("  Q2. The forge cross-section and the linked-pair fraction: sets the")
-print("      fuel production rate per collider watt.")
-print("  Q3. Trap loading: steering a born ring/knot onto a fabricated")
-print("      fault loop before first charged contact (its mean free path in")
-print("      solid matter is ~(n_e sigma)^-1 with sigma = pi l^2: metres in")
-print("      ordinary solids, so a vacuum-gap forge-to-trap line suffices).")
-print("  Q4. The output-fidelity derivation (clock coupling of a defect to")
-print("      delta-mu) -- the section's own remaining theory item.")
-print("  With Q1-Q4 closed, the rotor spec of sec:clock_actuation flies as")
-print("  written: ~1,200 trapped knots, centimetre rotor, one g of pure")
-print("  free-fall thrust, and the half-watt ambient jet for the hover.")
+print("      Kinematic  -> circulation cannot be shed through a charge, and")
+print("                    the free sector is unreachable by this route.")
+print("      Energetic  -> the transition exists and Q2 becomes a number.")
+print("  Q2. The production cross-section and the linked-pair fraction, which")
+print("      set how fast the sector can be populated in a laboratory.")
+print("  Q3. Whether a core-scale linked pair is genuinely stable or only")
+print("      long-lived: free-evolution simulations find knots untie by")
+print("      self-reconnection, so this needs a Gross-Pitaevskii integration.")
+print("  None of these revives an actuation route. Closure and compactness")
+print("  close that independently (knot_closure_theorem.py); what the line")
+print("  hunt settles is whether the free sector exists in the laboratory.")

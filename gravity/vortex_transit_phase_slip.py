@@ -45,8 +45,12 @@ Three results, each a short calculation:
      electron's field energy caps its phase leverage.
 
   COROLLARY: pumping the macroscopic vacuum phase requires a vacuum
-  vortex line that is macroscopically EXTENDED. Particles are not.
-  The dark-sector knots are. (Taken up in knot_rotor_theorem.py.)
+  vortex line that is macroscopically EXTENDED. No particle is one, and
+  neither is any object of the condensate's own free sector: its rings
+  and knots are closed loops a few lattice spacings across, so they
+  inherit this same protection rather than escaping it. The two
+  arguments that close the topological route, the closure identity and
+  the aperture factor, are worked in knot_closure_theorem.py.
 """
 
 import numpy as np
@@ -60,9 +64,9 @@ e     = 1.602176634e-19
 ell   = 2.8179403262e-15
 m0c2  = 0.51099895069e6*e/alpha        # node rest energy, J (70.03 MeV)
 m0    = m0c2/c**2
-f_s   = 4/5
+f_s   = 5/6                            # bootstrap superfluid fraction
 rho_s = f_s*m0/ell**3
-kappa = 2*np.pi*c*ell                  # h/m0, with hbar = m0 c ell
+kappa = h/m0                           # = 2 pi c ell, with hbar = m0 c ell
 
 print("="*72)
 print("A. N vs N^2, and the pairing catch")
@@ -102,6 +106,6 @@ print(f"  net predicted clock shift near a polarised ampere:")
 print(f"       {dmu/m0c2:.1e} x {supp:.0e} = {dmu/m0c2*supp:.1e}   -> unobservable, consistent")
 print()
 print("  The corollary is the whole point: macroscopic phase pumping needs")
-print("  a macroscopically EXTENDED vacuum vortex line. No particle is one.")
-print("  The dark-sector knots are the only such objects in the framework.")
+print("  a macroscopically EXTENDED vacuum vortex line. No particle is one,")
+print("  and neither is a free-sector ring or knot: see knot_closure_theorem.py.")
 print("="*72)
