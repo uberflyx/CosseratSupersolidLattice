@@ -67,6 +67,26 @@ The chain has five links.
   Result: f_anchor = F_pin / s, of order 0.02 N/m in iron and 0.1 N/m in
   diamond or osmium. The spread is real and is driven by the host's
   cohesion rather than by the vortex physics.
+
+  STEP 6  Stability of the wind-forced shape.
+          The equilibrium is a helix (see the monograph appendix). Two
+          checks are run here. First the shape is re-derived from the
+          local-induction dynamics, v_L = V + beta kappa_c b_hat, which
+          gives c = beta/V against c = T/(rho_s kappa V) from the force
+          balance: the same expression, differing only by the order-unity
+          constant chosen inside the logarithm. Second, the Hasimoto map
+          sends the filament onto the focusing nonlinear Schrodinger
+          equation, where a helix is a plane wave and therefore
+          modulationally unstable, with
+
+              unstable for k < kappa_c,  sigma_max = beta kappa_c^2 / 2.
+
+          Pins act as nodes, so the instability is excluded when the pin
+          spacing satisfies s < pi/kappa_c = pi R_w / sin(theta). At the
+          smallest coil the core allows (a ~ 3 ell) that asks for 23 nm,
+          against the 102 nm the anchor delivers in osmium: a factor of
+          4.4, or ~19x in the host product n*U. No element closes it;
+          nuclear-density matter closes it by four orders.
 """
 
 import numpy as np
@@ -215,4 +235,27 @@ print("  Thermal caveat: delta comes out near 12 pm, against a room-temperature"
 print("  nuclear displacement of about 7 pm in iron, so lattice vibration is an")
 print("  order-unity correction to which pins are in reach at a given instant.")
 print("  Treat every f_anchor above as good to a factor of about two.")
+print("="*74)
+
+# ============================================================== STEP 6
+print()
+print("="*74)
+print("STEP 6.  Stability of the wind-forced helix")
+print("="*74)
+eps_0 = rho_s*kappa**2/(4*np.pi)
+Rw = np.exp(brentq(lambda x: eps_0*(np.log(np.exp(x)/xi)-1) - np.exp(x)*rho_s*kappa*3.70e5,
+                   np.log(1e-14), np.log(1e-6)))
+Lam = np.log(Rw/xi)
+beta = (kappa/(4*np.pi))*Lam
+print(f"  R_w from the force balance      = {Rw*1e12:.3f} pm")
+print(f"  c = beta/V from local induction = {beta/3.70e5*1e12:.3f} pm"
+      f"   (ratio {(beta/3.70e5)/Rw:.3f}; the log's order-unity constant)")
+print("  Modulational instability of the helix (Hasimoto -> focusing NLS):")
+print(f"    {'pitch/deg':>10} {'a/ell':>9} {'t_grow/s':>10} {'s_needed/nm':>12}")
+for td in (45.0, 10.0, 1.0, 0.061):
+    th = np.radians(td); kc = np.sin(th)/Rw
+    print(f"    {td:10.3f} {Rw*np.sin(th)/ell:9.2f} {2/(beta*kc**2):10.1e}"
+          f" {np.pi/kc*1e9:12.2f}")
+print("  The coil must keep a > ~3 ell or it self-reconnects, so the best")
+print("  available case asks for 23 nm pinning against the 102 nm of Step 5.")
 print("="*74)
