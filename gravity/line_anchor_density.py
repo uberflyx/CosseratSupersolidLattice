@@ -151,10 +151,26 @@ hosts = [("iron",      55.85, 8.50e28,  211e9),
          ("diamond",   12.01, 1.763e29, 1050e9)]
 
 cal = 12.6e9/(211e9/10)   # Frenkel E/10 calibrated to iron's DFT ideal strength
+
+# The tension that resists the detour is NOT the core-scale ring value
+# T = E1/(2 pi R0). The detour is a bend of wavelength ~s, so the line's
+# logarithm runs out to s, giving T(s) = eps_0 [ln(s/xi) - 1], about thirty
+# times larger at the hundred-nanometre scale. Because s itself depends on
+# T, the spacing is implicit and is iterated to convergence below.
+eps_0 = rho_s*kappa**2/(4*np.pi)
+
+def spacing(n, U, seed=1e-7):
+    """Self-consistent pin spacing with the deformation-scale tension."""
+    s = seed
+    for _ in range(500):
+        T_s = eps_0*(np.log(s/xi) - 1.0)
+        s = 0.5*(s + np.sqrt(3*T_s/(2*np.pi*n*U)))
+    return s
+
 results = {}
 for name, A, n, E_mod in hosts:
     U, R_N, regime = pin_depth(A)
-    s     = np.sqrt(3*T/(2*np.pi*n*U))
+    s     = spacing(n, U)
     delta = 1/np.sqrt(np.pi*n*s)
     F_pin = (E_mod/10)*cal*n**(-2/3)
     f_anchor = F_pin/s
