@@ -1,6 +1,6 @@
 # Cosserat Supersolid Lattice
 
-**Mitchell A. Cox, University of the Witwatersrand**
+**Mitchell A. Cox, University of the Witwatersrand, Johannesburg, South Africa**
 
 I welcome any feedback: mitchell.cox@wits.ac.za
 
