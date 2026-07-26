@@ -1,0 +1,1898 @@
+{
+  "results": [
+    {
+      "name": "pi+",
+      "obs": 139.57,
+      "pred": 139.5395046220714,
+      "cluster": "cell_pair",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 1,
+        "J": 0,
+        "P": -1
+      }
+    },
+    {
+      "name": "pi0",
+      "obs": 134.98,
+      "pred": 134.9405140658614,
+      "cluster": "cell_pair",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 0,
+        "P": -1
+      }
+    },
+    {
+      "name": "eta(548)",
+      "obs": 547.86,
+      "pred": 547.9380394744857,
+      "cluster": "singlet_L1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1
+      }
+    },
+    {
+      "name": "f_0(500)",
+      "obs": 500.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "rho(770)",
+      "obs": 775.26,
+      "pred": 775.6643274799094,
+      "cluster": "crossed_fault",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 1,
+        "P": -1
+      }
+    },
+    {
+      "name": "omega(782)",
+      "obs": 782.66,
+      "pred": 781.7963148881894,
+      "cluster": "crossed_fault_I0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1
+      }
+    },
+    {
+      "name": "eta'(958)",
+      "obs": 957.78,
+      "pred": 957.35857222828,
+      "cluster": "singlet_L2",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "f_0(980)",
+      "obs": 990.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "a_0(980)",
+      "obs": 980.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "phi(1020)",
+      "obs": 1019.46,
+      "pred": 1019.4541425080403,
+      "cluster": "bilayer_pair",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_hidden_s": 1
+      }
+    },
+    {
+      "name": "h_1(1170)",
+      "obs": 1166.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "b_1(1235)",
+      "obs": 1229.5,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "a_1(1260)",
+      "obs": 1230.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_2(1270)",
+      "obs": 1275.4,
+      "pred": 1275.4890135261098,
+      "cluster": "microrotation",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_1(1285)",
+      "obs": 1281.9,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "eta(1295)",
+      "obs": 1294.0,
+      "pred": 0,
+      "cluster": "refuse: isoscalar pseudoscalar level=3 rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "level": 3
+      }
+    },
+    {
+      "name": "pi(1300)",
+      "obs": 1300.0,
+      "pred": 0,
+      "cluster": "refuse: light charged pseudoscalar level=2 rule not derived (pi(1300), pi(1800))",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 1,
+        "J": 0,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "a_2(1320)",
+      "obs": 1318.2,
+      "pred": 0,
+      "cluster": "regge: J=2 P=+1 non-f2 sector (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 2,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_0(1370)",
+      "obs": 1350.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "eta(1405)",
+      "obs": 1408.7,
+      "pred": 0,
+      "cluster": "refuse: isoscalar pseudoscalar level=3 rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "level": 3
+      }
+    },
+    {
+      "name": "h_1(1415)",
+      "obs": 1409.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_1(1420)",
+      "obs": 1428.4,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "omega(1420)",
+      "obs": 1410.0,
+      "pred": 0,
+      "cluster": "refuse: isoscalar vector level=2, n_hidden_s=0 rule not derived (omega(1420), phi(1680), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "a_0(1450)",
+      "obs": 1439.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "rho(1450)",
+      "obs": 1465.0,
+      "pred": 0,
+      "cluster": "refuse: vector level=2 with flavor=light_charged rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "eta(1475)",
+      "obs": 1476.0,
+      "pred": 0,
+      "cluster": "refuse: isoscalar pseudoscalar level=3 rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "level": 3,
+        "n_hidden_s": 1
+      }
+    },
+    {
+      "name": "f_0(1500)",
+      "obs": 1522.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_2'(1525)",
+      "obs": 1517.3,
+      "pred": 0,
+      "cluster": "refuse: ssbar tensor (f_2_prime) graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": 1,
+        "n_hidden_s": 1
+      }
+    },
+    {
+      "name": "eta_2(1645)",
+      "obs": 1617.0,
+      "pred": 0,
+      "cluster": "refuse: unhandled (J=2, P=-1, level=1)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": -1
+      }
+    },
+    {
+      "name": "omega(1650)",
+      "obs": 1670.0,
+      "pred": 0,
+      "cluster": "refuse: isoscalar vector level=3, n_hidden_s=0 rule not derived (omega(1420), phi(1680), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "level": 3
+      }
+    },
+    {
+      "name": "omega_3(1670)",
+      "obs": 1667.0,
+      "pred": 0,
+      "cluster": "regge: J=3 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 3,
+        "P": -1
+      }
+    },
+    {
+      "name": "pi_2(1670)",
+      "obs": 1670.6,
+      "pred": 0,
+      "cluster": "refuse: unhandled (J=2, P=-1, level=1)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 2,
+        "P": -1
+      }
+    },
+    {
+      "name": "rho_3(1690)",
+      "obs": 1688.8,
+      "pred": 0,
+      "cluster": "regge: J=3 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 3,
+        "P": -1
+      }
+    },
+    {
+      "name": "rho(1700)",
+      "obs": 1720.0,
+      "pred": 0,
+      "cluster": "refuse: vector level=3 with flavor=light_charged rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "level": 3
+      }
+    },
+    {
+      "name": "f_0(1710)",
+      "obs": 1733.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "pi(1800)",
+      "obs": 1810.0,
+      "pred": 0,
+      "cluster": "refuse: light charged pseudoscalar level=3 rule not derived (pi(1300), pi(1800))",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 1,
+        "J": 0,
+        "P": -1,
+        "level": 3
+      }
+    },
+    {
+      "name": "phi_3(1850)",
+      "obs": 1854.0,
+      "pred": 0,
+      "cluster": "regge: J=3 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 3,
+        "P": -1
+      }
+    },
+    {
+      "name": "a_4(1970)",
+      "obs": 1967.0,
+      "pred": 0,
+      "cluster": "regge: J=4 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 1,
+        "I3": 0,
+        "J": 4,
+        "P": 1
+      }
+    },
+    {
+      "name": "f_2(1950)",
+      "obs": 1936.0,
+      "pred": 0,
+      "cluster": "regge: J=2 P=+1 non-f2 sector (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": 1,
+        "level": 2
+      }
+    },
+    {
+      "name": "f_4(2050)",
+      "obs": 2018.0,
+      "pred": 0,
+      "cluster": "regge: J=4 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 4,
+        "P": 1
+      }
+    },
+    {
+      "name": "K+",
+      "obs": 493.68,
+      "pred": 493.753755159495,
+      "cluster": "hex_cap",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": -1
+      }
+    },
+    {
+      "name": "K0",
+      "obs": 497.61,
+      "pred": 497.841746765015,
+      "cluster": "hex_cap",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": -0.5,
+        "J": 0,
+        "P": -1
+      }
+    },
+    {
+      "name": "K_0*(700)",
+      "obs": 845.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "K*(892)",
+      "obs": 895.55,
+      "pred": 891.9323109981092,
+      "cluster": "strange_vector",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": -1
+      }
+    },
+    {
+      "name": "K_1(1270)",
+      "obs": 1253.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "K_1(1400)",
+      "obs": 1403.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "K*(1410)",
+      "obs": 1414.0,
+      "pred": 0,
+      "cluster": "refuse: vector level=2 with flavor=strange rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "K_0*(1430)",
+      "obs": 1425.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "K_2*(1430)",
+      "obs": 1432.4,
+      "pred": 0,
+      "cluster": "regge: J=2 P=+1 non-f2 sector (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2,
+        "P": 1
+      }
+    },
+    {
+      "name": "K_1(1650)",
+      "obs": 1650.0,
+      "pred": 0,
+      "cluster": "refuse: axial vector J=1 P=+1 graph rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": 1
+      }
+    },
+    {
+      "name": "K*(1680)",
+      "obs": 1718.0,
+      "pred": 0,
+      "cluster": "refuse: vector level=2 with flavor=strange rule not derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "K_2(1770)",
+      "obs": 1773.0,
+      "pred": 0,
+      "cluster": "refuse: unhandled (J=2, P=-1, level=1)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2,
+        "P": -1
+      }
+    },
+    {
+      "name": "K_3*(1780)",
+      "obs": 1779.0,
+      "pred": 0,
+      "cluster": "regge: J=3 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 3,
+        "P": -1
+      }
+    },
+    {
+      "name": "K_2(1820)",
+      "obs": 1819.0,
+      "pred": 0,
+      "cluster": "refuse: unhandled (J=2, P=-1, level=1)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2,
+        "P": -1
+      }
+    },
+    {
+      "name": "K_0*(1950)",
+      "obs": 1957.0,
+      "pred": 0.0,
+      "cluster": "refuse: scalar (J=0, P=+1) graph rule not yet derived (mixing sector)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": 1
+      }
+    },
+    {
+      "name": "K_2*(1980)",
+      "obs": 1990.0,
+      "pred": 0,
+      "cluster": "regge: J=2 P=+1 non-f2 sector (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2,
+        "P": 1
+      }
+    },
+    {
+      "name": "K_4*(2045)",
+      "obs": 2048.0,
+      "pred": 0,
+      "cluster": "regge: J=4 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "S": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 4,
+        "P": 1
+      }
+    },
+    {
+      "name": "phi(1680)",
+      "obs": 1680.0,
+      "pred": 0,
+      "cluster": "refuse: isoscalar vector level=2, n_hidden_s=0 rule not derived (omega(1420), phi(1680), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "level": 2
+      }
+    },
+    {
+      "name": "D+",
+      "obs": 1869.66,
+      "pred": 1869.6940501702877,
+      "cluster": "charm_PS",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": -0.5,
+        "J": 0,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D0",
+      "obs": 1864.84,
+      "pred": 1865.0950596140776,
+      "cluster": "charm_PS",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D*(2007)",
+      "obs": 2006.85,
+      "pred": 2006.6601644970583,
+      "cluster": "charm_V",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D*(2010)",
+      "obs": 2010.26,
+      "pred": 2010.2371571518884,
+      "cluster": "charm_V",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": -0.5,
+        "J": 1,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_0*(2300)",
+      "obs": 2343.0,
+      "pred": 2285.246570332362,
+      "cluster": "charm_Pwave_S",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_1(2420)",
+      "obs": 2422.1,
+      "pred": 2426.811675215343,
+      "cluster": "charm_Pwave",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_2*(2460)",
+      "obs": 2461.1,
+      "pred": 2426.811675215343,
+      "cluster": "charm_Pwave",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 0,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_s+",
+      "obs": 1968.35,
+      "pred": 1968.1710420590284,
+      "cluster": "charm_PS",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_s*",
+      "obs": 2112.2,
+      "pred": 2112.2911416954594,
+      "cluster": "charm_V",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_s0*(2317)",
+      "obs": 2317.8,
+      "pred": 2388.322552777313,
+      "cluster": "charm_Pwave_S",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 0,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "D_s1(2460)",
+      "obs": 2459.5,
+      "pred": 2532.442652413744,
+      "cluster": "charm_Pwave",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 0,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "eta_c(1S)",
+      "obs": 2984.1,
+      "pred": 2984.0028824278,
+      "cluster": "charm_PS",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "J/psi(1S)",
+      "obs": 3096.9,
+      "pred": 3096.952046072141,
+      "cluster": "charm_V",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "chi_c0(1P)",
+      "obs": 3414.7,
+      "pred": 3414.885371110575,
+      "cluster": "charm_Pwave_S",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": 1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "chi_c1(1P)",
+      "obs": 3510.7,
+      "pred": 3525.279540001465,
+      "cluster": "charm_Pwave",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "h_c(1P)",
+      "obs": 3525.4,
+      "pred": 3525.279540001465,
+      "cluster": "charm_Pwave",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": 1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "chi_c2(1P)",
+      "obs": 3556.2,
+      "pred": 3555.9394770428653,
+      "cluster": "charm_Pwave",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": 1,
+        "n_charm": 2
+      }
+    },
+    {
+      "name": "eta_c(2S)",
+      "obs": 3637.5,
+      "pred": 3637.717704695116,
+      "cluster": "charm_PS",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 0,
+        "P": -1,
+        "n_charm": 2,
+        "level": 2
+      }
+    },
+    {
+      "name": "psi(2S)",
+      "obs": 3686.1,
+      "pred": 3686.2810005525166,
+      "cluster": "charm_V",
+      "verdict": "WIN",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_charm": 2,
+        "level": 2
+      }
+    },
+    {
+      "name": "psi(3770)",
+      "obs": 3773.7,
+      "pred": 0,
+      "cluster": "refuse: charmonium level=3>2 (psi(3770), psi(4040), chi_c2(3930)) \u2014 D-wave / 3S rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_charm": 2,
+        "level": 3
+      }
+    },
+    {
+      "name": "chi_c2(3930)",
+      "obs": 3922.5,
+      "pred": 4116.141491333911,
+      "cluster": "charm_Pwave",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 2,
+        "P": 1,
+        "n_charm": 2,
+        "level": 2
+      }
+    },
+    {
+      "name": "psi(4040)",
+      "obs": 4039.0,
+      "pred": 0,
+      "cluster": "refuse: charmonium level=3>2 (psi(3770), psi(4040), chi_c2(3930)) \u2014 D-wave / 3S rule not yet derived",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 0,
+        "I": 0,
+        "I3": 0,
+        "J": 1,
+        "P": -1,
+        "n_charm": 2,
+        "level": 3
+      }
+    },
+    {
+      "name": "p",
+      "obs": 938.27,
+      "pred": 939.2089117078596,
+      "cluster": "baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "n",
+      "obs": 939.57,
+      "pred": 940.2309096092396,
+      "cluster": "baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": -0.5,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Lambda",
+      "obs": 1115.68,
+      "pred": 1115.8050380258812,
+      "cluster": "baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Sigma+",
+      "obs": 1189.37,
+      "pred": 1189.407282467092,
+      "cluster": "baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 1,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Sigma0",
+      "obs": 1192.64,
+      "pred": 1192.473276171232,
+      "cluster": "baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 0,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Sigma-",
+      "obs": 1197.45,
+      "pred": 1197.583265678132,
+      "cluster": "baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": -1,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Xi0",
+      "obs": 1314.86,
+      "pred": 1314.6388164698433,
+      "cluster": "baryon_S2",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Xi-",
+      "obs": 1321.71,
+      "pred": 1321.7928017795034,
+      "cluster": "baryon_S2",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0.5,
+        "I3": -0.5,
+        "J": 0.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Delta++",
+      "obs": 1232.0,
+      "pred": 1233.1068905220122,
+      "cluster": "baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 1.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Sigma*+(1385)",
+      "obs": 1382.8,
+      "pred": 1382.620072453464,
+      "cluster": "baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 1,
+        "J": 1.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Xi*0(1530)",
+      "obs": 1531.8,
+      "pred": 1531.8685571386457,
+      "cluster": "baryon_S2",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Omega-",
+      "obs": 1672.45,
+      "pred": 1672.4300596620972,
+      "cluster": "triple_bilayer",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -3,
+        "I": 0,
+        "I3": 0,
+        "J": 1.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "N(1440) Roper",
+      "obs": 1440.0,
+      "pred": 1359.3604224261437,
+      "cluster": "baryon_S0+rad",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": 1,
+        "level": 2
+      }
+    },
+    {
+      "name": "N(1520)",
+      "obs": 1515.0,
+      "pred": 1495.3229343933851,
+      "cluster": "baryon_S0+L1",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "N(1535)",
+      "obs": 1530.0,
+      "pred": 1495.3229343933851,
+      "cluster": "baryon_S0+L1",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "N(1650)",
+      "obs": 1650.0,
+      "pred": 1495.3229343933851,
+      "cluster": "baryon_S0+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "N(1675)",
+      "obs": 1675.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=2.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "N(1680)",
+      "obs": 1685.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=2.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 2.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "N(2190)",
+      "obs": 2180.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=3.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 3.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Delta(1600)",
+      "obs": 1600.0,
+      "pred": 1653.2584012402965,
+      "cluster": "baryon_S0+rad",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 1.5,
+        "P": 1,
+        "level": 2
+      }
+    },
+    {
+      "name": "Delta(1620)",
+      "obs": 1610.0,
+      "pred": 0,
+      "cluster": "forbidden: Pauli: I=I_max=1.5 with |S|=0 requires J\u22653/2",
+      "verdict": "FORBIDDEN",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Delta(1700)",
+      "obs": 1710.0,
+      "pred": 1495.3229343933851,
+      "cluster": "baryon_S0+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Delta(1905)",
+      "obs": 1880.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=2.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 2.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Delta(1950)",
+      "obs": 1930.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=3.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 1.5,
+        "I3": 1.5,
+        "J": 3.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Lambda(1405)",
+      "obs": 1405.1,
+      "pred": 1676.007052316927,
+      "cluster": "baryon_S1+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Lambda(1520)",
+      "obs": 1519.0,
+      "pred": 1676.007052316927,
+      "cluster": "baryon_S1+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Lambda(1600)",
+      "obs": 1600.0,
+      "pred": 1535.9565487441655,
+      "cluster": "baryon_S1+rad",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": 1,
+        "level": 2
+      }
+    },
+    {
+      "name": "Lambda(1670)",
+      "obs": 1674.0,
+      "pred": 1676.007052316927,
+      "cluster": "baryon_S1+L1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Lambda(1690)",
+      "obs": 1690.0,
+      "pred": 1676.007052316927,
+      "cluster": "baryon_S1+L1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Lambda(1820)",
+      "obs": 1820.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=2.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0,
+        "I3": 0,
+        "J": 2.5,
+        "P": 1
+      }
+    },
+    {
+      "name": "Sigma(1660)",
+      "obs": 1660.0,
+      "pred": 1609.5587931853763,
+      "cluster": "baryon_S1+rad",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 1,
+        "J": 0.5,
+        "P": 1,
+        "level": 2
+      }
+    },
+    {
+      "name": "Sigma(1670)",
+      "obs": 1675.0,
+      "pred": 1745.5213051526175,
+      "cluster": "baryon_S1+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 1,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Sigma(1775)",
+      "obs": 1775.0,
+      "pred": 0,
+      "cluster": "regge: baryon J=2.5 > 3/2 (Regge trajectory)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 1,
+        "I3": 1,
+        "J": 2.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Xi(1690)",
+      "obs": 1690.0,
+      "pred": 1874.840830760889,
+      "cluster": "baryon_S2+L1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Xi(1820)",
+      "obs": 1823.0,
+      "pred": 1874.840830760889,
+      "cluster": "baryon_S2+L1",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1.5,
+        "P": -1
+      }
+    },
+    {
+      "name": "Lambda_c+",
+      "obs": 2286.46,
+      "pred": 2286.268568233742,
+      "cluster": "charm_baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Sigma_c++(2455)",
+      "obs": 2453.97,
+      "pred": 2453.9498062274647,
+      "cluster": "charm_baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 1,
+        "I3": 1,
+        "J": 0.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Sigma_c(2520)",
+      "obs": 2518.5,
+      "pred": 2518.3356740144045,
+      "cluster": "charm_baryon_S0",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "I": 1,
+        "I3": 1,
+        "J": 1.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Lambda_c(2595)",
+      "obs": 2592.2,
+      "pred": 0,
+      "cluster": "refuse: charm baryon P=-1 graph rule not yet derived (\u039b_c(2595), \u039b_c(2625), \u039e_c(2790), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Lambda_c(2625)",
+      "obs": 2628.0,
+      "pred": 0,
+      "cluster": "refuse: charm baryon P=-1 graph rule not yet derived (\u039b_c(2595), \u039b_c(2625), \u039e_c(2790), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0,
+        "I3": 0,
+        "J": 1.5,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Lambda_c(2880)",
+      "obs": 2881.6,
+      "pred": 0,
+      "cluster": "regge: charm baryon J=2.5 > 3/2",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "I": 0,
+        "I3": 0,
+        "J": 2.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Xi_c+",
+      "obs": 2467.7,
+      "pred": 2468.2393813049343,
+      "cluster": "charm_baryon_S1",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Xi_c(2645)",
+      "obs": 2646.2,
+      "pred": 2468.2393813049343,
+      "cluster": "charm_baryon_S1",
+      "verdict": "WRONG",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Xi_c(2790)",
+      "obs": 2793.9,
+      "pred": 0,
+      "cluster": "refuse: charm baryon P=-1 graph rule not yet derived (\u039b_c(2595), \u039b_c(2625), \u039e_c(2790), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 0.5,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Xi_c(2815)",
+      "obs": 2819.8,
+      "pred": 0,
+      "cluster": "refuse: charm baryon P=-1 graph rule not yet derived (\u039b_c(2595), \u039b_c(2625), \u039e_c(2790), etc.)",
+      "verdict": "REGGE-SKIP",
+      "qn": {
+        "B": 1,
+        "S": -1,
+        "I": 0.5,
+        "I3": 0.5,
+        "J": 1.5,
+        "P": -1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Omega_c",
+      "obs": 2695.2,
+      "pred": 2695.196497578697,
+      "cluster": "charm_baryon_S2",
+      "verdict": "WIN",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0,
+        "I3": 0,
+        "J": 0.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    },
+    {
+      "name": "Omega_c(2770)",
+      "obs": 2765.9,
+      "pred": 2695.196497578697,
+      "cluster": "charm_baryon_S2",
+      "verdict": "SOFT-OK",
+      "qn": {
+        "B": 1,
+        "S": -2,
+        "I": 0,
+        "I3": 0,
+        "J": 1.5,
+        "P": 1,
+        "n_charm": 1
+      }
+    }
+  ],
+  "counts": {
+    "WIN": 45,
+    "REGGE-SKIP": 61,
+    "SOFT-OK": 7,
+    "WRONG": 13,
+    "FORBIDDEN": 1,
+    "EMPIRICAL": 0,
+    "ERROR": 0
+  }
+}

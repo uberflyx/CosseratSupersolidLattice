@@ -69,9 +69,9 @@ import os
 import sys
 import numpy as np
 
-# --- validated kernels from spectral_mass/ (Cosserat matrix + O_h machinery) ---
+# --- validated kernels alongside this file (Cosserat matrix + O_h machinery) ---
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, "spectral_mass"))
+sys.path.insert(0, _HERE)
 from cosserat_classifier import build_cosserat_matrix          # noqa: E402
 from spectral_classifier import fcc_nn_vectors                 # noqa: E402
 from proton_first_principles import (                          # noqa: E402
