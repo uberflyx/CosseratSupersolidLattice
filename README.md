@@ -117,8 +117,8 @@ me. Most are old machines and placeholder emails I never got round to fixing.
 The rest come from commits fired off from a random chat on my phone, where
 Claude, asked to write the commit, would confidently supply an author it had
 invented on the spot. My favourite is *Mitch Kovari*, which has never been my
-surname, though I concede it scans better than the real one. A few commits are
-signed by Claude itself, which at least has the virtue of honesty.
+surname. A few commits are signed by Claude itself, which at least has the
+virtue of honesty.
 
 So: one person, several laptops, and a language model with rather more
 enthusiasm than access to my passport. The physics was checked more carefully
