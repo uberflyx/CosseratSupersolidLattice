@@ -1,35 +1,59 @@
 # Cosserat Supersolid Lattice
 
+**Mitchell A. Cox, University of the Witwatersrand**
+
+Companion code for the monograph *The Cosserat Supersolid*. The scripts verify;
+they do not derive. Every result is worked through in full in the monograph, so
+a reader can rebuild any of it from the prose alone, and these files exist to
+make that check cheap and to guard the numbers against regression.
+
+**Monograph: [doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)**
+
+---
+
+## Papers
+
+Results are drawn out of the monograph into stand-alone papers as they reach a
+state fit for external review.
+
+**Published**
+
+- M. A. Cox, "The Peierls–Nabarro amplitude as an emergent coupling constant: an
+  explicit evaluation for the FCC Cosserat lattice", *Annals of Physics* **493**,
+  170613 (2026). Open access:
+  [doi.org/10.1016/j.aop.2026.170613](https://doi.org/10.1016/j.aop.2026.170613)
+  → reproduced by [`pn_variational.py`](pn_variational.py), which computes the fine
+  structure constant from the shear channel and Newton's constant from the
+  compression channel.
+
+Further papers are in preparation or under peer review at any given time, and
+they are added here once a decision is in. The monograph remains the complete
+and current statement of the framework.
+
+---
+
 ## Repository structure
 
-Everything is sorted by topic, with one exception kept at the root: the script
+Scripts are sorted by topic, with one exception kept at the root: the script
 behind the published paper, so a reader arriving from it finds it immediately.
-
-**M. A. Cox, "The Peierls–Nabarro amplitude as an emergent coupling constant:
-an explicit evaluation for the FCC Cosserat lattice", *Annals of Physics* **493**,
-170613 (2026), [doi:10.1016/j.aop.2026.170613](https://doi.org/10.1016/j.aop.2026.170613)
-(open access) → `pn_variational.py`**, which reproduces every number in that
-paper: the fine structure constant from the shear channel and Newton's constant
-from the compression channel.
 
 ```
 pn_variational.py               # ★ Published paper: α and G from the PN amplitude
 cosserat_calculator.py          # Legacy mass calculator (lookup-table version)
-├── foundations/                 # PN barrier, α derivation, symmetry channels
+├── foundations/                # PN barrier, α derivation, symmetry channels
 │   ├── theta_ch_ab_initio_v2.py#   Chirality parameter θ_ch
 │   ├── oh_irrep_overlaps.py    #   O_h irrep overlaps
 │   ├── cosserat_transfer_matrix.py # Transfer matrix eigenvalues
-│   ├── cosserat_dw.py          #   Debye-Waller factor
+│   ├── cosserat_dw.py          #   Debye–Waller factor
 │   └── koide_sigma_mott.py     #   Koide amplitude and quartic from the Mott point
-├── hadrons/                    # Ch. 9–10: mass formula, exotics, excited baryons
-│   ├── verify_fcc_geometry.py  #   FCC coordinate checks (Ch. 9)
+├── hadrons/                    # Mass formula, exotics, excited baryons
+│   ├── verify_fcc_geometry.py  #   FCC coordinate checks
 │   ├── exotic_catalogue.py     #   Exotic hadron classification
 │   ├── exotic_filling_fraction.py
-│   ├── three_mechanisms.py     #   Vacuum energy mechanisms (Ch. 13)
-│   ├── probe_cosserat_graph.py #   PDG validation harness for cosserat_graph
+│   ├── three_mechanisms.py     #   Vacuum energy mechanisms
 │   ├── pdg_comparison.md       #   Full prediction-vs-PDG comparison report
 │   └── fcc_defect_catalogue.py #   Composition catalogue of FCC defect cores
-├── spectral_mass/              #   Hadron masses from the cluster elastic spectrum
+├── spectral_mass/              # Hadron masses from the cluster elastic spectrum
 │   ├── spectral_classifier.py  #   FCC cluster builders + O_h irrep decomposition
 │   ├── cosserat_classifier.py  #   Full Cosserat dynamical matrix
 │   ├── hadron_spectral_mass.py #   Mass law m = N m_0 − N(4−λ) m_e
@@ -37,27 +61,20 @@ cosserat_calculator.py          # Legacy mass calculator (lookup-table version)
 │   ├── parity_flip_rule.py     #   J^P → parent irrep map
 │   ├── retrospective_adiabatic.py # Excited-baryon adiabatic audit
 │   └── delta1600_dual_orbit.py #   Δ(1600) dual-orbit closure (+ supporting builders)
-├── decays/                     # Ch. 12: decay rates and lifetimes
+├── decays/                     # Decay rates and lifetimes
 │   ├── cosserat_decay_engine.py#   Full decay rate calculator
 │   └── test_decay_engine.py    #   Regression tests
-├── neutrinos/                  # Ch. 8: neutrino sector
+├── neutrinos/                  # Neutrino masses, mixing, error budget
 │   ├── neutrino_predictions.py #   ν mass and mixing predictions
 │   └── neutrino_error_budget.py#   Error propagation
-├── gravity/                    # Ch. 15–16: black holes, gravity
-│   ├── bh_entropy_derivation.py#   Bekenstein-Hawking entropy
+├── gravity/                    # Black holes and gravity
+│   ├── bh_entropy_derivation.py#   Bekenstein–Hawking entropy
 │   └── bh_statistical_mechanics.py # BH statistical mechanics
-└── d4/                         # Sec. 2.8: four-dimensional interpretation
+└── d4/                         # Four-dimensional interpretation
     ├── d4_lattice_sums.py      #   D3 vs D4 elastic lattice sums
     ├── d4_mu_prime.py          #   μ' = 2 self-consistency: KK reduction
     └── d4_scales.py            #   Temperature hierarchy, G × K_sf = c⁴/ℓ²
 ```
-
-
-**Mitchell A. Cox, University of the Witwatersrand**
-
-Companion code for [*The Cosserat Supersolid*](https://doi.org/10.5281/zenodo.18636501)
-
-Full monograph: [https://doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)
 
 ---
 
@@ -79,17 +96,7 @@ The monograph is a work in progress but fairly complete. It has many falsifiable
 
 Whether the leading-order agreement is evidence for the hypothesis or an elaborate coincidence is for the reader to judge. The purpose of the monograph is to present the derivations in sufficient detail that the question can be answered.
 
-Please go read it: [https://doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)
-
----
-
-## Summary
-
-The vacuum is modelled as an FCC Cosserat supersolid — a face-centred cubic crystal that is simultaneously superfluid (rigid to shear, frictionless to translation). Particles are topological defects: screw dislocations (electrons), partial dislocations (quarks, with the FCC threefold stacking degeneracy providing colour), edge dislocations (neutrinos), and vacancies (dark matter). Forces are elastic waves: transverse shear (electromagnetism), stacking-fault elasticity (strong force), evanescent modes (weak force), and longitudinal compression (gravity).
-
-The fine structure constant is the Boltzmann factor for tunnelling through the Peierls–Nabarro barrier. Newton's constant requires coherent tunnelling of all 19 nodes in the FCC coordination cluster, giving *G* ∝ α¹⁹ — the 10³⁸ hierarchy between electromagnetism and gravity is a counting problem (1 node vs 19). A universal mass formula *m* = *m*ₑ(*N*/α*ᵏ* + *Q*) yields the full particle spectrum from geometric building blocks, each derived from the defect geometry with no reference to experiment.
-
-The obvious objection — that a crystal breaks Lorentz invariance — is addressed quantitatively in the monograph and in a [dedicated paper](https://doi.org/10.5281/zenodo.18739953) (submitted, under review). Two suppression mechanisms intrinsic to the lattice (the Peierls–Nabarro form factor and Debye–Waller smearing from quantum zero-point delocalisation) combine to push Bragg scattering five orders of magnitude below the Fermi-LAT gamma-ray bound. The lattice is there, but it hides well.
+Please go read it: [doi.org/10.5281/zenodo.18636501](https://doi.org/10.5281/zenodo.18636501)
 
 ---
 
@@ -99,6 +106,20 @@ MIT
 
 ---
 
-Warp drive doesn't jump out of this framework (unfortunately). But if the vacuum really is a crystal, then the universe is (now) an engineering problem — and that's a start. 
+Warp drive doesn't jump out of this framework (unfortunately). But if the vacuum really is a crystal, then the universe is (now) an engineering problem — and that's a start.
 
-For the brave: I was wondering if the Lattice supports some sort of long-range propagation for information — like electromagnetism and gravity, but not those. Kinks on lattice dislocation lines might be something, with heavy nuclei as "transducers" for the interface.
+---
+
+## A note on the commit history
+
+The git log carries about fifteen different author names, and all of them are
+me. Most are old machines and placeholder emails I never got round to fixing.
+The rest come from commits fired off from a random chat on my phone, where
+Claude, asked to write the commit, would confidently supply an author it had
+invented on the spot. My favourite is *Mitch Kovari*, which has never been my
+surname, though I concede it scans better than the real one. A few commits are
+signed by Claude itself, which at least has the virtue of honesty.
+
+So: one person, several laptops, and a language model with rather more
+enthusiasm than access to my passport. The physics was checked more carefully
+than the metadata.
