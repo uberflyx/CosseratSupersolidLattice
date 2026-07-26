@@ -2,15 +2,24 @@
 
 ## Repository structure
 
+Everything is sorted by topic, with one exception kept at the root: the script
+behind the published paper, so a reader arriving from it finds it immediately.
+
+**M. A. Cox, "The Peierls–Nabarro amplitude as an emergent coupling constant:
+an explicit evaluation for the FCC Cosserat lattice", *Annals of Physics* **493**,
+170613 (2026), [doi:10.1016/j.aop.2026.170613](https://doi.org/10.1016/j.aop.2026.170613)
+(open access) → `pn_variational.py`**, which reproduces every number in that
+paper: the fine structure constant from the shear channel and Newton's constant
+from the compression channel.
+
 ```
+pn_variational.py               # ★ Published paper: α and G from the PN amplitude
 cosserat_calculator.py          # Legacy mass calculator (lookup-table version)
-cosserat_graph.py               # ★ Constructive graph calculator — all masses from FCC edge counting
-├── foundations/                 # Ch. 3–6: PN barrier, α derivation, symmetry channels
-│   ├── pn_variational.py       #   PN tunnelling amplitude (Ch. 5)
-│   ├── theta_ch_ab_initio_v2.py#   Chirality parameter θ_ch (Ch. 6)
-│   ├── oh_irrep_overlaps.py    #   O_h irrep overlaps (Ch. 4)
-│   ├── cosserat_transfer_matrix.py # Transfer matrix eigenvalues (Ch. 4)
-│   ├── cosserat_dw.py          #   Debye-Waller factor (Ch. 3)
+├── foundations/                 # PN barrier, α derivation, symmetry channels
+│   ├── theta_ch_ab_initio_v2.py#   Chirality parameter θ_ch
+│   ├── oh_irrep_overlaps.py    #   O_h irrep overlaps
+│   ├── cosserat_transfer_matrix.py # Transfer matrix eigenvalues
+│   ├── cosserat_dw.py          #   Debye-Waller factor
 │   └── koide_sigma_mott.py     #   Koide amplitude and quartic from the Mott point
 ├── hadrons/                    # Ch. 9–10: mass formula, exotics, excited baryons
 │   ├── verify_fcc_geometry.py  #   FCC coordinate checks (Ch. 9)

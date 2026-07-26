@@ -1,0 +1,25 @@
+# Canonical author identity for this repository.
+#
+# The history carries fifteen author identities, accumulated from assorted
+# machines and assistant sessions: misspelled surnames, placeholder domains
+# (example.com, lattice.org, cox.com), and commits authored as the assistant
+# rather than carrying it as a Co-Authored-By trailer. All of them are the
+# same person. This file maps them onto one identity, which is what git
+# shortlog, git log and GitHub's contributors view read.
+#
+# Format:  Canonical Name <canonical@email> Commit Name <commit@email>
+
+Mitch Cox <mitch@enox.co.za> Mitchell A. Cox <mitchell.cox@wits.ac.za>
+Mitch Cox <mitch@enox.co.za> Mitchell Cox <mitchell.cox@wits.ac.za>
+Mitch Cox <mitch@enox.co.za> Mitchell Cox <mitch@wits.ac.za>
+Mitch Cox <mitch@enox.co.za> Mitch Kovari <mitch@cosserat.dev>
+Mitch Cox <mitch@enox.co.za> Mitchell A. Cox <mitchell@cox.com>
+Mitch Cox <mitch@enox.co.za> Mitchell Cox <mitchell@lattice.org>
+Mitch Cox <mitch@enox.co.za> Mitchell Cox <mitch@lattice.org>
+Mitch Cox <mitch@enox.co.za> Mitchell Cox <mitchell@example.com>
+Mitch Cox <mitch@enox.co.za> Mitchell A. Cox <mitch@users.noreply.github.com>
+Mitch Cox <mitch@enox.co.za> uberflyx <uberflyx@users.noreply.github.com>
+Mitch Cox <mitch@enox.co.za> uberflyx <mitch@cosserat.local>
+Mitch Cox <mitch@enox.co.za> uberflyx <mitch@uberflyx.local>
+Mitch Cox <mitch@enox.co.za> Claude (AI assistant) <claude@anthropic.com>
+Mitch Cox <mitch@enox.co.za> Claude (assistant for Mitchell Cox) <claude@anthropic.com>
