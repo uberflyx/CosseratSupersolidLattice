@@ -27,7 +27,7 @@ Three findings, in increasing order of structural importance:
       cells zero.  This is the matrix-entry expression of the
       factorisation theorem.
 
-  (b) At the first KK level k_4 ell = 2 pi / 3, exactly seven
+  (b) At the first KK level k_4 ell = 2 pi / sqrt(6), exactly seven
       additional matrix entries activate.  Every one of them is
       purely imaginary.  Each carries a factor of i k_4 inherited
       from differentiating exp(i k_4 x_4).  The compact direction
@@ -66,8 +66,13 @@ K = K_over_mu * mu
 lam = K - 2 * mu / 3
 M_long = lam + 2 * mu + kappa_c
 
-# Calibrated PN amplitude from FCC repo run
-V0 = 106.425237
+# PN barrier amplitude.  This is calibrated below, on THIS matrix, so that the
+# transverse (electromagnetic) eigenvalue equals alpha at k_4 = 0.  It must not be
+# copied from the 12x12 FCC script: that matrix is not this one, and its calibrating
+# amplitude differs by about 13%.  Borrowing it left the k_4 = 0 electromagnetic
+# eigenvalue at 0.00654 instead of alpha, a 10% error, and any hard-coded literal
+# silently goes stale the moment a modulus changes.
+V0 = 1.0  # placeholder; set by calibrate_V0() below
 
 
 def V_PN(x):
@@ -176,6 +181,49 @@ def M20(x, k4):
 
 
 # ----------------------------------------------------------------------
+# Calibrate V_0 on this matrix, at k_4 = 0, to the electromagnetic channel
+# ----------------------------------------------------------------------
+ALPHA_EXP = 1.0 / 137.035999177        # CODATA 2022 fine-structure constant
+
+
+def _one_period_T(k4, dim=20, n_steps=4000):
+    """Path-ordered exp(int M dx) over one PN period.  Used by the calibration
+    and re-used by PART C below."""
+    def rhs(x, Psi_flat):
+        return (M20(x, k4) @ Psi_flat.reshape(dim, dim).astype(complex)).flatten()
+    sol = solve_ivp(rhs, [0, ell], np.eye(dim, dtype=complex).flatten(),
+                    method='DOP853', rtol=1e-11, atol=1e-13,
+                    max_step=ell / n_steps)
+    return sol.y[:, -1].reshape(dim, dim)
+
+
+def _em_eigenvalue(V0_trial):
+    """Smallest |lambda| at k_4 = 0.  At k_4 = 0 the spectrum's lowest entry is the
+    doubly degenerate transverse pair (u_2, phi_12) and (u_3, phi_13): the two photon
+    polarisations.  Everything else is gapped well above it."""
+    global V0
+    V0 = V0_trial
+    return min(abs(e) for e in np.linalg.eigvals(_one_period_T(0.0)))
+
+
+def calibrate_V0(lo=40.0, hi=400.0, iters=50):
+    """Bisect V_0 so the transverse tunnelling amplitude equals alpha at k_4 = 0.
+    The amplitude falls monotonically with barrier height, so bisection is safe."""
+    for _ in range(iters):
+        mid = 0.5 * (lo + hi)
+        if _em_eigenvalue(mid) < ALPHA_EXP:
+            hi = mid
+        else:
+            lo = mid
+    return 0.5 * (lo + hi)
+
+
+V0 = calibrate_V0()
+print(f"  V_0 calibrated on this matrix: {V0:.6f}")
+print(f"  |lambda|_EM(k_4 = 0) = {_em_eigenvalue(V0):.10f}   alpha = {ALPHA_EXP:.10f}")
+
+
+# ----------------------------------------------------------------------
 # Pretty-print the sparsity pattern
 # ----------------------------------------------------------------------
 def print_sparsity(M, title, labels, k4=None, threshold=1e-12):
@@ -243,9 +291,13 @@ print("  Systems A and B are completely decoupled.")
 # ----------------------------------------------------------------------
 # PART B.  What switches on at k_4 != 0
 # ----------------------------------------------------------------------
-k4_KK = 2 * np.pi / 3 / ell           # first Kaluza-Klein level
+k4_KK = 2 * np.pi / (np.sqrt(6) * ell)   # first Kaluza-Klein level.  The compact
+# period is L_4 = sqrt(6) ell (three layers of d111 = 2 ell/sqrt6), so momentum
+# quantisation on the ring gives k_4 = 2 pi / L_4, i.e. k_4 ell = 2pi/sqrt6 = 2.565.
+# Equivalently k_4 d111 = 2pi/3 -- that is the 2pi/3 in the literature, measured in
+# interlayer spacings, NOT in ell.  Setting k_4 ell = 2pi/3 undershoots the rung by 18%.
 M1 = M20(ell / 2, k4=k4_KK)
-print_sparsity(M1, "PART B.  D_4 equation matrix M(x) at k_4 ell = 2pi/3 (first KK)",
+print_sparsity(M1, "PART B.  D_4 equation matrix M(x) at k_4 ell = 2pi/sqrt6 (first KK)",
                LABELS, k4=k4_KK)
 
 # Find entries that are zero at k_4=0 but nonzero at k_4 != 0
@@ -253,8 +305,8 @@ new_entries = (np.abs(M0) < 1e-12) & (np.abs(M1) > 1e-12)
 print(f"\n  Entries that ACTIVATE at k_4 != 0: "
       f"{new_entries.sum()}")
 print()
-print("  Position    Value at k_4 = 2pi/3        Field-language coupling")
-print("  --------    --------------------        -----------------------")
+print("  Position    Value at k_4 ell = 2pi/sqrt6  Field-language coupling")
+print("  --------    ----------------------------  -----------------------")
 for i in range(20):
     for j in range(20):
         if new_entries[i, j]:
@@ -267,7 +319,7 @@ for i in range(20):
 
 
 # ----------------------------------------------------------------------
-# PART C.  Eigenvalue spectrum: k_4 = 0  versus  k_4 = 2 pi / 3
+# PART C.  Eigenvalue spectrum: k_4 = 0  versus  k_4 ell = 2 pi / sqrt(6)
 # ----------------------------------------------------------------------
 def transfer_matrix(M_func, k4, dim=20, n_steps=4000):
     """Path-ordered integral exp(integral M dx) over one lattice period."""
@@ -287,7 +339,7 @@ print("  PART C.  Transfer-matrix eigenvalues over one lattice period")
 print("=" * 78)
 
 for k4_val, label in [(0.0, "k_4 = 0  (System A factorised from System B)"),
-                      (k4_KK, "k_4 ell = 2pi/3  (first KK level, full coupling)")]:
+                      (k4_KK, "k_4 ell = 2pi/sqrt6  (first KK level, full coupling)")]:
     T = transfer_matrix(M20, k4_val)
     eigs = np.linalg.eigvals(T)
     abs_eigs = np.sort(np.abs(eigs))
@@ -304,7 +356,7 @@ for k4_val, label in [(0.0, "k_4 = 0  (System A factorised from System B)"),
 # ----------------------------------------------------------------------
 print("\n")
 print("=" * 78)
-print("  PART D.  Block structure of T at k_4 ell = 2 pi / 3")
+print("  PART D.  Block structure of T at k_4 ell = 2 pi / sqrt(6)")
 print("=" * 78)
 
 T_KK = transfer_matrix(M20, k4_KK)
