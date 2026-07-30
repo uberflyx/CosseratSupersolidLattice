@@ -37,7 +37,10 @@ from scipy.integrate import solve_ivp
 N2       = 1.0 / np.pi                     # Cosserat coupling number
 mu       = 1.0                              # shear modulus
 ell      = 1.0                              # lattice spacing
-kappa_c  = 2 * N2 * mu / (1.0 - N2)        # rotational stiffness
+# From N² = κ_c / [2(μ + κ_c)], the framework definition.  Note this is NOT
+# κ_c/(2μ + κ_c), which is the rotational-channel coupling g_c = 1/(π-1) = 0.4669.
+#   2N²(μ + κ_c) = κ_c  →  κ_c = 2N²μ/(1-2N²) = 2μ/(π-2) = 1.7519 μ
+kappa_c  = 2 * N2 * mu / (1.0 - 2 * N2)     # rotational stiffness
 mu_tot   = mu + kappa_c                     # total shear modulus
 gamma_c  = mu * ell**2                      # curvature modulus
 K_over_mu = 1e6                             # near-incompressible

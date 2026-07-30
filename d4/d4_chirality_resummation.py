@@ -40,7 +40,10 @@ from numba import njit
 N2       = 1.0 / np.pi                 # Cosserat coupling number N^2 = 1/pi
 mu       = 1.0                         # shear modulus
 ell      = 1.0                         # lattice spacing
-kappa_c  = 2 * N2 * mu / (1.0 - N2)    # rotational stiffness
+# From N^2 = kappa_c / [2(mu + kappa_c)], the framework definition.  This is NOT
+# kappa_c/(2mu + kappa_c), which is the rotational-channel coupling g_c = 1/(pi-1).
+#   kappa_c = 2 N^2 mu/(1 - 2 N^2) = 2 mu/(pi-2) = 1.7519 mu
+kappa_c  = 2 * N2 * mu / (1.0 - 2 * N2)  # rotational stiffness
 mu_tot   = mu + kappa_c                # total shear modulus
 gamma_c  = mu * ell**2                 # curvature modulus
 ALPHA    = 1.0 / 137.035999177         # fine-structure constant
