@@ -66,7 +66,7 @@ print(f"""
   ─────────────────────────────────────────
   N²        = 1/π         = {N2:.6f}
   μ         = {mu:.4f}       (shear modulus)
-  κ_c       = 2N²μ/(1-N²) = {kappa_c:.6f}  (rotational stiffness)
+  κ_c       = 2N²μ/(1-2N²)= {kappa_c:.6f}  (rotational stiffness)
   μ_tot     = μ + κ_c      = {mu_tot:.6f}  (total shear)
   γ         = μℓ²          = {gamma_c:.6f}  (curvature modulus)
   K/μ       =               {K_over_mu:.0e}  (near-incompressible)
