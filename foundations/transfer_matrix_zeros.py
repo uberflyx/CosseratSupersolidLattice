@@ -31,7 +31,7 @@ np.set_printoptions(precision=4, suppress=True, linewidth=200)
 N2 = 1.0 / np.pi
 mu = 1.0
 ell = 1.0
-kappa_c = 2 * N2 * mu / (1.0 - N2)
+kappa_c = 2 * N2 * mu / (1.0 - 2 * N2)
 mu_tot = mu + kappa_c
 gamma_c = mu * ell**2
 K_over_mu = 1e6

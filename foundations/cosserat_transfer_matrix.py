@@ -31,9 +31,10 @@ N2 = 1.0 / np.pi    # Cosserat coupling number
 mu = 1.0             # shear modulus (sets energy scale)
 ell = 1.0            # lattice spacing (sets length scale)
 
-# From N² = κ_c / (2μ + κ_c):
-#   κ_c (1 - N²) = 2 N² μ  →  κ_c = 2N²μ/(1-N²)
-kappa_c = 2 * N2 * mu / (1.0 - N2)
+# From N² = κ_c / [2(μ + κ_c)], the framework definition.  Note this is NOT
+# κ_c/(2μ + κ_c), which is the rotational-channel coupling g_c = 1/(π-1) = 0.4669.
+#   2N²(μ + κ_c) = κ_c  →  κ_c = 2N²μ/(1-2N²) = 2μ/(π-2) = 1.7519 μ
+kappa_c = 2 * N2 * mu / (1.0 - 2 * N2)
 
 # Total shear modulus
 mu_tot = mu + kappa_c       # = (π+1)/(π-1) × μ
