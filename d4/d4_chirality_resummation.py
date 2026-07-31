@@ -161,6 +161,38 @@ def main():
     print("    amplitude split: EVEN in k4  (birefringence; survives)")
     print("    Im(Sigma_13):    ODD  in k4  (CP; cancels unless handedness)")
 
+    # ------------------------------------------------------------------
+    # The selection rule: |lambda| itself is exactly even in k4.
+    #
+    # This is the check that decides which face can source a matter/
+    # antimatter asymmetry.  A CP-odd RATE asymmetry would need the
+    # tunnelling probability to differ between a winding (+k4) and its
+    # reverse (-k4).  It does not, to machine precision, for either
+    # helicity.  So all the CP-odd content is a PHASE, and no rate
+    # asymmetry follows from it until that phase interferes against a
+    # CP-even absorptive one.  The helicity split |lam_DF| - |lam_CG| is
+    # therefore NOT a proxy for the CP bias: being even in k4, it takes
+    # the same value for a winding and its reverse and so carries no
+    # particle/antiparticle information at all.
+    # ------------------------------------------------------------------
+    print("\n  SELECTION RULE: is |lambda| itself odd in k4?")
+    print(f"  {'helicity':>10} {'|lam(+k4)|':>18} {'|lam(-k4)|':>18} {'rate asym':>12}")
+    for s, name in ((+1.0, 'CG (asd)'), (-1.0, 'DF (sd)')):
+        lp = abs(smallest_eig(transfer(K4_KK, V0, s, NS)))
+        lm = abs(smallest_eig(transfer(-K4_KK, V0, s, NS)))
+        print(f"  {name:>10} {lp:18.12f} {lm:18.12f} {(lp-lm)/(0.5*(lp+lm)):12.1e}")
+    print("    |lambda| is EVEN in k4 to machine precision: no CP-odd RATE")
+    print("    asymmetry at this order.  The CP content is a pure phase (pi/2),")
+    print("    so every rate asymmetry needs a CP-even absorptive phase too.")
+
+    # Z3 coherence factor, checked against its closed form sqrt(3).
+    im_kk = chirality(K4_KK, V0, NS)[1]
+    z3 = abs(sum(i * wn for i, wn in
+                 zip([chirality(k, V0, NS)[1] for k in (0.0, K4_KK, -K4_KK)],
+                     np.exp(2j * np.pi * np.arange(3) / 3))))
+    print(f"\n  Z3 coherence: |sum_n Im(Sigma_13)^(n) w^n| / |Im(Sigma_13)| = "
+          f"{z3/abs(im_kk):.6f}   (closed form sqrt(3) = {np.sqrt(3):.6f})")
+
     print("\n  Z3 SUM over sublattice momenta {0, +2pi/sqrt6, -2pi/sqrt6}")
     ks = (0.0, K4_KK, -K4_KK)
     amps = [chirality(k, V0, NS)[0] for k in ks]
