@@ -253,66 +253,33 @@ def residual_V0(log_V0):
         return 1.0
 
 
-# Scan to find the right V₀
-print("\n  Scanning V₀ to calibrate anti-plane tunnelling to α...")
-best_V0 = None
-best_err = 1.0
+# Calibrate V₀ by bisection.  The anti-plane tunnelling amplitude falls
+# monotonically with barrier height, so bisection converges to |λ_C| = α to
+# machine precision.  A coarse grid scan lands one step short of α (about
+# 0.7%), and because this is the calibration target rather than a prediction,
+# that residue would propagate into every quoted EM eigenvalue as a spurious
+# offset.  Bisect instead: it costs nothing and the amplitude lands on α.
+print("\n  Calibrating V₀ by bisection so |λ_C| = α...")
 
-for log_V0 in np.linspace(0, 8, 100):
-    V0 = np.exp(log_V0)
-    try:
-        T_C = compute_transfer_matrix(sector_C_matrix, 4)
-        ev, _ = get_tunnelling_amplitudes(T_C)
-        if ev:
-            err = abs(ev[0][0] - alpha_target)
-            if err < best_err:
-                best_err = err
-                best_V0 = V0
-    except Exception:
-        pass
 
-if best_V0 is None:
-    print("  Could not find calibration V₀. Using iterative search...")
-    # Try different range
-    for log_V0 in np.linspace(-2, 12, 200):
-        V0 = np.exp(log_V0)
-        try:
-            T_C = compute_transfer_matrix(sector_C_matrix, 4)
-            ev, _ = get_tunnelling_amplitudes(T_C)
-            if ev:
-                err = abs(ev[0][0] - alpha_target)
-                if err < best_err:
-                    best_err = err
-                    best_V0 = V0
-        except Exception:
-            pass
+def lambda_C(V0_val):
+    global V0
+    V0 = V0_val
+    ev, _ = get_tunnelling_amplitudes(compute_transfer_matrix(sector_C_matrix, 4))
+    return ev[0][0]
 
-# Refine with bisection if possible
+
+lo, hi = 50.0, 400.0
+for _ in range(80):
+    mid = 0.5 * (lo + hi)
+    if lambda_C(mid) < alpha_target:
+        hi = mid
+    else:
+        lo = mid
+best_V0 = 0.5 * (lo + hi)
 V0 = best_V0
-print(f"  Best V₀ = {V0:.4f}  (|λ_C| error = {best_err:.2e})")
-
-# Fine-tune
-try:
-    # Search around best_V0
-    for dV in np.linspace(-V0*0.2, V0*0.2, 500):
-        V0_try = best_V0 + dV
-        if V0_try <= 0:
-            continue
-        V0 = V0_try
-        try:
-            T_C = compute_transfer_matrix(sector_C_matrix, 4)
-            ev, _ = get_tunnelling_amplitudes(T_C)
-            if ev:
-                err = abs(ev[0][0] - alpha_target)
-                if err < best_err:
-                    best_err = err
-                    best_V0 = V0_try
-        except Exception:
-            pass
-    V0 = best_V0
-    print(f"  Refined V₀ = {V0:.6f}  (|λ_C| error = {best_err:.2e})")
-except Exception:
-    pass
+best_err = abs(lambda_C(best_V0) - alpha_target)
+print(f"  Calibrated V₀ = {best_V0:.6f}  (|λ_C| error = {best_err:.2e})")
 
 V0 = best_V0
 
