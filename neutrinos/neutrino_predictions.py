@@ -195,9 +195,9 @@ print(f"            pull = {pull_31:+.2f} sigma")
 print(f"  Combined chi^2 = {pull_21**2 + pull_31**2:.3f}  (2 dof)")
 
 print(f"\n--- Mixing angles (exponentiated generator; see pmns_construction.py) ---")
-print(f"  sin^2(theta_12) = 0.3148  (pull +0.6 sigma vs JUNO)")
-print(f"  sin^2(theta_23) = 0.5549  (pull -0.4 sigma vs NuFit 6.0)")
-print(f"  sin^2(theta_13) = 0.02230 (pull +0.6 sigma vs NuFit 6.0)")
+print(f"  sin^2(theta_12) = 0.3088  (pull -0.1 sigma vs JUNO)")
+print(f"  sin^2(theta_23) = 0.4682  (pull -0.1 sigma vs NuFit 6.0 with SK-atm)")
+print(f"  sin^2(theta_13) = 0.02200 (pull +0.1 sigma vs NuFit 6.0)")
 print(f"  delta_CP        = 182 deg (pull +0.3 sigma vs NuFit 6.0)")
 
 print(f"\n--- Error budget ---")

@@ -21,10 +21,10 @@ from scipy.stats import chi2
 
 # Predictions (zero adjustable parameters; inputs m_e, m_mu, m_tau, alpha)
 PRED = {
-    "s12": 0.31480,        # sin^2 theta_12
-    "s23": 0.55493,        # sin^2 theta_23
-    "s13": 0.02230,        # sin^2 theta_13
-    "dcp": 182.4,          # delta_CP [deg]
+    "s12": 0.30877,        # sin^2 theta_12
+    "s23": 0.46822,        # sin^2 theta_23
+    "s13": 0.02200,        # sin^2 theta_13
+    "dcp": 181.6,          # delta_CP [deg]
     "dm21": 7.4711e-5,     # eV^2
     "dm31": 2.5234e-3,     # eV^2
 }

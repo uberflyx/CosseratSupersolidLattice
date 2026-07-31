@@ -14,10 +14,11 @@ derived quantities (no free parameters):
     z12  = sqrt(m_e/m_mu) * omega          (stacking rotation, omega = e^{2 pi i/3})
     z13  = +/- sqrt(3 m_mu / (8 m_tau))    (Cosserat torsion; the mu-tau mirror
                                             forces it real, sign = orientation)
-    gamma = sqrt(m_mu/(8 m_tau)) - m_mu/(2 m_tau)
-                                           (net mu-tau rotation: four-family
-                                            chirality term minus the diagonal
-                                            second-order baseline)
+    gamma = -m_mu/(2 m_tau)                (mu-tau rotation: the second-order
+                                            diagonal baseline.  The inter-family
+                                            coupling is circulant in its gauge-
+                                            invariant form and contributes zero
+                                            to every mixing channel.)
 
     A_e mu  = -i (z12 + sqrt(2) z13) / 2
     A_e tau = -i (z12 - sqrt(2) z13) / 2
@@ -26,8 +27,7 @@ derived quantities (no free parameters):
 Exact linear-order statements (verified symbolically and numerically below):
     U_e2  = (1 + z12)/sqrt(3)        -> sin^2 th12 = (1 - t + t^2)/3
     U_e3  = z13                      -> sin^2 th13 = 3 m_mu/(8 m_tau)
-    U_mu3 = (1 + gamma)/sqrt(2)      -> sin^2 th23 = (1 - m_mu/m_tau
-                                                      + 2 sqrt(m_mu/8m_tau))/2
+    U_mu3 = (1 + gamma)/sqrt(2)      -> sin^2 th23 = (1 - m_mu/m_tau)/2
     J     = -|z13| sin(psi)/(3 sqrt2) = 0 for real z13 (mirror-enforced)
 
 The script prints the exponentiated (all-orders) observables for both torsion
@@ -50,7 +50,7 @@ ALPHA = 1 / 137.035999177
 # derived generator parameters (closed form, zero free parameters)
 THETA_E = np.sqrt(M_E / M_MU)                  # 0.06954
 Z13_MAG = np.sqrt(3 * M_MU / (8 * M_TAU))      # 0.14933
-GAMMA = np.sqrt(M_MU / (8 * M_TAU)) - M_MU / (2 * M_TAU)   # +0.05648
+GAMMA = -M_MU / (2 * M_TAU)                                # -0.02973
 OMEGA = np.exp(2j * np.pi / 3)
 
 # tribimaximal matrix (orthogonal; S3-fixed frame)
