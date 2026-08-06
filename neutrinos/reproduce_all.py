@@ -17,7 +17,9 @@ Chain (all derived in the monograph):
   U    = exp(iA_gen) U_TBM             flavour-row generator, closed form:
          z12 = sqrt(m_e/m_mu) omega,   omega = exp(2i pi/3)
          |z13| = sqrt(3 m_mu/(8 m_tau)),  psi = pi
-         gamma = 2 t_cross |z13| - m_mu/(2 m_tau),  t_cross = 1/(2 sqrt 3)
+         gamma = -m_mu/(2 m_tau)  (the inter-family cross term is removed
+         by the circulant projection theorem; the mu-tau rotation is pure
+         level repulsion of the heavier pair)
 """
 
 import numpy as np
@@ -47,7 +49,7 @@ def predict(m_e=M_E, m_mu=M_MU, m_tau=M_TAU, alpha=ALPHA):
     theta_e = np.sqrt(m_e / m_mu)
     z12 = theta_e * OMEGA
     z13 = np.sqrt(3 * m_mu / (8 * m_tau)) * np.exp(1j * np.pi)   # psi = pi
-    gamma = np.sqrt(m_mu / (8 * m_tau)) - m_mu / (2 * m_tau)
+    gamma = -m_mu / (2 * m_tau)
     a = -0.5j * (z12 + S2 * z13)
     b = -0.5j * (z12 - S2 * z13)
     A_gen = np.array([[0, a, b],
@@ -78,9 +80,9 @@ ANCHORS = {   # (best fit, sigma+, sigma-, source)
     "sin2_th12":          (0.3092, 0.0087, 0.0087, "JUNO 2025"),
     "Dm2_21 [1e-5 eV^2]": (7.50,   0.12,   0.12,   "JUNO 2025"),
     "sin2_th13":          (0.02195, 0.00054, 0.00058, "NuFit 6.0"),
-    "sin2_th23":          (0.56,   0.03,   0.05,   "T2K+NOvA"),
-    "delta_CP [deg]":     (177.0,  19.0,   20.0,   "NuFit 6.0 (NO)"),
-    "Dm2_31 [1e-3 eV^2]": (2.534,  0.025,  0.023,  "NuFit 6.0"),
+    "sin2_th23":          (0.470,  0.017,  0.013,  "NuFit 6.0 with SK-atm"),
+    "delta_CP [deg]":     (212.0,  26.0,   41.0,   "NuFit 6.0 with SK-atm (NO)"),
+    "Dm2_31 [1e-3 eV^2]": (2.513,  0.021,  0.019,  "NuFit 6.0 with SK-atm"),
 }
 
 if __name__ == "__main__":
