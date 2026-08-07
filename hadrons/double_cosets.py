@@ -100,3 +100,59 @@ for (a,b) in [('C3v (tri-face, <111>)','C3v (tri-face, <111>)'),
     print(f"\n{a}  ⋈  {b}:")
     for g,s in sorted(zip(reps,sizes),key=lambda z:z[1]):
         print(f"   orbit {s:2d}   junction symmetry order {residual(H,K,g):2d}   rep ~ {rep_type(g)}")
+
+
+# ======================================================================
+# Does the mirrored grain actually leave the lattice?
+# ======================================================================
+# Counting orientations is not the same as counting NEW junctions.  A
+# reoriented copy is a second grain only if it sits off the FCC lattice; if
+# the mirror in a feature plane is already a lattice symmetry composed with a
+# translation, it maps the crystal to itself and no boundary forms, so the
+# "molecular" junction is really a coherent overlap under another name.
+# This is the test that decides which family each feature contributes to.
+
+NN_SHELL = [np.array(v) for v in itertools.product((-1,0,1), repeat=3)
+            if sum(abs(x) for x in v) == 2]
+SHELL = [np.array((0,0,0))] + NN_SHELL
+
+def mirror_in_feature_plane(axis):
+    """Reflect the shell in the plane of its outermost feature on `axis`."""
+    a = np.array(axis, float); a /= np.linalg.norm(a)
+    h = max(float(v @ a) for v in SHELL)
+    return [v - 2*(float(v @ a) - h)*a for v in SHELL]
+
+def on_lattice(pts):
+    """Every node an FCC site: integer coordinates with even sum."""
+    for v in pts:
+        r = np.round(v)
+        if not np.allclose(v, r, atol=1e-9) or int(round(sum(r))) % 2:
+            return False
+    return True
+
+print("\n\n=== does the mirrored grain leave the lattice? ===")
+print("(only a copy that leaves it is a genuine second grain)\n")
+print(f"{'feature':22s}{'shared':8s}{'nodes':7s}{'on-lattice':12s}{'verdict'}")
+Akeys = {tuple(int(round(x)) for x in v) for v in SHELL}
+for label, axis in [('tri-face <111>', (1,1,1)),
+                    ('sq-face <100>',  (1,0,0)),
+                    ('vertex <110>',   (1,1,0))]:
+    B = mirror_in_feature_plane(axis)
+    lat = on_lattice(B)
+    Bk = {tuple(int(round(x)) for x in v) for v in B} if lat else set()
+    shared = (len(Akeys & Bk) if lat
+              else sum(1 for p in SHELL for q in B
+                       if np.allclose(p, q, atol=1e-9)))
+    nodes = 26 - shared
+    verdict = ("TRUE grain boundary" if not lat else
+               "collapses to a coherent overlap")
+    print(f"{label:22s}{shared:<8d}{nodes:<7d}{str(lat):12s}{verdict}")
+
+print("\nThe {111} mirror is not an element of O_h, so it alone produces a")
+print("copy off the lattice: three shared face atoms across 23 positioned")
+print("nodes, the antiprismatic ABA twin.  The {100} and <110> mirrors are")
+print("lattice symmetries, and their 'molecular' junctions are the <200> and")
+print("<220> coherent overlaps of docking_enumerate.py.  So the lattice")
+print("admits exactly ONE genuine two-shell grain boundary, and it is the")
+print("{111} twin: the stacking fault that also carries strangeness and")
+print("colour.  That is why the triangular face carries the physics.")
