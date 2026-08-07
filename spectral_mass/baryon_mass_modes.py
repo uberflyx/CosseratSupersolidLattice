@@ -24,10 +24,16 @@ facts and nothing else:
      microrotation-dominant (phi-content > 1/2), since rest mass is stored
      microrotation, not displacement.
 
-  3. Branch and localisation. The node count fixes the sign of the spectral
-     correction -N(4-lambda)m_e and so the branch. A cap-extended cluster
-     overshoots at lambda=4 and must read the soft branch (lambda<4); a
-     void-extended cluster undershoots and reads the stiff branch (lambda>4).
+  3. Branch and localisation. The branch is computed from the cluster with
+     no measured mass consulted: seed the added nodes' microrotations at
+     tau = 0 (exactly lambda = 1 when decoupled), symmetry-adapt them, and
+     trace each degenerate multiplet as a subspace to full coupling. A
+     cluster whose descendants include one above the reference lambda = 4
+     resists its added structure and reads the stiff branch; a cluster
+     whose descendants all stay below accommodates and reads soft. In
+     composition terms, interstitial voids resist and in-plane triangle
+     extensions accommodate. (The monograph derives this; the node count's
+     over/undershoot of the measured mass follows as a check.)
      On the stiff branch (resisted class) the mass mode is the lowest
      pure-optical mode, microrotation-dominant AND shell-localised
      (shell >= 0.9). On the soft branch (accommodated class) the mass mode

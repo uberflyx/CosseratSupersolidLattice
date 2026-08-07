@@ -14,11 +14,14 @@ De-duplicating that shared atom leaves 34 - 1 = 33 nodes.
 
 The mass mode is inherited.  The bare Delta carries its rest mass in a
 stiff phi-dominant shell-concentrated T_1 mode at lambda = 9.0515.  On the
-dimer that root doubles and splits into a tight multiplet under the
-bridging-atom perturbation.  Selecting the modes that stay phi-dominant
-(microrotation fraction >= 97%) and shell-concentrated (void localisation
-<= 1%) isolates that multiplet cleanly; it is well separated from the next
-phi-dominant band near lambda = 10.6.
+dimer that root doubles and splits into a six-fold near-degenerate
+multiplet under the bridging-atom perturbation, the 2 x 3 states the J = 3
+compound requires.  Phi and shell thresholds alone do NOT isolate it
+(isolated phi-dominant modes near lambda = 10.6 and higher bands pass
+them too); what distinguishes the mass multiplet is being the LOWEST
+stiff six-fold near-degenerate group, matching the resisted-class
+'lowest stiff' reading.  The selection here chains stiff phi-dominant
+(>= 90%) modes by gap < 0.15 and takes the lowest chain of six.
 
 Mass uses the un-deduplicated count N_tot = 33 in the master formula,
 m = N_tot m_0 - N_tot (4 - lambda) m_e.  The bare-dimer value overshoots
@@ -79,16 +82,30 @@ def main():
     H = build_cosserat_matrix_two_d(coords, K_u=1.0, K_phi=1.0, alpha=1.0)
     vals, vecs = eigh(H)
 
-    # Inherited doubled-T_1 multiplet: phi-dominant and shell-concentrated.
-    multiplet = []
-    print(f"  {'lambda':>9} {'phi%':>6} {'void%':>7}")
+    # Inherited doubled-T_1 multiplet: the lowest six-fold near-degenerate
+    # chain of stiff phi-dominant modes (thresholds alone also pass
+    # isolated modes near 10.6 and higher bands; the near-degeneracy is
+    # what identifies the J = 3 multiplet).
+    cand = []
     for k in range(len(vals)):
-        if vals[k] < 1.0:
+        if vals[k] <= 4.0:
             continue
         pf, vl = diagnostics(vecs[:, k], n, is_void)
-        if pf >= 0.97 and vl <= 0.01:
-            multiplet.append(vals[k])
-            print(f"  {vals[k]:9.4f} {pf * 100:6.1f} {vl * 100:7.2f}")
+        if pf >= 0.90:
+            cand.append((float(vals[k]), pf, vl))
+    chains, cur = [], [cand[0]]
+    for row in cand[1:]:
+        if row[0] - cur[-1][0] < 0.15:
+            cur.append(row)
+        else:
+            chains.append(cur)
+            cur = [row]
+    chains.append(cur)
+    multiplet = next(ch for ch in chains if len(ch) >= 6)[:6]
+    print(f"  {'lambda':>9} {'phi%':>6} {'void%':>7}")
+    for lam_k, pf, vl in multiplet:
+        print(f"  {lam_k:9.4f} {pf * 100:6.1f} {vl * 100:7.2f}")
+    multiplet = [row[0] for row in multiplet]
 
     lam = float(np.mean(multiplet))
     m_bare = n * M_0 - n * (4.0 - lam) * M_E
