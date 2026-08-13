@@ -311,6 +311,68 @@ def delta_alpha_had(M2=None, s_match=2000.0**2, Gee_rho_use=None,
     return sum(c.values()), c
 
 # ======================================================================
+# 5b. The muon anomaly from the same spectral function
+# ======================================================================
+# The leading-order hadronic contribution to a_mu reads the SAME R(s) through a
+# different filter:
+#
+#     a_mu^HVP = (1/3) (alpha/pi)^2 Int (ds/s) K(s/m_mu^2) R(s),
+#     K(r) = Int_0^1 dx x^2 (1-x) / (x^2 + r(1-x)) ,
+#
+# with K -> 1/(3r) = m_mu^2/(3s) for s >> m_mu^2.  So a_mu weights the spectrum as
+# 1/s^2 where the running weights it as 1/s: the muon anomaly is dominated by the rho
+# and barely notices the continuum, which is the exact reverse of the Z-pole running.
+# One spectral function, two observables, opposite sensitivities.
+m_mu_phys = 105.6583755
+
+def K_kernel(r):
+    v, _ = integrate.quad(lambda x: x*x*(1.0-x)/(x*x + r*(1.0-x)), 0.0, 1.0, limit=200)
+    return v
+
+def amu_narrow(mV, Gee, B_had=1.0):
+    """Narrow resonance contribution to a_mu^HVP.
+    Reduction: (1/3)(alpha/pi)^2 K(r) (1/m^2) Int R ds with Int R ds = 9 pi m Gee B/alpha^2
+    collapses to 3 Gee B K(r) / (pi m)."""
+    return 3.0*Gee*B_had*K_kernel(mV**2/m_mu_phys**2)/(np.pi*mV)
+
+def amu_disp(R, s_lo, s_hi):
+    """Continuum/Breit-Wigner contribution, integrated in t = ln s."""
+    pref = (1.0/3.0)*(alpha/np.pi)**2
+    f = lambda t: K_kernel(np.exp(t)/m_mu_phys**2)*R(np.exp(t))
+    v, _ = integrate.quad(f, np.log(s_lo), np.log(s_hi), limit=300)
+    return pref*v
+
+def a_mu_hvp(s_match=2000.0**2, Gee_rho_use=None, tower_supp=TOWER_SUPP,
+             with_towers=True, verbose=False):
+    Gr = Gee_rho if Gee_rho_use is None else Gee_rho_use
+    c = {}
+    c['pi pi (rho)'] = amu_disp(R_pipi_factory(Gr), 4.0*m_pi**2, s_match)
+    c['omega']       = amu_narrow(m_omega_pdg, Gee_omega)
+    c['phi']         = amu_narrow(m_phi_pdg,   Gee_phi)
+    if with_towers:
+        t = 0.0
+        for n in range(1, 12):
+            m_n = np.sqrt(m_rho**2 + n*2.0*np.pi*sigma_string)
+            if m_n >= np.sqrt(s_match):
+                break
+            t += amu_narrow(m_n, Gr*(m_rho/m_n)**2*tower_supp)
+        c['vector towers'] = t/RHO_SHARE
+    s_charm, s_bottom = (3739.0)**2, (10560.0)**2
+    Rq = lambda s, q: q*(1.0 + alpha_s(s)/np.pi)
+    c['uds continuum']   = amu_disp(lambda s: Rq(s, 2.0),      s_match, s_charm)
+    c['udsc continuum']  = amu_disp(lambda s: Rq(s, 10.0/3.0), s_charm, s_bottom)
+    c['udscb continuum'] = amu_disp(lambda s: Rq(s, 11.0/3.0), s_bottom, 4.0e12)
+    qq = 0.0
+    for name, mV, Gd, Gm, Bee, tau_open, is_der in quarkonia:
+        B_had = 1.0 - (3.0 if tau_open else 2.0)*Bee
+        qq += amu_narrow(mV, Gd if is_der else Gm, B_had)
+    c['quarkonia'] = qq
+    if verbose:
+        for k, v in c.items():
+            print("     %-20s %8.1f" % (k, v*1e10))
+    return sum(c.values()), c
+
+# ======================================================================
 # 6.  Run
 # ======================================================================
 if __name__ == "__main__":
@@ -395,6 +457,24 @@ if __name__ == "__main__":
           % (0.5*(ainv_lo+ainv_hi), unc, AINV_MZ_REF, AINV_MZ_EREF))
     print("  central at the 2.0 GeV point: %.3f   tension: %.2f sigma"
           % (ainv, abs(0.5*(ainv_lo+ainv_hi) - AINV_MZ_REF)/np.hypot(unc, AINV_MZ_EREF)))
+
+    print("\nTHE MUON ANOMALY FROM THE SAME SPECTRAL FUNCTION")
+    print("  (units of 1e-10; the 1/s^2 weight makes this the rho's observable)")
+    amu, amu_c = a_mu_hvp(verbose=True)
+    print("     %-20s %8.1f" % ("TOTAL", amu*1e10))
+    print("  data-driven / lattice consensus (WP25): 713 +- 6")
+    print("  residual: %+.1f%%" % (100.0*(amu*1e10/713.0 - 1.0)))
+    amu_m, _ = a_mu_hvp(Gee_rho_use=Gee_rho_pdg)
+    print("  with the MEASURED rho width (7.04 keV) instead of the derived 7.36:")
+    print("     total %8.1f   residual %+.1f%%   (shift %+.1f%%)"
+          % (amu_m*1e10, 100.0*(amu_m*1e10/713.0 - 1.0), 100.0*(amu_m/amu - 1.0)))
+    lo_t, _ = a_mu_hvp(tower_supp=1.0)
+    print("  tower normalisation ceiling: %8.1f  (%+.1f%% on the total)"
+          % (lo_t*1e10, 100.0*(lo_t/amu - 1.0)))
+    for sm in (1500.0, 2400.0):
+        t, _ = a_mu_hvp(s_match=sm**2)
+        print("  matching at %.1f GeV: %8.1f  (%+.2f%%)  <- the continuum barely matters here"
+              % (sm/1000, t*1e10, 100.0*(t/amu - 1.0)))
 
     print("\nDERIVED ELECTROWEAK OBSERVABLES")
     da_had_W, _ = delta_alpha_had(M2=MW2)
