@@ -10,13 +10,13 @@ Computes the complete one-loop electroweak programme from lattice first principl
 
 - **Leptonic vacuum polarisation** — exact one-loop integral with Koide-derived lepton masses. Matches the SM value to three significant figures (0.0314 vs 0.0315).
 
-- **Hadronic vacuum polarisation** — once-subtracted dispersion integral over the lattice vector meson spectral function (ρ, ω, φ, J/ψ, Υ(1S)), with perturbative QCD at Λ_QCD = π·m₀ above the quark-hadron duality matching point. Zero free parameters. Result: Δα_had = 0.0272 ± 0.0007 against the data-driven 0.02766 ± 0.00010. The radial vector towers sit on the Regge trajectory with Γ_ee ∝ 1/m² derived from linear confinement; that scaling is a ceiling (it overshoots every measured quarkonium radial pair by ~2×) and the bracket down to the measured floor is the quoted uncertainty.
+- **Hadronic vacuum polarisation** — once-subtracted dispersion integral over the lattice vector meson spectral function (ρ, ω, φ, J/ψ, Υ(1S)), with perturbative QCD at Λ_QCD = π·m₀ above the quark-hadron duality matching point. Zero free parameters. Result: Δα_had = 0.0273 ± 0.0003 against the data-driven 0.02766 ± 0.00010. The radial vector tower widths are derived, not fitted: the Cornell potential built from the framework's own string tension and α_s, solved by radial diagonalisation, reproduces both measured bottomonium radial ratios to 1–3% where the pure-linear limit was off by factors of 1.9 and 2.4. The uncertainty is now dominated by the duality matching point and the string tension.
 
 - **Custodial-breaking ρ parameter** — UV-convergent integral from the top-bottom mass splitting in the evanescent (W) self-energy. Result: Δρ = 0.0092, matching the SM value ~0.0094.
 
-- **Running coupling** — α⁻¹(M_Z) = 129.01 ± 0.10 against the measured 128.943 ± 0.014, an agreement at 0.6σ.
+- **Running coupling** — α⁻¹(M_Z) = 128.98 ± 0.04 against the measured 128.943 ± 0.014, an agreement at 0.9σ.
 
-- **Corrected G_F** — Δr = Δα − (c²/s²)Δρ = 0.0261 reduces the tree-level residual from 3.2% to 0.6%.
+- **Corrected G_F** — Δr = Δα − (c²/s²)Δρ = 0.0265 reduces the tree-level residual from 3.2% to 0.6%.
 
 - **Effective Weinberg angle** — tree-level residual reduced from 4.0% to 1.7%.
 
