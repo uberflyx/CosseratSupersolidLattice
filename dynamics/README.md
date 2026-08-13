@@ -38,3 +38,23 @@ Requires: `numpy`, `scipy`.
 ### References
 
 Monograph Chapter 10 (Dynamics), Sections on the two-loop QED programme, Landau pole elimination, and the electroweak radiative correction programme.
+
+### `rho_sector_audit.py`
+
+Audits the rho sector, which supplies the single most consequential number in the
+hadronic programme. Establishes what is in good order (mass 0.05%, KSRF width 0.23%,
+KSRF coupling tested against the measured width 0.15%) and localises what is not:
+
+- **Gamma_ee(rho) is +4.6%**, and is the outlier among the three vector leptonic widths
+  the framework computes (omega +0.5%, phi -1.1%); no single rescaling fits rho and phi
+  together, so the defect is specific to the rho's coupling to the photon.
+- **The two routes to that width are not independent.** They agree only through the
+  numerical near-identity 8 pi^3 ~ 2 (Z^2/(Z+1))^2, true to 1.1%, which makes
+  m_a1^2 = 3 m_rho^2 and the Weinberg factor 3/2. Their agreement checks neither.
+- **The a_1 mass cannot rescue it.** Lowering m_a1 raises the sum-rule factor, so the
+  observed 1230 MeV gives 8.15 keV; the measured width would need m_a1 = 1409, further
+  from observation than the framework's 1348.
+- **The Regge trajectory does not separate orbital from radial excitation.** The observed
+  slopes differ by 1.69 (0.91e6 MeV^2 to the a_1 against 1.55e6 to the rho(1450)), while
+  the framework uses one step for both, which is why the same formula puts the a_1 10%
+  high and the rho(1450) 8% low.
