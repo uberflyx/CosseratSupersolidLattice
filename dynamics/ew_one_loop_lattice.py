@@ -478,12 +478,14 @@ B_PIPI_RHO1 = 0.15
 # what the quoted uncertainty rests on.  Taking the pion coupling to be the same for
 # every tower member is the most generous assumption, because the physical recurrences
 # decay dominantly to four pions and so couple to two pions LESS as n rises; it gives
-# c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.138.
+# c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.146 with the renormalised c_1 = -0.172 (residue conventions
+# carrying mass factors give 0.088 to 0.113; the envelope is quoted).
 #
 # Across that range a_mu responds smoothly, symmetrically and quadratically, with the
 # recovered leptonic width holding at its target throughout, which is the signature of
 # genuine interference rather than a solver artefact.  Both signs LOWER a_mu, so the
-# two-resonance value is a maximum: a_mu runs from 734 down to 684 over the bound.
+# two-resonance value is a maximum: a_mu runs from 731 down to 683 over the bound, one-sidedly: both signs of c_2
+# lower it, so the c_2 = 0 value is a maximum and the truncation error is asymmetric.
 C2_BOUND = 0.138
 
 def gs_amplitude(m, G, mpi):
@@ -509,9 +511,19 @@ def _gs_pair(mpi=None, G1=None):
     return gs_amplitude(m_rho, Gamma_rho, mpi), gs_amplitude(m1, G1, mpi)
 
 def R_pipi_factory(Gee_target, mpi=None, G1=None):
-    """Two-resonance GS pi pi spectral function with F_pi(0) = 1 exactly."""
+    """Two-resonance GS pi pi spectral function with F_pi(0) = 1 exactly.
+
+    Each amplitude is renormalised by its own value at s = 0.  The GS d-parameter is
+    constructed so that f(0) = d m Gamma makes F(0) = 1 analytically, but that identity
+    needs the sub-threshold analytic continuation of p^2 < 0, which this implementation
+    clamps; the raw amplitudes therefore come out about 1.0101 at the origin.  Dividing
+    each by its own A(0) restores charge conservation exactly, by construction, and
+    costs nothing above threshold where the shapes are correct."""
     mpi = m_pi if mpi is None else mpi
-    A0, A1 = _gs_pair(mpi, G1)
+    A0r, A1r = _gs_pair(mpi, G1)
+    n0, n1 = A0r(0.0), A1r(0.0)
+    A0 = lambda s: A0r(s)/n0
+    A1 = lambda s: A1r(s)/n1
 
     def R_of(c):
         def R(s):
@@ -533,6 +545,51 @@ def R_pipi_factory(Gee_target, mpi=None, G1=None):
         else:
             hi = mid
     return R_of(0.5*(lo + hi))
+
+def gee_rho_pole():
+    """The rho leptonic width as a POLE RESIDUE, which is what experiments fit.
+
+    The framework's derivation fixes the current coupling f_rho^2, which in a
+    dispersive setting is the spectral AREA of the rho region; that is what the
+    c_0 solve imposes.  The PDG's 7.04(6) keV is instead the pole residue of fits
+    that carry the recurrences explicitly.  In the charge-conserving two-resonance
+    form factor the two differ by construction, and the map is exact:
+
+        Gee_pole = c_0^2 x Gee(single GS),
+
+    because the residue at s = m_rho^2 belongs to the c_0 A_0 term alone while the
+    area includes the rho-rho' interference.  With c_0 = 1.172 forced by charge
+    conservation this gives 7.12 keV against the measured 7.04(6): a like-for-like
+    residual of +1.1 per cent, where comparing the area to the pole gave +3.4."""
+    A0r, A1r = _gs_pair()
+    n0 = A0r(0.0)
+    A0 = lambda s: A0r(s)/n0
+    def Rs(s):
+        b = np.sqrt(np.maximum(1.0 - 4.0*m_pi*m_pi/s, 0.0))
+        return 0.25*b**3*abs(A0(s))**2
+    area, _ = integrate.quad(Rs, 4.0*m_pi*m_pi, (m_rho + 12.0*Gamma_rho)**2, limit=300)
+    G_single = area*alpha**2/(9.0*np.pi*m_rho)
+    # recover c_0 exactly as the factory does
+    R = R_pipi_factory(Gee_rho)
+    # c_0 satisfies area(R) = Gee_rho with c_1 = 1 - c_0; solve again cheaply
+    A1r_ = _gs_pair()[1]; n1 = A1r_(0.0)
+    A1 = lambda s: A1r_(s)/n1
+    def area_of(c0):
+        def Rt(s):
+            F = c0*A0(s) + (1.0 - c0)*A1(s)
+            b = np.sqrt(np.maximum(1.0 - 4.0*m_pi*m_pi/s, 0.0))
+            return 0.25*b**3*abs(F)**2
+        ar, _ = integrate.quad(Rt, 4.0*m_pi*m_pi, (m_rho + 12.0*Gamma_rho)**2, limit=300)
+        return ar*alpha**2/(9.0*np.pi*m_rho)
+    lo, hi = 0.5, 3.0
+    for _ in range(45):
+        mid = 0.5*(lo + hi)
+        if area_of(mid) < Gee_rho:
+            lo = mid
+        else:
+            hi = mid
+    c0 = 0.5*(lo + hi)
+    return c0*c0*G_single, c0, G_single
 
 def _R_pipi_naive(Gee_target, mpi=None):
 
