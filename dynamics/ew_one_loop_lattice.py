@@ -112,7 +112,16 @@ def beta_pi(s, mpi=None):
     return np.sqrt(np.maximum(0.0, 1.0 - 4.0 * mpi**2 / s))
 
 Gamma_rho   = g2 * m_rho * beta_pi(m_rho**2)**3 / (48.0 * np.pi)
-Gee_rho     = 4.0 * np.pi * alpha**2 * f_pi**2 / m_rho
+# The rho leptonic width carries a DERIVED finite-pion-mass correction.  Both Weinberg
+# sum rules are chiral-limit statements; giving the pion its mass moves its pole from
+# s = 0 to s = m_pi^2, which leaves the zeroth moment alone and adds f_pi^2 m_pi^2 to
+# the first.  Eliminating f_a1^2 between the two then multiplies the coupling by
+# (1 - m_pi^2/m_a1^2).  The factor is small because the pole enters the FIRST moment and
+# is therefore weighed against m_a1, the heaviest scale in the sum rule, not m_rho.
+Gee_rho_chiral = 4.0 * np.pi * alpha**2 * f_pi**2 / m_rho     # chiral-limit value
+_m_a1_sq       = m_rho**2 + 2.0*np.pi*(2.0*np.pi*m_0)**2
+WSR_FINITE_MPI = 1.0 - (2.0*m_0)**2 / _m_a1_sq                # = 0.98921
+Gee_rho     = Gee_rho_chiral * WSR_FINITE_MPI
 Gee_phi     = (2.0/9.0) * 4.0 * np.pi * alpha**2 * f_pi**2 / m_phi_pdg
 m_omega     = m_rho + 12.0 * m_e
 sigma_string= (2.0 * np.pi * m_0)**2

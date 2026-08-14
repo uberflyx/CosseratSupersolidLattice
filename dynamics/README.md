@@ -20,6 +20,8 @@ Computes the complete one-loop electroweak programme from lattice first principl
 
 - **Effective Weinberg angle** — tree-level residual reduced from 4.0% to 1.7%.
 
+- **Muon anomaly** — a_mu^HVP = (733 ± 10) × 10⁻¹⁰ against WP25's 713 ± 6, 1.7σ. The ρ leptonic width carries a derived finite-pion-mass correction: both Weinberg sum rules are chiral-limit statements, and giving the pion its mass moves its pole off the origin, adding f_π²m_π² to the first moment and multiplying the coupling by (1 − m_π²/m_a1²) = −1.08%. The factor is small because the pole enters the *first* moment, so it is weighed against m_a1 rather than m_ρ.
+
 The script carries five analytic checks that run before any physics is reported: the
 dispersion integral against its closed form for constant R, the Breit-Wigner spectral
 area against the arctangent, the narrow-resonance pole formula against area times weight,
