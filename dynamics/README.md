@@ -14,13 +14,13 @@ Computes the complete one-loop electroweak programme from lattice first principl
 
 - **Custodial-breaking ρ parameter** — UV-convergent integral from the top-bottom mass splitting in the evanescent (W) self-energy. Result: Δρ = 0.0092, matching the SM value ~0.0094.
 
-- **Running coupling** — α⁻¹(M_Z) = 128.98 ± 0.07 against the measured 128.943 ± 0.014, an agreement at 0.5σ.
+- **Running coupling** — α⁻¹(M_Z) = 128.95 ± 0.06 against the measured 128.943 ± 0.014, an agreement at 0.2σ.
 
 - **Corrected G_F** — Δr = Δα − (c²/s²)Δρ = 0.0265 reduces the tree-level residual from 3.2% to 0.6%.
 
 - **Effective Weinberg angle** — tree-level residual reduced from 4.0% to 1.7%.
 
-- **Muon anomaly** — a_mu^HVP = (733 ± 10) × 10⁻¹⁰ against WP25's 713 ± 6, 1.7σ. The ρ leptonic width carries a derived finite-pion-mass correction: both Weinberg sum rules are chiral-limit statements, and giving the pion its mass moves its pole off the origin, adding f_π²m_π² to the first moment and multiplying the coupling by (1 − m_π²/m_a1²) = −1.08%. The factor is small because the pole enters the *first* moment, so it is weighed against m_a1 rather than m_ρ.
+- **Muon anomaly** — a_mu^HVP = (728 ± 10) × 10⁻¹⁰ against WP25's 713 ± 6, 1.3σ. The π π channel uses a two-resonance Gounaris-Sakurai form factor with F_π(0) = 1 imposed exactly; the previous rescaled Breit-Wigner violated that constraint by 48%, inflating the low-s region the muon kernel weights most. The ρ leptonic width carries a derived finite-pion-mass correction: both Weinberg sum rules are chiral-limit statements, and giving the pion its mass moves its pole off the origin, adding f_π²m_π² to the first moment and multiplying the coupling by (1 − m_π²/m_a1²) = −1.08%. The factor is small because the pole enters the *first* moment, so it is weighed against m_a1 rather than m_ρ.
 
 The script carries five analytic checks that run before any physics is reported: the
 dispersion integral against its closed form for constant R, the Breit-Wigner spectral

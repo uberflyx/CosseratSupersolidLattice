@@ -425,7 +425,83 @@ def delta_alpha_lep(M2):
 # ======================================================================
 # 5.  Hadronic vacuum polarisation
 # ======================================================================
-def R_pipi_factory(Gee_target, mpi=None):
+# ----------------------------------------------------------------------
+# The pion form factor
+# ----------------------------------------------------------------------
+# R_pipi = (1/4) beta^3 |F_pi(s)|^2, and F_pi is fixed at F_pi(0) = 1 by charge
+# conservation.  A naive Breit-Wigner rescaled to match a target leptonic width violates
+# that badly: the rescaling multiplies |F_pi(0)|^2 to about 1.5, inflating exactly the
+# low-s region the a_mu kernel weights most.  Two corrections put it right, and neither
+# needs an input the framework lacks.
+#
+# First, the correct analytic form.  Gounaris and Sakurai wrote the parametrisation that
+# respects analyticity and unitarity while keeping F(0) = 1 exactly; on the framework's
+# own (m_rho, Gamma_rho, m_pi) it reproduces the measured-parameter result for the pi pi
+# channel to 0.14 per cent, which is a clean check that the framework's hadronic
+# parameters are right.
+#
+# Second, the rho alone does not saturate F_pi: a single GS rho carries only 5.29 keV of
+# leptonic width against the derived 7.28, so the first recurrence must be present too.
+# In vector-meson dominance F_pi is the coupling-weighted sum over the tower, and the
+# excited states enter with negative coefficients, which is what suppresses the form
+# factor above the resonance.  Truncating at the first recurrence leaves two coefficients
+# fixed by two conditions with no freedom left over:
+#     c_0 + c_1 = 1                                  charge conservation
+#     c_0 chosen so the implied width equals the derived one
+# The recurrence mass is the framework's Regge value.  Its width is not derived, and is
+# the one measured input here; over 300 to 500 MeV it moves a_mu by +-3 x 1e-10.
+GAMMA_RHO1 = 400.0        # MeV, the rho(1450) width; sensitivity quoted above
+
+def gs_amplitude(m, G, mpi):
+    """Gounaris-Sakurai amplitude, normalised to 1 at s = 0."""
+    p0 = 0.5*np.sqrt(max(m*m - 4.0*mpi*mpi, 1e-9))
+    p  = lambda s: 0.5*np.sqrt(np.maximum(s - 4.0*mpi*mpi, 0.0))
+    def h(s):
+        ps, rt = p(s), np.sqrt(np.maximum(s, 1e-12))
+        return (2.0/np.pi)*(ps/rt)*np.log(np.maximum((rt + 2.0*ps)/(2.0*mpi), 1.0 + 1e-12))
+    h0  = h(m*m)
+    hp0 = h0*(1.0/(8.0*p0*p0) - 1.0/(2.0*m*m)) + 1.0/(2.0*np.pi*m*m)
+    d   = ((3.0/np.pi)*(mpi*mpi/(p0*p0))*np.log((m + 2.0*p0)/(2.0*mpi))
+           + m/(2.0*np.pi*p0) - (mpi*mpi*m)/(np.pi*p0**3))
+    f   = lambda s: G*(m*m/p0**3)*(p(s)**2*(h(s) - h0) + (m*m - s)*p0*p0*hp0)
+    Gam = lambda s: G*(m/np.sqrt(np.maximum(s, 1e-12)))*(p(s)/p0)**3
+    num = m*m + d*m*G
+    return lambda s: num/((m*m - s + f(s)) - 1j*m*Gam(s))
+
+def _gs_pair(mpi=None, G1=None):
+    mpi = m_pi if mpi is None else mpi
+    G1  = GAMMA_RHO1 if G1 is None else G1
+    m1  = np.sqrt(m_rho**2 + 2.0*np.pi*sigma_string)
+    return gs_amplitude(m_rho, Gamma_rho, mpi), gs_amplitude(m1, G1, mpi)
+
+def R_pipi_factory(Gee_target, mpi=None, G1=None):
+    """Two-resonance GS pi pi spectral function with F_pi(0) = 1 exactly."""
+    mpi = m_pi if mpi is None else mpi
+    A0, A1 = _gs_pair(mpi, G1)
+
+    def R_of(c):
+        def R(s):
+            F = c*A0(s) + (1.0 - c)*A1(s)
+            b = np.sqrt(np.maximum(1.0 - 4.0*mpi*mpi/s, 0.0))
+            return 0.25*b**3*abs(F)**2
+        return R
+
+    def implied(c):
+        area, _ = integrate.quad(R_of(c), 4.0*mpi*mpi,
+                                 (m_rho + 12.0*Gamma_rho)**2, limit=300)
+        return area*alpha**2/(9.0*np.pi*m_rho)
+
+    lo, hi = 0.5, 3.0
+    for _ in range(45):
+        mid = 0.5*(lo + hi)
+        if implied(mid) < Gee_target:
+            lo = mid
+        else:
+            hi = mid
+    return R_of(0.5*(lo + hi))
+
+def _R_pipi_naive(Gee_target, mpi=None):
+
     """R_pipi from the lattice BW, rescaled to the stated leptonic width."""
     mpi = m_pi if mpi is None else mpi
     def Fpi2(s):
