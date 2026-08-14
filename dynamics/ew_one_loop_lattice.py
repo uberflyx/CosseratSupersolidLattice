@@ -260,7 +260,8 @@ def family_towers(s_match, M2=None, alpha_s=None, m_q=None, sigma=None):
         for n, ratio in enumerate(R[1:], start=1):
             m_n = np.sqrt(m0V**2 + n*2.0*np.pi*sig)
             if m_n**2 < s_match:
-                tot += narrow(m_n, GeeV*ratio, M2=M2)
+                w = (1.0 - B_PIPI_RHO1) if (n == 1 and abs(m0V - m_rho) < 1.0) else 1.0
+                tot += w*narrow(m_n, GeeV*ratio, M2=M2)
     return tot
 
 # ----------------------------------------------------------------------
@@ -305,7 +306,8 @@ def a_mu_hvp_interval(N, Gee_rho_use=None):
         for n, ratio in enumerate(R[1:], start=1):
             m_n = np.sqrt(m0V**2 + n*2.0*np.pi*sigma_string)
             if m_n**2 < s_match:
-                a += amu_narrow(m_n, GeeV*ratio)
+                w = (1.0 - B_PIPI_RHO1) if (n == 1 and abs(m0V - m_rho) < 1.0) else 1.0
+                a += w*amu_narrow(m_n, GeeV*ratio)
     a += amu_disp(lambda s: 2.0*(1.0 + delta_qcd(s, 3)),        s_match, s_charm)
     a += amu_disp(lambda s: (10.0/3.0)*(1.0 + delta_qcd(s, 4)), s_charm, s_bottom)
     a += amu_disp(lambda s: (11.0/3.0)*(1.0 + delta_qcd(s, 5)), s_bottom, 4.0e12)
@@ -451,6 +453,12 @@ def delta_alpha_lep(M2):
 # The recurrence mass is the framework's Regge value.  Its width is not derived, and is
 # the one measured input here; over 300 to 500 MeV it moves a_mu by +-3 x 1e-10.
 GAMMA_RHO1 = 400.0        # MeV, the rho(1450) width; sensitivity quoted above
+# Because the first recurrence now sits INSIDE F_pi, its pi pi strength is already in
+# R_pipi and the tower pole must carry only its remaining decays, or that strength is
+# counted twice.  The rho(1450) goes dominantly to four pions and the PDG records
+# rho(1450) -> pi pi only as 'seen', so the branching is a bounded systematic: over
+# 0.10 to 0.25 it moves a_mu by -2 to -7 x 1e-10, and 0.15 is carried.
+B_PIPI_RHO1 = 0.15
 
 def gs_amplitude(m, G, mpi):
     """Gounaris-Sakurai amplitude, normalised to 1 at s = 0."""
