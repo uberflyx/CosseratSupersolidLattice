@@ -470,6 +470,21 @@ GAMMA_RHO1 = 400.0        # MeV, the rho(1450) width; sensitivity quoted above
 # rho(1450) -> pi pi only as 'seen', so the branching is a bounded systematic: over
 # 0.10 to 0.25 it moves a_mu by -2 to -7 x 1e-10, and 0.15 is carried.
 B_PIPI_RHO1 = 0.15
+#
+# TRUNCATION.  F_pi is a tower sum and it is truncated at the first recurrence, which is
+# a choice rather than a derivation: c_n is the product of the state's coupling to the
+# PHOTON, which the Cornell solve gives, and its coupling to PIONS, which the framework
+# does not derive.  So c_2 cannot be predicted.  It can be bounded, and the bound is
+# what the quoted uncertainty rests on.  Taking the pion coupling to be the same for
+# every tower member is the most generous assumption, because the physical recurrences
+# decay dominantly to four pions and so couple to two pions LESS as n rises; it gives
+# c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.138.
+#
+# Across that range a_mu responds smoothly, symmetrically and quadratically, with the
+# recovered leptonic width holding at its target throughout, which is the signature of
+# genuine interference rather than a solver artefact.  Both signs LOWER a_mu, so the
+# two-resonance value is a maximum: a_mu runs from 734 down to 684 over the bound.
+C2_BOUND = 0.138
 
 def gs_amplitude(m, G, mpi):
     """Gounaris-Sakurai amplitude, normalised to 1 at s = 0."""
