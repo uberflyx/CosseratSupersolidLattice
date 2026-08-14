@@ -400,6 +400,17 @@ def _checks():
 
     # (v) the derived tower scaling against measured radial pairs.  Bottomonium is the
     # most non-relativistic system available and therefore the sharpest test.
+    # (vi) ABSOLUTE validation of the a_mu kernel.  The same machinery computes the
+    # two-loop QED vacuum-polarisation insertion, because an electron loop is just
+    # another R(s): R_l(s) = (1 + 2m^2/s) sqrt(1 - 4m^2/s).  Its coefficient in the
+    # muon anomaly is known to be 1.094 (alpha/pi)^2, so this fixes the kernel's
+    # normalisation against a number nothing in this script can influence.
+    R_lep = lambda s, m: 0.0 if s <= 4*m*m else (1 + 2*m*m/s)*np.sqrt(1 - 4*m*m/s)
+    a_e = amu_disp(lambda s: R_lep(s, m_e), 4*m_e*m_e, 1.0e14)/(alpha/np.pi)**2
+    print("  a_mu kernel          electron loop %.4f (alpha/pi)^2 against the known 1.094"
+          % a_e)
+    assert abs(a_e/1.094 - 1.0) < 3e-3
+
     print("  tower scaling, tested where radial widths are measured:")
     for name, mq, masses, obs, a_s in (
             ("bottomonium", 4700.0, [9460.40, 10023.4, 10355.1],
