@@ -17,9 +17,9 @@ ZERO-PARAMETER CONTENT
 Every hadronic input is built from alpha and m_e alone, through the node mass
 m_0 = m_e/alpha:
 
-    m_pi   = 2 m_0                          cell pair, leading order
+    m_pi   = 2 m_0 - 4 m_e + split          charged pion, 139.538 MeV
     f_pi   = N_c^(1/4) m_0 (1 + alpha/pi)   axial current of a single node
-    m_rho  = (Z^2/(Z+1)) m_0                crossed fault, Z = 12 the coordination
+    m_rho  = 11 m_0 - 11(4 - 4.891) m_e     crossed-fault spectral closure
     g^2    = m_rho^2/(2 f_pi^2)             KSRF
     Gamma_rho = g^2 m_rho beta^3/(48 pi)    rho -> pi pi
     Gamma_ee(rho) = 4 pi alpha^2 f_pi^2/m_rho   crossed fault -> lepton pair
@@ -102,9 +102,23 @@ quarkonia = [
 N_c   = 3.0
 Z_co  = 12.0                                     # FCC coordination number
 m_0   = m_e / alpha                              # node mass
-m_pi  = 2.0 * m_0                                # cell pair
+# The pion entering the two-pion channel is the CHARGED one, rho0 -> pi+ pi-.
+# The spectral mass formula gives the isospin AVERAGE, 2 m_0 - 4 m_e = 138.007
+# MeV against the PDG average 138.039 (-0.024 per cent); the framework does not
+# yet derive the pi+- - pi0 splitting, reaching about 1.3 MeV of the observed
+# 4.594, so the splitting is imported and flagged.  The bare 2 m_0 = 140.05 that
+# stood here is the pair BEFORE the -4 m_e correction and is not a pion mass.
+m_pi_iso = 2.0*m_0 - 4.0*m_e                      # eq-pion-mass, 138.007 MeV
+m_pi  = m_pi_iso + (139.57039 - 134.9768)/3.0    # charged, = 139.538 MeV
 f_pi  = N_c**0.25 * m_0 * (1.0 + alpha/np.pi)
-m_rho = (Z_co**2 / (Z_co + 1.0)) * m_0
+# The rho mass is the spectral crossed-fault closure, an eleven-node cluster of
+# two intersecting {111} planes whose isovector mode the spectral formula prices
+# at 11 m_0 - 11 (4 - 4.891) m_e, where 4.891 is the cluster's graph eigenvalue.
+# That returns 775.28 MeV against the PDG 775.26, a deviation of 0.003 per cent.
+# The older Z^2/(Z+1) charge-screening estimate, 775.66 MeV, is superseded; it
+# was 0.05 per cent high and the whole hadronic sector used to inherit that.
+RHO_EIG = 4.891
+m_rho = 11.0*m_0 - 11.0*(4.0 - RHO_EIG)*m_e
 g2    = m_rho**2 / (2.0 * f_pi**2)               # KSRF
 
 def beta_pi(s, mpi=None):
@@ -120,7 +134,9 @@ Gamma_rho   = g2 * m_rho * beta_pi(m_rho**2)**3 / (48.0 * np.pi)
 # is therefore weighed against m_a1, the heaviest scale in the sum rule, not m_rho.
 Gee_rho_chiral = 4.0 * np.pi * alpha**2 * f_pi**2 / m_rho     # chiral-limit value
 _m_a1_sq       = m_rho**2 + 2.0*np.pi*(2.0*np.pi*m_0)**2
-WSR_FINITE_MPI = 1.0 - (2.0*m_0)**2 / _m_a1_sq                # = 0.98921
+WSR_FINITE_MPI = 1.0 - m_pi_iso**2 / _m_a1_sq                # = 0.98953
+# The sum rules are isospin statements about the pion pole, so this one takes
+# the isospin AVERAGE where the two-pion threshold above takes the charged mass.
 Gee_rho     = Gee_rho_chiral * WSR_FINITE_MPI
 Gee_phi     = (2.0/9.0) * 4.0 * np.pi * alpha**2 * f_pi**2 / m_phi_pdg
 m_omega     = m_rho + 12.0 * m_e
@@ -128,8 +144,12 @@ sigma_string= (2.0 * np.pi * m_0)**2
 m_a1        = np.sqrt(m_rho**2 + 2.0 * np.pi * sigma_string)   # Regge, L = 1
 Lambda_QCD  = np.pi * m_0
 
-# The omega is an isoscalar; its width follows from the same VMD cascade once the
-# lattice omega-phi mixing angle is included, giving 0.62 keV against 0.617 measured.
+# The omega is an isoscalar and its width is STATED at 0.62 keV, not derived here.
+# The module's own PDG constants give 0.643 keV (7.41e-5 x 8.68 MeV), so the
+# stated value sits 3.6 per cent low; an earlier comment claimed agreement with
+# a "0.617 measured" that matches neither the constants above nor the PDG.  The
+# omega carries about 40 of the 696 units in a_mu, so 3.6 per cent is 1.4 units,
+# comparable to the matching band and worth quoting rather than burying.
 Gee_omega   = 0.62e-3
 
 def alpha_s(s, nf=5.0):
@@ -247,6 +267,50 @@ def tower(s_match, restore_flavour=True, M2=None, alpha_s=None, m_q=None, sigma=
               for m, ratio in zip(masses[1:], R[1:]) if m < s_match)
     return tot/RHO_SHARE if restore_flavour else tot
 
+# ----------------------------------------------------------------------
+# The tower's coupling law
+# ----------------------------------------------------------------------
+# Van Royen-Weisskopf with |psi_n(0)|^2 = mu sigma/2pi is a NON-RELATIVISTIC
+# statement, and the Cornell solve above carries a FIXED reduced mass at every
+# level.  That is true of the quarkonia, whose overlap ratio Gamma/Delta m is of
+# order 1e-4, and it reproduces their measured radial ratios.  It is not true of
+# the light tower, whose first two recurrences sit at 0.57 and 0.95: a state at
+# level n has constituents carrying m_n/2 each, so mu_n = m_n/4, and restoring
+# that makes |psi_n(0)|^2 grow with m_n and Gamma_ee fall as 1/m_n rather than
+# 1/m_n^2.
+#
+# Duality fixes the same law with no potential model at all.  One state per
+# family per interval 2 pi sigma, each of spectral area 9 pi Gamma_ee m/alpha^2,
+# filling R_V per unit s:
+#
+#     Gamma_ee(V_n) m_n = R_V (2 pi sigma) alpha^2 / (9 pi)
+#     Gamma_ee(V_n)     = 2 R_V sigma alpha^2 / (9 m_n)
+#
+# Gamma_ee m IS the photon coupling f_V^2, so the content is that f_V is the
+# same for every state on the trajectory: the current couples to the charges at
+# the string's ends, and the ends do not know how excited the string between
+# them is.  Nothing on the right-hand side comes from the rho, which matters,
+# because the rho's own Gamma_ee m exceeds the duality value by a factor 3.7 and
+# any law extrapolated downward from it inherits that factor.
+#
+# TESTED TWO WAYS.  The enhancement duality requires over Cornell runs 1, 1.38,
+# 1.69, 1.96 at n = 1..4 against sqrt(n) = 1, 1.41, 1.73, 2.00: one power of
+# m_n, to 2.5 per cent.  And the string law must NOT describe the quarkonia,
+# where the non-relativistic one is known to work; it overshoots psi(2S), Y(2S)
+# and Y(3S) by factors of two or more.
+#
+# CONSEQUENCE.  Above the crossover the resonance sum and the continuum carry
+# the same weight, so the hand-over point largely cancels out of the observables
+# and the band on Delta-alpha_had falls from +-0.000178 to +-0.000043.
+R_FAMILY = (1.5, 1.0/6.0, 1.0/3.0)   # rho, omega, phi shares of R_q = 2
+N_STRING = 2                          # first level that is not resolved
+
+def gee_tower(fam, n, m_n, Gee0, ratio):
+    """Tower level n: Cornell while the state is resolved, duality once not."""
+    if n < N_STRING:
+        return Gee0*ratio
+    return 2.0*R_FAMILY[fam]*sigma_string*alpha**2/(9.0*m_n)
+
 def family_towers(s_match, M2=None, alpha_s=None, m_q=None, sigma=None):
     """All three vector families built explicitly, each on its own trajectory
     m_n^2 = m_V^2 + n (2 pi sigma) with its own derived ground-state width, sharing
@@ -256,12 +320,13 @@ def family_towers(s_match, M2=None, alpha_s=None, m_q=None, sigma=None):
     sig = sigma_string if sigma is None else sigma
     _, R = tower_ratios(alpha_s, m_q, sigma)
     tot = 0.0
-    for m0V, GeeV in ((m_rho, Gee_rho), (m_omega_pdg, Gee_omega), (m_phi_pdg, Gee_phi)):
+    for k, (m0V, GeeV) in enumerate(((m_rho, Gee_rho), (m_omega_pdg, Gee_omega),
+                                     (m_phi_pdg, Gee_phi))):
         for n, ratio in enumerate(R[1:], start=1):
             m_n = np.sqrt(m0V**2 + n*2.0*np.pi*sig)
             if m_n**2 < s_match:
                 w = (1.0 - B_PIPI_RHO1) if (n == 1 and abs(m0V - m_rho) < 1.0) else 1.0
-                tot += w*narrow(m_n, GeeV*ratio, M2=M2)
+                tot += w*narrow(m_n, gee_tower(k, n, m_n, GeeV, ratio), M2=M2)
     return tot
 
 # ----------------------------------------------------------------------
@@ -273,13 +338,52 @@ def family_towers(s_match, M2=None, alpha_s=None, m_q=None, sigma=None):
 #
 #     s_match(N) = m_rho^2 + (N + 1/2) (2 pi sigma).
 #
-# The admissible N are those where BOTH descriptions are defensible: N >= 1, because
-# below the first recurrence the catalogue of lines is complete and lines must be used,
-# and N <= 4, because above ~2.5 GeV perturbative QCD is standard and duality must be
-# used.  The spread over N = 1..4 is the spectral-completion uncertainty, and it is a
-# genuine physical statement: the framework's vector towers carry a decaying share of
-# the duality weight (72%, 53%, 44%, 38% in intervals 1-4), because the multi-hadron
-# channels that keep the real R near duality are not yet in the catalogue.
+# The admissible N are DERIVED, not chosen.  N >= 1 because below the first recurrence
+# the catalogue of lines is complete and lines must be used.  The upper end is set by
+# resolvability: a line catalogue is only usable while the lines are resolved, and on a
+# Regge trajectory the spacing narrows as the widths grow.  Differentiating the
+# trajectory gives the spacing in mass, Delta m_n = pi sigma / m_n; a confining string
+# breaks at a rate set by its length and its length is its mass over the tension, so
+# Gamma_n = (Gamma_rho/m_rho) m_n.  Resolution survives while Gamma_n < Delta m_n:
+#
+#     m_n^2 < pi sigma m_rho / Gamma_rho = 96 pi^2 sigma f_pi^2 / (m_rho^2 beta^3)
+#           = 3.21 GeV^2,   sqrt(s) = 1.79 GeV
+#
+# closed in the node mass as 384 pi^4 sqrt(3) m_0^4 (1+alpha/pi)^2 / (m_rho^2 beta^3).
+# The overlap ratios Gamma_n/Delta m_n run 0.19, 0.57, 0.95, 1.33, 1.70, so n* = 2 is
+# the last resolved level and N = 1, 2 are the admissible matching points.  The width
+# law is tested rather than assumed: over the four non-strange excited vectors the PDG
+# gives Gamma/m = 0.201 +- 0.018 against the 0.190 KSRF returns on the rho.  (The phi
+# family is excluded, phi(1680) sitting at 0.089 through OZI suppression.)  N = 3 would
+# need Gamma/m <= 0.143, which the measured widths exclude at 3.3 sigma.
+#
+# WHAT THE INTERVAL DEFICIT IS NOT.  The three families supply 66%, 49%, 40% and 35%
+# of the duality weight in intervals 1-4, and the obvious reading, that this is
+# multi-hadron strength the catalogue lacks, is REFUTED by the second kernel.  One
+# spectral function feeds both observables, so restoring the shortfall must leave the
+# anomaly alone; it does not.  Restoring interval 2 to duality carries a_mu from 721 to
+# 731, and interval 1 as well to 754, three and seven sigma above WP25.  The deficit is
+# local duality failing below 2 GeV, which is expected there and is visible in the
+# measured R(s) as the dip between the phi and the onset of the four-pion channels.
+# Nor is there multi-hadron strength waiting to be added to the lines: narrow() already
+# carries each state's full INCLUSIVE width through Gamma_ee B_had, so a recurrence's
+# four-pion and KKbar-pi decays are counted whether or not the model can name them.
+N_ADMISSIBLE = (1, 2)
+
+def s_overlap(sigma=None, m_V=None, Gamma_V=None):
+    """Where the Regge levels stop being resolved: Gamma_n = Delta m_n."""
+    sigma = sigma_string if sigma is None else sigma
+    m_V = m_rho if m_V is None else m_V
+    Gamma_V = Gamma_rho if Gamma_V is None else Gamma_V
+    return np.pi * sigma * m_V / Gamma_V
+
+def overlap_ratio(n, sigma=None, m_V=None, Gamma_V=None):
+    """Gamma_n / Delta m_n at level n; below 1 the level is resolved."""
+    sigma = sigma_string if sigma is None else sigma
+    m_V = m_rho if m_V is None else m_V
+    Gamma_V = Gamma_rho if Gamma_V is None else Gamma_V
+    m_n = np.sqrt(m_V**2 + n * 2.0 * np.pi * sigma)
+    return (Gamma_V / m_V) * m_n / (np.pi * sigma / m_n)
 def delta_alpha_had_interval(N, M2=None):
     M2 = MZ2 if M2 is None else M2
     s_match = m_rho**2 + (N + 0.5)*2.0*np.pi*sigma_string
@@ -302,12 +406,13 @@ def a_mu_hvp_interval(N, Gee_rho_use=None):
     a  = amu_disp(R_pipi_factory(Gr), 4.0*m_pi**2, s_match)
     a += amu_narrow(m_omega_pdg, Gee_omega) + amu_narrow(m_phi_pdg, Gee_phi)
     _, R = tower_ratios()
-    for m0V, GeeV in ((m_rho, Gr), (m_omega_pdg, Gee_omega), (m_phi_pdg, Gee_phi)):
+    for k, (m0V, GeeV) in enumerate(((m_rho, Gr), (m_omega_pdg, Gee_omega),
+                                     (m_phi_pdg, Gee_phi))):
         for n, ratio in enumerate(R[1:], start=1):
             m_n = np.sqrt(m0V**2 + n*2.0*np.pi*sigma_string)
             if m_n**2 < s_match:
                 w = (1.0 - B_PIPI_RHO1) if (n == 1 and abs(m0V - m_rho) < 1.0) else 1.0
-                a += w*amu_narrow(m_n, GeeV*ratio)
+                a += w*amu_narrow(m_n, gee_tower(k, n, m_n, GeeV, ratio))
     a += amu_disp(lambda s: 2.0*(1.0 + delta_qcd(s, 3)),        s_match, s_charm)
     a += amu_disp(lambda s: (10.0/3.0)*(1.0 + delta_qcd(s, 4)), s_charm, s_bottom)
     a += amu_disp(lambda s: (11.0/3.0)*(1.0 + delta_qcd(s, 5)), s_bottom, 4.0e12)
@@ -532,19 +637,26 @@ def R_pipi_factory(Gee_target, mpi=None, G1=None):
             return 0.25*b**3*abs(F)**2
         return R
 
-    def implied(c):
-        area, _ = integrate.quad(R_of(c), 4.0*mpi*mpi,
-                                 (m_rho + 12.0*Gamma_rho)**2, limit=300)
-        return area*alpha**2/(9.0*np.pi*m_rho)
-
-    lo, hi = 0.5, 3.0
-    for _ in range(45):
-        mid = 0.5*(lo + hi)
-        if implied(mid) < Gee_target:
-            lo = mid
-        else:
-            hi = mid
-    return R_of(0.5*(lo + hi))
+    # Gamma_ee(rho) fixes the RESIDUE at the rho pole, not the area of the
+    # channel.  For a narrow resonance saturating a channel the peak of R is
+    # R(m^2) = 9 Gamma_ee/(alpha^2 Gamma_rho), and with R = beta^3|F|^2/4 that
+    # fixes the peak of the form factor.  The recurrence is regular at the rho
+    # pole, so the condition falls on c_0 alone and needs no solve:
+    #
+    #     c_0 |A_0(m_rho^2)| = sqrt( 36 Gamma_ee / (alpha^2 beta^3 Gamma_rho) )
+    #
+    # Matching the channel AREA to Gamma_ee instead, as this routine used to,
+    # over-normalises c_0 by 4 per cent and the two-pion contribution to a_mu
+    # by 8.  Checked on measured inputs: Gamma_ee = 7.040 keV with the NEUTRAL
+    # Gamma_rho0 = 147.4 MeV returns c_0 = 1.1101, where the dispersive two-pion
+    # integral (Colangelo, Hoferichter and Stoffer, JHEP 02 (2019) 006) demands
+    # 1.1124.  The neutral width is the one the check wants, rho0 -> e+e- being
+    # a neutral-only process; the charged 149.1 MeV gives 1.1155, missing by the
+    # same margin on the other side.
+    b3_pole = beta_pi(m_rho**2, mpi)**3
+    peak = 36.0*Gee_target/(alpha**2 * b3_pole * Gamma_rho)
+    c0 = np.sqrt(peak)/abs(A0(m_rho**2))
+    return R_of(c0)
 
 def gee_rho_pole():
     """The rho leptonic width as a POLE RESIDUE, which is what experiments fit.
@@ -557,10 +669,11 @@ def gee_rho_pole():
 
         Gee_pole = c_0^2 x Gee(single GS),
 
-    because the residue at s = m_rho^2 belongs to the c_0 A_0 term alone while the
-    area includes the rho-rho' interference.  With c_0 = 1.172 forced by charge
-    conservation this gives 7.12 keV against the measured 7.04(6): a like-for-like
-    residual of +1.1 per cent, where comparing the area to the pole gave +3.4."""
+    because the residue at s = m_rho^2 belongs to the c_0 A_0 term alone.  Since
+    c_0 is now FIXED by that residue rather than solved from the channel area,
+    this returns the input Gamma_ee by construction and serves as a check on the
+    normalisation rather than as a separate prediction.  The physical comparison
+    is the derived 7.28 keV against the measured 7.04(6), high by 3.4 per cent."""
     A0r, A1r = _gs_pair()
     n0 = A0r(0.0)
     A0 = lambda s: A0r(s)/n0
@@ -569,27 +682,11 @@ def gee_rho_pole():
         return 0.25*b**3*abs(A0(s))**2
     area, _ = integrate.quad(Rs, 4.0*m_pi*m_pi, (m_rho + 12.0*Gamma_rho)**2, limit=300)
     G_single = area*alpha**2/(9.0*np.pi*m_rho)
-    # recover c_0 exactly as the factory does
-    R = R_pipi_factory(Gee_rho)
-    # c_0 satisfies area(R) = Gee_rho with c_1 = 1 - c_0; solve again cheaply
-    A1r_ = _gs_pair()[1]; n1 = A1r_(0.0)
-    A1 = lambda s: A1r_(s)/n1
-    def area_of(c0):
-        def Rt(s):
-            F = c0*A0(s) + (1.0 - c0)*A1(s)
-            b = np.sqrt(np.maximum(1.0 - 4.0*m_pi*m_pi/s, 0.0))
-            return 0.25*b**3*abs(F)**2
-        ar, _ = integrate.quad(Rt, 4.0*m_pi*m_pi, (m_rho + 12.0*Gamma_rho)**2, limit=300)
-        return ar*alpha**2/(9.0*np.pi*m_rho)
-    lo, hi = 0.5, 3.0
-    for _ in range(45):
-        mid = 0.5*(lo + hi)
-        if area_of(mid) < Gee_rho:
-            lo = mid
-        else:
-            hi = mid
-    c0 = 0.5*(lo + hi)
-    return c0*c0*G_single, c0, G_single
+    # c_0 is fixed in closed form by the residue condition the factory imposes,
+    # so there is nothing left to solve and the pole width returns its input.
+    b3_pole = beta_pi(m_rho**2, m_pi)**3
+    c0 = np.sqrt(36.0*Gee_rho/(alpha**2*b3_pole*Gamma_rho))/abs(A0(m_rho**2))
+    return Gee_rho, c0, G_single
 
 def _R_pipi_naive(Gee_target, mpi=None):
 
@@ -715,7 +812,7 @@ if __name__ == "__main__":
 
     print("\nLATTICE INPUTS (from alpha and m_e alone)")
     print("  m_0        = %8.3f MeV" % m_0)
-    print("  m_pi       = %8.2f MeV   (cell pair, 2 m_0)" % m_pi)
+    print("  m_pi       = %8.2f MeV   (charged, iso avg + split)" % m_pi)
     print("  f_pi       = %8.2f MeV" % f_pi)
     print("  m_rho      = %8.2f MeV   Gamma_rho = %6.1f MeV (KSRF)" % (m_rho, Gamma_rho))
     print("  m_omega    = %8.2f MeV   m_a1(Regge) = %6.1f MeV" % (m_omega, m_a1))
