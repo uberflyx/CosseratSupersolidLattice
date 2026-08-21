@@ -52,7 +52,7 @@ Requires: numpy, scipy.
 """
 
 import numpy as np
-from scipy import integrate
+from scipy import integrate, optimize
 
 # ======================================================================
 # 1.  Constants
@@ -148,7 +148,7 @@ Lambda_QCD  = np.pi * m_0
 # The module's own PDG constants give 0.643 keV (7.41e-5 x 8.68 MeV), so the
 # stated value sits 3.6 per cent low; an earlier comment claimed agreement with
 # a "0.617 measured" that matches neither the constants above nor the PDG.  The
-# omega carries about 40 of the 696 units in a_mu, so 3.6 per cent is 1.4 units,
+# omega carries about 40 of the 700 units in a_mu, so 3.6 per cent is 1.4 units,
 # comparable to the matching band and worth quoting rather than burying.
 Gee_omega   = 0.62e-3
 
@@ -357,14 +357,19 @@ def family_towers(s_match, M2=None, alpha_s=None, m_q=None, sigma=None):
 # family is excluded, phi(1680) sitting at 0.089 through OZI suppression.)  N = 3 would
 # need Gamma/m <= 0.143, which the measured widths exclude at 3.3 sigma.
 #
-# WHAT THE INTERVAL DEFICIT IS NOT.  The three families supply 66%, 49%, 40% and 35%
-# of the duality weight in intervals 1-4, and the obvious reading, that this is
-# multi-hadron strength the catalogue lacks, is REFUTED by the second kernel.  One
-# spectral function feeds both observables, so restoring the shortfall must leave the
-# anomaly alone; it does not.  Restoring interval 2 to duality carries a_mu from 721 to
-# 731, and interval 1 as well to 754, three and seven sigma above WP25.  The deficit is
-# local duality failing below 2 GeV, which is expected there and is visible in the
-# measured R(s) as the dip between the phi and the onset of the four-pion channels.
+# WHAT THE INTERVAL DEFICIT IS NOT.  Counting the form factor's own share of each
+# interval alongside the narrow states, the catalogue supplies 64%, 88%, 89% and 90%
+# of the duality weight in intervals 1-4.  The obvious reading, that the shortfall is
+# multi-hadron strength the catalogue lacks, is tested by the second kernel, since one
+# spectral function feeds both observables and restoring real missing strength would
+# have to leave the anomaly alone.  The test separates the two lowest intervals rather
+# than settling them together.  Restoring interval 2 carries a_mu from 698 to 701,
+# three units against a modelling band of two, so there the second kernel decides
+# nothing.  Restoring interval 1 as well carries it to 730, which overshoots WP25 by
+# 2.8 sigma; since interval 1 holds much the largest deficit, that is where the reading
+# would have to be right and it is where it fails.  The deficit is local duality
+# failing below 2 GeV, which is expected there and is visible in the measured R(s) as
+# the dip between the phi and the onset of the four-pion channels.
 # Nor is there multi-hadron strength waiting to be added to the lines: narrow() already
 # carries each state's full INCLUSIVE width through Gamma_ee B_had, so a recurrence's
 # four-pion and KKbar-pi decays are counted whether or not the model can name them.
@@ -586,12 +591,18 @@ B_PIPI_RHO1 = 0.15
 # c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.146 with the renormalised c_1 = -0.172 (residue conventions
 # carrying mass factors give 0.088 to 0.113; the envelope is quoted).
 #
-# Across that range a_mu responds smoothly, symmetrically and quadratically, with the
-# recovered leptonic width holding at its target throughout, which is the signature of
-# genuine interference rather than a solver artefact.  Both signs LOWER a_mu, so the
-# two-resonance value is a maximum: a_mu runs from 731 down to 683 over the bound, one-sidedly: both signs of c_2
-# lower it, so the c_2 = 0 value is a maximum and the truncation error is asymmetric.
-C2_BOUND = 0.138
+# Across that range a_mu responds smoothly and quadratically, with the recovered
+# leptonic width holding at its target throughout, which is the signature of genuine
+# interference rather than a solver artefact.
+#
+# The response is SMALL under the peak normalisation and was not under the superseded
+# area one, and the reason is structural rather than lucky: c0_normalisation re-solves
+# c_0 whenever c_2 moves, so the peak is pinned and a third resonance displaces the
+# second instead of rescaling the channel.  Over the adopted |c_2| <= 0.038 the anomaly
+# moves by 0.4 units and over the flat-tower |c_2| <= 0.112 by 2.3.  The constant below
+# is the flat-tower figure kept for reference; the adopted value is derived in
+# papers/alpha_running/Scripts/truncation_tightened.py from c_1 itself.
+C2_BOUND = 0.112
 
 def gs_amplitude(m, G, mpi):
     """Gounaris-Sakurai amplitude, normalised to 1 at s = 0."""
@@ -637,43 +648,82 @@ def R_pipi_factory(Gee_target, mpi=None, G1=None):
             return 0.25*b**3*abs(F)**2
         return R
 
-    # Gamma_ee(rho) fixes the RESIDUE at the rho pole, not the area of the
-    # channel.  For a narrow resonance saturating a channel the peak of R is
-    # R(m^2) = 9 Gamma_ee/(alpha^2 Gamma_rho), and with R = beta^3|F|^2/4 that
-    # fixes the peak of the form factor.  The recurrence is regular at the rho
-    # pole, so the condition falls on c_0 alone and needs no solve:
+    # Gamma_ee(rho) fixes the PEAK of the channel, not its area, and the peak
+    # belongs to the whole form factor rather than to the rho term alone.  For
+    # a resonance saturating a channel the peak of R is
     #
-    #     c_0 |A_0(m_rho^2)| = sqrt( 36 Gamma_ee / (alpha^2 beta^3 Gamma_rho) )
+    #     R(m^2) = 9 Gamma_ee / (alpha^2 Gamma_rho),
     #
-    # Matching the channel AREA to Gamma_ee instead, as this routine used to,
-    # over-normalises c_0 by 4 per cent and the two-pion contribution to a_mu
-    # by 8.  Checked on measured inputs: Gamma_ee = 7.040 keV with the NEUTRAL
-    # Gamma_rho0 = 147.4 MeV returns c_0 = 1.1101, where the dispersive two-pion
-    # integral (Colangelo, Hoferichter and Stoffer, JHEP 02 (2019) 006) demands
-    # 1.1124.  The neutral width is the one the check wants, rho0 -> e+e- being
-    # a neutral-only process; the charged 149.1 MeV gives 1.1155, missing by the
-    # same margin on the other side.
-    b3_pole = beta_pi(m_rho**2, mpi)**3
-    peak = 36.0*Gee_target/(alpha**2 * b3_pole * Gamma_rho)
-    c0 = np.sqrt(peak)/abs(A0(m_rho**2))
-    return R_of(c0)
+    # and with R = beta^3 |F_pi|^2/4 that fixes |F_pi(m_rho^2)|.  The condition
+    # is therefore solved on the SUM, c_0 A_0 + c_1 A_1, with c_1 = 1 - c_0:
+    #
+    #     | c_0 A_0(m_rho^2) + (1 - c_0) A_1(m_rho^2) | = target.
+    #
+    # THREE PRESCRIPTIONS WERE WRONG BEFORE THIS ONE, and each was refuted by
+    # the same external check: apply it to MEASURED inputs, Gamma_ee = 7.040 keV
+    # with the neutral Gamma_rho0 = 147.4 MeV, and score the c_0 it returns
+    # against the 1.1124 that the dispersive two-pion integral independently
+    # demands (Colangelo, Hoferichter and Stoffer, JHEP 02 (2019) 006).  Nothing
+    # of the construction enters that comparison.
+    #
+    #   channel AREA matched to Gamma_ee          c_0 = 1.199    +7.8%
+    #   single-resonance area, c_0^2 Gee[A_0]     c_0 = 1.1665   +4.9%
+    #   complex-pole residue of A_0               c_0 = 1.1471   +3.1%
+    #   peak with the recurrence DROPPED          c_0 = 1.1100   -0.2%
+    #   peak with the recurrence kept  <- this    c_0 = 1.1133   +0.1%
+    #
+    # The residue reading deserves its own note, because it is the one the
+    # physics argument suggests and it fails.  Gamma_ee is a one-particle
+    # current matrix element, so it is tempting to impose it as the residue at
+    # the rho pole, where the regular recurrence genuinely drops out.  But the
+    # Gounaris-Sakurai pole sits at sqrt(s_p) = 761.7 - 70.7i MeV, i.e. a pole
+    # mass of 762 MeV and pole width of 141 MeV against the Breit-Wigner 775.3
+    # and 147.4 (the PDG's own pole values, 763 and 145, confirm the
+    # continuation).  Its residue differs from the Breit-Wigner identity
+    # |Res A| = m Gamma |A(m^2)| by 3.2%, and imposing it misses the external
+    # check by 3.1%.  Gamma_ee as quoted, and as the Weinberg sum rules deliver
+    # it, is a BREIT-WIGNER quantity: it fixes the peak.
+    #
+    # Dropping the recurrence from that peak was an error of algebra rather
+    # than of convention: |c_1 A_1| is 3.1% of |c_0 A_0| at s = m_rho^2 and the
+    # two sit 97 degrees apart, so the interference is destructive and small,
+    # but it is not zero.  Keeping it raises c_0 by 0.34%, a_mu by 0.42% and
+    # Delta-alpha_had by 0.09%.
+    return R_of(c0_normalisation(Gee_target, mpi, G1))
+
+
+def c0_normalisation(Gee_target, mpi=None, G1=None):
+    """The two-pion channel's normalisation c_0, from the peak condition above.
+
+    One expression, called from both R_pipi_factory and gee_rho_pole, so the
+    two cannot drift apart.  c_1 = 1 - c_0 by charge conservation throughout.
+    """
+    mpi = m_pi if mpi is None else mpi
+    A0r, A1r = _gs_pair(mpi, G1)
+    A0 = lambda s: A0r(s)/A0r(0.0)
+    A1 = lambda s: A1r(s)/A1r(0.0)
+    sR = m_rho**2
+    target = np.sqrt(36.0*Gee_target
+                     / (alpha**2 * beta_pi(sR, mpi)**3 * Gamma_rho))
+    return optimize.brentq(
+        lambda c: abs(c*A0(sR) + (1.0 - c)*A1(sR)) - target, 0.5, 2.0, xtol=1e-14)
 
 def gee_rho_pole():
-    """The rho leptonic width as a POLE RESIDUE, which is what experiments fit.
+    """Diagnostics on the two-pion normalisation: c_0 and the bare channel width.
 
-    The framework's derivation fixes the current coupling f_rho^2, which in a
-    dispersive setting is the spectral AREA of the rho region; that is what the
-    c_0 solve imposes.  The PDG's 7.04(6) keV is instead the pole residue of fits
-    that carry the recurrences explicitly.  In the charge-conserving two-resonance
-    form factor the two differ by construction, and the map is exact:
+    Returns (Gamma_ee as imposed, c_0, Gamma_ee of the single unscaled GS line).
 
-        Gee_pole = c_0^2 x Gee(single GS),
+    The third of those is what the rho term would carry on its own with c_0 = 1,
+    so the ratio Gee/G_single is a crude estimate of c_0^2 and is deliberately
+    NOT how c_0 is obtained: imposing Gamma_ee on the c_0 A_0 term by itself
+    returns 1.1665 on measured inputs where the dispersive two-pion integral
+    demands 1.1124, missing by 4.9 per cent.  See c0_normalisation for the
+    prescription that survives that check and for the three that do not.
 
-    because the residue at s = m_rho^2 belongs to the c_0 A_0 term alone.  Since
-    c_0 is now FIXED by that residue rather than solved from the channel area,
-    this returns the input Gamma_ee by construction and serves as a check on the
-    normalisation rather than as a separate prediction.  The physical comparison
-    is the derived 7.28 keV against the measured 7.04(6), high by 3.4 per cent."""
+    Because c_0 comes from the one place that computes it, the first return
+    value is the input by construction; this is a check on the normalisation
+    rather than a separate prediction.  The physical comparison is the derived
+    7.29 keV against the measured 7.04(6), high by 3.5 per cent."""
     A0r, A1r = _gs_pair()
     n0 = A0r(0.0)
     A0 = lambda s: A0r(s)/n0
@@ -682,11 +732,9 @@ def gee_rho_pole():
         return 0.25*b**3*abs(A0(s))**2
     area, _ = integrate.quad(Rs, 4.0*m_pi*m_pi, (m_rho + 12.0*Gamma_rho)**2, limit=300)
     G_single = area*alpha**2/(9.0*np.pi*m_rho)
-    # c_0 is fixed in closed form by the residue condition the factory imposes,
-    # so there is nothing left to solve and the pole width returns its input.
-    b3_pole = beta_pi(m_rho**2, m_pi)**3
-    c0 = np.sqrt(36.0*Gee_rho/(alpha**2*b3_pole*Gamma_rho))/abs(A0(m_rho**2))
-    return Gee_rho, c0, G_single
+    # c_0 comes from the one place that computes it, so this returns its input
+    # by construction and serves as a check on the normalisation.
+    return Gee_rho, c0_normalisation(Gee_rho), G_single
 
 def _R_pipi_naive(Gee_target, mpi=None):
 
@@ -885,18 +933,25 @@ if __name__ == "__main__":
               % (n, m_n, name, obs, 100.0*(m_n/obs - 1.0)))
 
     print("\nTHE DUALITY-INTERVAL PRESCRIPTION (primary result)")
-    print("  matching quantised to the tower's own spacing; admissible N = 1..4")
+    print("  matching quantised to the tower's own spacing; admissible N = 1, 2")
     iv = {}
     for N in (0, 1, 2, 3, 4, 5):
         iv[N] = delta_alpha_had_interval(N)
-        tag = "  <- admissible" if 1 <= N <= 4 else ("  (duality-everywhere bound)"
+        tag = "  <- admissible" if N in N_ADMISSIBLE else ("  (duality-everywhere bound)"
                                                      if N == 0 else "  (past pQCD onset)")
         sm = np.sqrt(m_rho**2 + (N + 0.5)*2.0*np.pi*sigma_string)
         print("     N = %d   match %4.0f MeV :  %.5f%s" % (N, sm, iv[N], tag))
-    lo_i, hi_i = min(iv[n] for n in (1, 2, 3, 4)), max(iv[n] for n in (1, 2, 3, 4))
+    lo_i = min(iv[n] for n in N_ADMISSIBLE)
+    hi_i = max(iv[n] for n in N_ADMISSIBLE)
     dc, dh = 0.5*(lo_i+hi_i), 0.5*(hi_i-lo_i)
-    # input variations (string tension dominant) enter on top of the completion band
-    dh_tot = float(np.hypot(dh, 0.0003))
+    # The Cornell coupling and the constituent mass are the two stated inputs that
+    # carry a range, and they enter on top of the matching band: scanning alpha_s
+    # from 0.30 to 0.70 moves the total by 0.000047 and the constituent mass by a
+    # quarter either way moves it by 0.000020.  The string tension is derived and
+    # carries no range by that rule, though releasing it across the phenomenological
+    # 420 to 460 MeV would move the total by 0.000166, which is the honest measure of
+    # what "derived" is holding here.
+    dh_tot = float(np.sqrt(dh**2 + 0.000047**2 + 0.000020**2))
     print("     completion band %.5f to %.5f;  with input budget:" % (lo_i, hi_i))
     print("     Delta-alpha_had = %.4f +- %.4f   (data-driven %.5f +- %.5f)"
           % (dc, dh_tot, DA_HAD_REF, DA_HAD_EREF))
@@ -918,7 +973,7 @@ if __name__ == "__main__":
     print("  data-driven / lattice consensus (WP25): 713 +- 6")
     print("  residual: %+.1f%%" % (100.0*(amu*1e10/713.0 - 1.0)))
     amu_m, _ = a_mu_hvp(Gee_rho_use=Gee_rho_pdg)
-    print("  with the MEASURED rho width (7.04 keV) instead of the derived 7.36:")
+    print("  with the MEASURED rho width (7.04 keV) instead of the derived 7.29:")
     print("     total %8.1f   residual %+.1f%%   (shift %+.1f%%)"
           % (amu_m*1e10, 100.0*(amu_m*1e10/713.0 - 1.0), 100.0*(amu_m/amu - 1.0)))
     lo_t, _ = a_mu_hvp(with_towers=False)
