@@ -64,7 +64,7 @@ e     = 1.602176634e-19
 ell   = 2.8179403262e-15
 m0c2  = 0.51099895069e6*e/alpha        # node rest energy, J (70.03 MeV)
 m0    = m0c2/c**2
-f_s   = 5/6                            # bootstrap superfluid fraction
+f_s   = 0.9999                            # superfluid fraction, Leggett-saturated (sec-fs-bootstrap)
 rho_s = f_s*m0/ell**3
 kappa = h/m0                           # = 2 pi c ell, with hbar = m0 c ell
 

@@ -73,7 +73,7 @@ e     = 1.602176634e-19
 ell   = 2.8179403205e-15          # lattice spacing = r_e [m]
 m0c2  = 0.51099895069e6*e/alpha   # node rest energy [J]  (70.03 MeV)
 m0    = m0c2/c**2                 # node mass [kg]
-f_s   = 5/6                       # bootstrap superfluid fraction
+f_s   = 0.9999                       # superfluid fraction, Leggett-saturated (sec-fs-bootstrap)
 rho_s = f_s*m0/ell**3             # superfluid density [kg/m^3]
 kappa = h/m0                      # circulation quantum [m^2/s]
 V_cmb = 3.70e5                    # lab speed through the lattice frame [m/s]
@@ -88,7 +88,7 @@ print("="*72)
 print("Framework primitives")
 print("="*72)
 print(f"  m0 c^2      = {m0c2/e/1e6:.2f} MeV")
-print(f"  rho_s       = {rho_s:.3e} kg/m^3      (f_s = 5/6)")
+print(f"  rho_s       = {rho_s:.3e} kg/m^3      (f_s = 0.9999)")
 print(f"  kappa       = {kappa:.3e} m^2/s")
 print(f"  R0          = {R0*1e15:.2f} fm ;  E1 = {E1/e/1e9:.3f} GeV")
 print(f"  line tension T = {T_line/1e3:.2f} kN  ({T_line:.0f} J per metre of line)")
