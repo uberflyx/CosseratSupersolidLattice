@@ -252,6 +252,28 @@ single tension can absorb the bend in any case, since the M^2 deficits divided b
 python3 regge_bend_mechanisms.py
 ```
 
+### `omega_phi_mixing.py`
+
+Fits the single omega-phi mixing angle that reconciles the two isoscalar leptonic
+widths.  Ideal mixing puts the omega 21% high and the phi 6% low, opposite signs that no
+rescaling can fix and which are the signature of a rotation.  One angle acting with
+opposite effect on the two, delta = 3.09 degrees, brings both from 7.0 and 5.4 sigma to
+below one, at chi2 = 1.77 on one degree of freedom, and the two isoscalars agree on the
+angle separately (3.60 +- 0.52 and 2.64 +- 0.50) having had no chance to.  The check the
+fit could not arrange: the resulting nonet angle is 35.26 + 3.09 = 38.36 degrees against
+the standard phenomenological value near 39, and nothing in the two widths knows about
+that number.
+
+The isoscalars are scaled off the MEASURED rho rather than the framework's own f_pi, and
+that is not a free choice: vector_normalisation.py shows the difference between the two
+routes is the rho's own leptonic excess, and uses it to establish that the excess belongs
+to the whole sector.  The angle is fitted, not derived; deriving it needs the off-diagonal
+element of the isoscalar mass matrix.
+
+```
+python3 omega_phi_mixing.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
