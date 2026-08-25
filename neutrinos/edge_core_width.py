@@ -105,7 +105,7 @@ def make_figure(path="edge_core_balance.pdf"):
         ax.vlines(w0, 0, RHS, color=c, lw=0.8, ls=":")
     ax.annotate(r"$w_{\rm screw} = 0.454\,\ell$", (w_s, RHS),
                 xytext=(w_s + 0.05, RHS + 0.55), fontsize=10, color="#1f77b4")
-    ax.annotate(r"$w_{\rm edge} = 0.860\,\ell$", (w_e, RHS),
+    ax.annotate(r"$w_{\rm edge} = 0.590\,\ell$", (w_e, RHS),
                 xytext=(w_e + 0.05, RHS + 0.55), fontsize=10, color="#922b21")
     ax.set_xlabel(r"core half-width $w$  [$\ell$]")
     ax.set_ylabel(r"elastic restoring integral  [$\mu/\ell$]")
