@@ -97,11 +97,29 @@ print("  So the isoscalar pair and the rho ask for the same normalisation to wit
 print("  %.1f per cent, having been given no chance to agree." %
       abs(100 * (OBS["omega"][0] / (B["omega"] * Rw**2) / (OBS["rho"][0] / B["rho"]) - 1)))
 
-print("\n=== what a common normalisation would mean ===")
-print("  The VMD expression Gamma_ee = 4 pi alpha^2 f_pi^2 / m_V is the framework's")
-print("  chiral-limit result with the Weinberg factor at exactly 3/2.  A common k")
-print("  below one says that expression is uniformly high, which points at the")
-print("  chiral-limit decay constant: lattice determinations put F_0/F_pi near 0.94,")
-print("  and the corpus feeds the PHYSICAL f_pi into a chiral-limit sum rule.")
-print("  F_0/F_pi = %.4f would be needed here, against the lattice's 0.93 to 0.95."
+print("\n=== three candidate sources for k, all excluded ===")
+print("  (a) the chiral-limit decay constant.  eq-gee-final is a chiral-limit relation")
+print("      fed the physical f_pi, so F_0 is the natural suspect.  Direction right,")
+print("      size badly wrong: k wants F_0/f_pi = %.4f where the lattice sits near"
       % np.sqrt(k_fit))
+for r in (0.93, 0.94, 0.95):
+    print("      0.94.  At %.2f, k = %.4f and the rho lands %+.1f%%."
+          % (r, r * r, 100 * (B["rho"] * r * r / OBS["rho"][0] - 1)))
+x = np.log(np.sqrt(k_fit) * 3**0.25) / np.log(3)
+print("  (b) the N_c exponent of eq-fpi-exponent.  k would need N_c^%.4f where the" % x)
+print("      topological susceptibility confirms N_c^0.249.  Excluded.")
+print("  (c) each channel with its OWN chiral partner instead of a common Weinberg")
+print("      factor.  This fails differently and the failure is informative:")
+for nm, w, mV, mA in (("rho", 1.0, M_RHO, 1348.11), ("omega", 1 / 9, M_OMEGA, 1281.9),
+                      ("phi", 2 / 9, M_PHI, 1426.3)):
+    W = 1 / (1 - mV**2 / mA**2)
+    G = w * (2 / 3) * base(mV) * W
+    print("      %-6s m_A = %7.1f  W = %.4f  ->  %6.3f keV vs %6.3f  (%+.1f%%)"
+          % (nm, mA, W, G, OBS[nm][0], 100 * (G / OBS[nm][0] - 1)))
+print("      The two isoscalars overshoot by the same 34%, agreeing to half a per")
+print("      cent, where the rho sits at +4.2%.  That says the isoscalar pair shares")
+print("      a factor the rho does not, which is the opposite of a sector-wide k, so")
+print("      the two readings cannot both be the whole story.")
+print("\n  What survives is the measurement and not its explanation: a single factor")
+print("  near 0.96 is asked for independently by the rho and by the isoscalar pair,")
+print("  and no candidate yet accounts for it.")

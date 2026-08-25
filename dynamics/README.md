@@ -197,11 +197,18 @@ involved, then ask for k = 0.941: two determinations from different states and d
 charge weights, agreeing to 2.5% with no chance to negotiate.
 
 So the excess is a sector-wide normalisation rather than a rho-channel defect, about 4%
-in the width and 2% in the coupling.  The suspect is the decay constant, since the
-Weinberg relation is a chiral-limit statement fed the physical f_pi; the direction is
-right and the size is not settled, closing k entirely wanting F_0/f_pi = 0.978 against
-a lattice value near 0.94.  k is reported as a diagnostic and the corpus widths are not
-rescaled by it.
+in the width and 2% in the coupling.  Three candidate sources are then tested and all
+three are excluded, which is recorded so they are not tried again.  The chiral-limit
+decay constant has the right direction and badly the wrong size, k wanting
+F_0/f_pi = 0.978 where the lattice sits near 0.94, which would drive the rho to -8.5%.
+The N_c exponent of the f_pi derivation would need N_c^0.230 against a topological
+susceptibility that confirms N_c^0.249.  Giving each channel its own chiral partner
+instead of a common Weinberg factor fails informatively: the rho lands at +4.2% while
+the omega and phi both land at +34%, agreeing to half a per cent, so the isoscalar pair
+shares a factor the rho does not, which is the opposite of a sector-wide k.
+
+What survives is the measurement and not its explanation.  k is reported as a
+diagnostic and the corpus widths are not rescaled by it.
 
 ```
 python3 vector_normalisation.py
