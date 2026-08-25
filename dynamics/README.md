@@ -105,6 +105,26 @@ read backwards.
 python3 regge_massive_endpoints.py
 ```
 
+### `chiral_ladder.py`
+
+Chases the observation regge_massive_endpoints.py recorded: the Adler-zero intercept
+alpha_rho(0) = 1/2 (Lovelace-Shapiro), combined with the framework's own slope
+1/(2 pi sigma), anchors the chiral vector trajectory at M_L^2 = (2L+1) pi sigma with
+nothing fitted, i.e. m_rho = 2 pi^(3/2) m_0 in the chiral limit.  Against the corpus's
+own chiral-limit constructions: the L = 1 doublet centre lands at -0.14% (0.1 sigma),
+the L = 2 centre at +3.3% (the unitarity bend, separately established).  Two corpus
+puzzles close structurally: the 8 pi^3 = 2 (m_rho/m_0)^2 near-identity (1.2%) becomes
+exact on the ladder, the 1.2% now measuring the spectral rho's offset from
+sqrt(pi sigma), and the same offset is the 0.4% gap between the two Gamma_ee routes,
+which merge identically once m_a1^2 = 3 m_rho^2 is exact.  Honest caveats are printed:
+the physical-pion anchor overshoots the rho by 2.2%, empirical intercept fits sit at
+0.42-0.48 rather than exactly 1/2, and the pion-trajectory daughter check is weak.
+Observation status: not yet in the monograph.
+
+```
+python3 chiral_ladder.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
