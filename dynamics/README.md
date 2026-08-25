@@ -119,6 +119,16 @@ sqrt(pi sigma), and the same offset is the 0.4% gap between the two Gamma_ee rou
 which merge identically once m_a1^2 = 3 m_rho^2 is exact.  Honest caveats are printed:
 the physical-pion anchor overshoots the rho by 2.2%, empirical intercept fits sit at
 0.42-0.48 rather than exactly 1/2, and the pion-trajectory daughter check is weak.
+
+The sharpest test is the level structure rather than any single mass.  At level N the
+amplitude's residue carries spins 0 to N, all degenerate, so the leading J = N state
+and the J = 1 daughter must sit together; the J = 1 daughter is an axial/vector pair
+split by chiral symmetry breaking, whose centre is the doublet construction the corpus
+already uses.  At N = 3 the two land on top of each other, rho3(1690) at 1688.8 against
+the a1(1640)/rho(1700) centre at 1687.8, a tenth of a standard deviation between two
+multiplets that share no state and with nothing imposing it.  At N = 2 it is broken at
+1.5 sigma, the a2 sitting low.  The ladder's own centre also tightens the corpus's rho'
+prediction from -0.42% to -0.09% and its half-splitting from -1.8% to +0.44%.
 Observation status: not yet in the monograph.
 
 ```

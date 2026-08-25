@@ -119,3 +119,45 @@ print("    Recorded as a curiosity, not a closure.")
 print("  Lovelace-Shapiro is reported ghost-free with critical dimension FOUR")
 print("    (Bianchi et al.), the one hadronic dual amplitude distinguished in d = 4;")
 print("    the framework's lattice is four-dimensional.  Recorded, not built on.")
+
+
+# ----------------------------------------------------------------------
+# 6. The level structure: leading state and J=1 daughter must be degenerate
+# ----------------------------------------------------------------------
+print("\n=== 6. the LS level structure, and the degeneracy it predicts ===")
+print("At level N the amplitude's residue carries spins 0..N, all at (2N-1) pi sigma.")
+print("So the leading J = N state and the J = 1 daughter sit together.  The J = 1")
+print("daughter is an axial/vector pair split by chiral symmetry breaking, and its")
+print("centre is exactly the doublet construction the corpus already uses.")
+print("Nothing below imposes the degeneracy; it is a prediction of the level structure.\n")
+
+
+def centre(a, ea, v, ev):
+    c = np.sqrt((a * a + v * v) / 2)
+    dc = np.hypot((a / (2 * c)) * ea, (v / (2 * c)) * ev)
+    return c, dc
+
+
+print("  N  leading J=N          J=1 daughter pair        centre       degeneracy")
+for N, ln, lm, le, dn, a, ea, v, ev in (
+        (2, "a2(1320)", 1318.2, 0.6, "a1(1260)/rho(1450)", 1230., 40., 1465., 25.),
+        (3, "rho3(1690)", 1688.8, 2.1, "a1(1640)/rho(1700)", 1655., 16., 1720., 20.)):
+    ct, dct = centre(a, ea, v, ev)
+    d = ct - lm
+    print("  %d  %-11s %7.1f  %-19s %7.1f+-%4.1f   %+6.1f MeV (%.2f sigma)"
+          % (N, ln, lm, dn, ct, dct, d, abs(d) / np.hypot(dct, le)))
+print("\n  N = 3 is the sharp one: two multiplets sharing no state land on top of")
+print("  each other, 1688.8 against 1687.8, a tenth of a standard deviation.")
+print("  N = 2 is broken at 1.5 sigma, the a2 sitting low.")
+
+print("\n=== 7. what the ladder's centre forces on the doublet ===")
+M_A1 = 1227.37     # Born-cluster eigenvalue, an independent derivation
+for nm, ct in (("corpus centre, sqrt(m_rho,cluster^2 + 2 pi sigma)", 1348.11),
+               ("ladder centre, sqrt(3 pi sigma)", 1e3 * np.sqrt(3 * PS))):
+    rp = np.sqrt(2 * ct**2 - M_A1**2)
+    half = (ct**2 - M_A1**2) / 1e6
+    print("  %-46s centre %7.2f MeV" % (nm, ct))
+    print("     rho' = %7.1f against 1465 +- 25  (%+.2f%%, %.2f sigma)"
+          % (rp, 100 * (rp / 1465 - 1), abs(rp - 1465) / 25))
+    print("     half-splitting %.4f against 0.3167 GeV^2  (%+.2f%%)"
+          % (half, 100 * (half / 0.31666 - 1)))
