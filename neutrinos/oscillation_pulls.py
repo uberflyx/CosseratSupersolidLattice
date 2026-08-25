@@ -36,25 +36,26 @@ pred = {
 }
 
 # ---- verified measurements ----
-# JUNO first measurement (arXiv 2511.14593), Normal Ordering
-juno = {
-    "Dm21 [1e-5 eV^2]": (7.50, 0.12, 0.12),
-    "sin2_th12":        (0.3092, 0.0087, 0.0087),
-}
-# NuFit 6.0 IC19 WITHOUT SK-atm, Normal Ordering (v60 parameter table)
+# NuFIT 6.1 IC23 WITHOUT SK-atm, Normal Ordering (v61 parameter table).
+# 6.1 already includes the JUNO first result, so the solar pair is taken from
+# the same fit rather than quoted separately; quoting both would double-count it.
 nufit_noSK = {
-    "Dm31 [1e-3 eV^2]": (2.534, 0.025, 0.023),
-    "sin2_th23":        (0.561, 0.012, 0.015),
-    "sin2_th13":        (0.02195, 0.00054, 0.00058),
-    "deltaCP [deg]":    (177.0, 19.0, 20.0),
+    "Dm21 [1e-5 eV^2]": (7.537, 0.094, 0.10),
+    "Dm31 [1e-3 eV^2]": (2.521, 0.026, 0.018),
+    "sin2_th12":        (0.3088, 0.0067, 0.0066),
+    "sin2_th23":        (0.470, 0.017, 0.014),
+    "sin2_th13":        (0.02249, 0.00057, 0.00057),
+    "deltaCP [deg]":    (207.0, 23.0, 20.0),
 }
-# NuFit 6.0 IC24 WITH SK-atm, Normal Ordering (v60 parameter table);
+# NuFIT 6.1 IC24 WITH SK-atm, Normal Ordering (v61 parameter table);
 # theta_23 sits in the FIRST octant in this variant, on the prediction.
 nufit_SK = {
-    "Dm31 [1e-3 eV^2]": (2.513, 0.021, 0.019),
-    "sin2_th23":        (0.470, 0.017, 0.013),
-    "sin2_th13":        (0.02215, 0.00056, 0.00058),
-    "deltaCP [deg]":    (212.0, 26.0, 41.0),
+    "Dm21 [1e-5 eV^2]": (7.537, 0.094, 0.10),
+    "Dm31 [1e-3 eV^2]": (2.511, 0.021, 0.020),
+    "sin2_th12":        (0.3088, 0.0067, 0.0066),
+    "sin2_th23":        (0.470, 0.017, 0.014),
+    "sin2_th13":        (0.02248, 0.00055, 0.00059),
+    "deltaCP [deg]":    (212.0, 26.0, 36.0),
 }
 
 
@@ -76,18 +77,17 @@ def report(name, ref):
 
 
 if __name__ == "__main__":
-    c1, n1 = report("JUNO (2511.14593)", juno)
-    c3, n3 = report("NuFit 6.0 WITH SK-atm (primary anchor)", nufit_SK)
-    print(f"\nsix-observable chi^2 (JUNO solar sector + NuFit-6.0-with-SK "
-          f"atmospheric sector) = {c1 + c3:.2f} for {n1 + n3} observables")
+    c3, n3 = report("NuFIT 6.1 WITH SK-atm (primary anchor)", nufit_SK)
+    print(f"\nsix-observable chi^2 (NuFIT 6.1 with SK-atm, single anchor) "
+          f"= {c3:.2f} for {n3} observables")
 
-    c2, n2 = report("NuFit 6.0 without SK-atm (contrast: the octant flips)", nufit_noSK)
+    c2, n2 = report("NuFIT 6.1 without SK-atm (contrast: the octant flips)", nufit_noSK)
     print(f"\nWith the SK-atm variant the theta_23 Gaussianised pull is "
           f"{pull(pred['sin2_th23'], nufit_SK['sin2_th23']):+.1f} sigma, but the "
           f"likelihood is bimodal:")
     print("  the 3-sigma ranges of BOTH variants span both octants, so the")
     print("  prediction remains inside 3 sigma of either fit. The octant is the")
-    print("  one genuinely unresolved parameter (NuFit 6.0 abstract), the")
+    print("  one genuinely unresolved parameter (NuFit 6.0/6.1 abstract), the")
     print("  datasets split (T2K+NOvA joint: upper, Bayes factor 3.5; SK-atm:")
     print("  lower), and the framework stakes a sharp lower-octant claim:")
     print("  sin^2 th23 = (1 - m_mu/m_tau)/2 = 0.470, half the mu-to-tau mass")

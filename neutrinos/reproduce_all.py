@@ -72,17 +72,31 @@ def predict(m_e=M_E, m_mu=M_MU, m_tau=M_TAU, alpha=ALPHA):
         "Dm2_21 [1e-5 eV^2]": (m2_**2 - m1_**2) * 1e-1,
         "Dm2_31 [1e-3 eV^2]": (m3_**2 - m1_**2) * 1e-3,
         "sin2_th12": s12, "sin2_th23": s23, "sin2_th13": s13,
-        "delta_CP [deg]": dcp, "J": J, "m_bb [meV]": 0.0,   # Dirac
+        "delta_CP [deg]": dcp, "J": J,
+        # Kinematic (tritium endpoint) mass: the incoherent quadratic average
+        # over the electron row, m_beta^2 = sum_i |U_ei|^2 m_i^2.  Not an
+        # independent prediction, but the third face of the same spectrum, and
+        # the one the direct programme measures.
+        "m_beta [meV]": float(np.sqrt(
+            (1 - s12) * (1 - s13) * m1_**2
+            + s12 * (1 - s13) * m2_**2
+            + s13 * m3_**2)),
+        "m_bb [meV]": 0.0,   # Dirac: lepton number is a winding, so exactly zero
     }
 
 
+# One anchor for all six: NuFIT 6.1 (2025), IC24 with SK atmospheric data,
+# normal ordering, from the v61 parameter table.  6.1 already contains the JUNO
+# first result, so the solar pair comes from the same fit; quoting JUNO
+# separately as well would enter that measurement twice.
+SRC = "NuFIT 6.1 with SK-atm"
 ANCHORS = {   # (best fit, sigma+, sigma-, source)
-    "sin2_th12":          (0.3092, 0.0087, 0.0087, "JUNO 2025"),
-    "Dm2_21 [1e-5 eV^2]": (7.50,   0.12,   0.12,   "JUNO 2025"),
-    "sin2_th13":          (0.02195, 0.00054, 0.00058, "NuFit 6.0"),
-    "sin2_th23":          (0.470,  0.017,  0.013,  "NuFit 6.0 with SK-atm"),
-    "delta_CP [deg]":     (212.0,  26.0,   41.0,   "NuFit 6.0 with SK-atm (NO)"),
-    "Dm2_31 [1e-3 eV^2]": (2.513,  0.021,  0.019,  "NuFit 6.0 with SK-atm"),
+    "sin2_th12":          (0.3088,  0.0067,  0.0066,  SRC),
+    "Dm2_21 [1e-5 eV^2]": (7.537,   0.094,   0.10,    SRC),
+    "sin2_th13":          (0.02248, 0.00055, 0.00059, SRC),
+    "sin2_th23":          (0.470,   0.017,   0.014,   SRC),
+    "delta_CP [deg]":     (212.0,   26.0,    36.0,    SRC),
+    "Dm2_31 [1e-3 eV^2]": (2.511,   0.021,   0.020,   SRC),
 }
 
 if __name__ == "__main__":
