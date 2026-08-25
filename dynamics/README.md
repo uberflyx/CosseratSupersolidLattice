@@ -180,6 +180,33 @@ needs m_a1^2/m_rho^2 = 3.26, or m_a1 = 1399 MeV, which no route in the corpus pr
 python3 wsr_tower_saturation.py
 ```
 
+### `vector_normalisation.py`
+
+Asks whether the 3.5% excess on Gamma_ee(rho) belongs to the rho or to the whole light
+vector sector.  The omega-phi mixing angle is fixed by scaling the isoscalars off the
+MEASURED rho, and doing it instead off the framework's own f_pi makes the two isoscalars
+disagree (4.5 degrees against 0.7); the whole of that disagreement is the rho's own
+excess, so the isoscalars carry information about it.
+
+Fitting one common normalisation k and one mixing angle to all three measured widths at
+once returns k = 0.957 and delta = 3.08 degrees, chi2 = 3.3 on one degree of freedom,
+bringing all three residuals below 1.1 sigma where ideal mixing leaves them at 4.1, 8.9
+and 1.5.  What matters is not the fit quality but that the rho alone asks for k = 0.966
+while the two isoscalars alone, fixing delta from their ratio with no normalisation
+involved, then ask for k = 0.941: two determinations from different states and different
+charge weights, agreeing to 2.5% with no chance to negotiate.
+
+So the excess is a sector-wide normalisation rather than a rho-channel defect, about 4%
+in the width and 2% in the coupling.  The suspect is the decay constant, since the
+Weinberg relation is a chiral-limit statement fed the physical f_pi; the direction is
+right and the size is not settled, closing k entirely wanting F_0/f_pi = 0.978 against
+a lattice value near 0.94.  k is reported as a diagnostic and the corpus widths are not
+rescaled by it.
+
+```
+python3 vector_normalisation.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
