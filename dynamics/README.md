@@ -135,6 +135,51 @@ Observation status: not yet in the monograph.
 python3 chiral_ladder.py
 ```
 
+### `pull_scorecard.py`
+
+Recomputes every paper-relevant framework prediction and scores it, reporting the
+residual, the pull in experimental sigma alone, and the pull against experiment and
+the framework's own stated resolution combined.  The three columns are kept separate
+because ranking on experimental sigma alone gets the answers backwards: m_pi at 0.024%
+scores 3.2 sigma against a razor-sharp PDG average while Gamma_rho scores 0.4 sigma at
+ten times the residual.  Currently 18 of 25 entries sit below one sigma.  The script
+also records that the two a_mu benchmarks disagree with each other by 3.1 sigma, so no
+prediction can sit within one sigma of both and the pair bounds what is achievable.
+
+```
+python3 pull_scorecard.py
+```
+
+### `wsr_tower_saturation.py`
+
+Asks whether saturating the Weinberg sum rules with the framework's own derived tower
+closes the +3.5% excess on Gamma_ee(rho), which is the largest single pull in the
+scorecard.  It does not, and the script is the record of why.
+
+Three findings, all negative or diagnostic:
+
+- The excess is not the framework's inputs.  Feeding the corpus formula MEASURED f_pi
+  and m_rho still returns 7.240 keV, +2.8%, so single-state saturation itself carries
+  most of it and the derived inputs add 0.7%.
+- The tower is the wrong tool.  Solving both sum rules with two vectors and two axials
+  on the framework's own tower moves f_rho^2 by -16% to +14% depending on the axial
+  coupling ratio, which the framework does not derive.  A 15% tool cannot fix a 3%
+  gap.  Truncated sum rules are known to behave this way, since the two sums converge
+  only in the difference and that difference is controlled by chiral restoration at
+  high rung rather than by the first recurrence.
+- The comparison value is not soft.  All six published Gounaris-Sakurai determinations
+  are listed; they agree with each other at chi2/dof = 0.76, so the PDG error needs no
+  inflating and the pull is real.
+
+What the script does establish in the framework's favour: Weinberg's classic
+m_a1^2 = 2 m_rho^2 misses the measured width by 39%, and the framework's own a1 at
+m_a1^2 = 3 m_rho^2 brings that to 3.5%, a factor of eleven.  Closing the remainder
+needs m_a1^2/m_rho^2 = 3.26, or m_a1 = 1399 MeV, which no route in the corpus produces.
+
+```
+python3 wsr_tower_saturation.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
