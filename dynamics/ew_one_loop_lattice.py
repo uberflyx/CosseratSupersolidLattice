@@ -144,13 +144,20 @@ sigma_string= (2.0 * np.pi * m_0)**2
 m_a1        = np.sqrt(m_rho**2 + 2.0 * np.pi * sigma_string)   # Regge, L = 1
 Lambda_QCD  = np.pi * m_0
 
-# The omega is an isoscalar and its width is STATED at 0.62 keV, not derived here.
-# The module's own PDG constants give 0.643 keV (7.41e-5 x 8.68 MeV), so the
-# stated value sits 3.6 per cent low; an earlier comment claimed agreement with
-# a "0.617 measured" that matches neither the constants above nor the PDG.  The
-# omega carries about 40 of the 700 units in a_mu, so 3.6 per cent is 1.4 units,
-# comparable to the matching band and worth quoting rather than burying.
-Gee_omega   = 0.62e-3
+# The omega's leptonic width is an INPUT, taken from the PDG at
+# B_ee x Gamma_tot = 7.38e-5 x 8.68 MeV = 0.6406 keV, in the same way the omega and
+# phi masses are inputs.  It was previously stated at 0.62 keV, which sits 3.2 per
+# cent below the PDG value and matched no source; correcting it raises a_mu by 1.4
+# units, since the omega carries about 42 of the 700.
+#
+# The ideal-mixing charge ratio 1/9 that serves the phi does NOT serve the omega: it
+# returns 0.811 keV, 26 per cent high.  omega_phi_mixing.py resolves that, showing
+# both isoscalars fall below one sigma under a single omega-phi mixing angle of about
+# 3.1 degrees, which each channel determines independently and consistently.  The
+# angle is measured rather than derived, so the width stays an input here; deriving
+# the angle from light-quark annihilation through the stacking channel would remove
+# the last isoscalar input.
+Gee_omega   = 0.6406e-3
 
 def alpha_s(s, nf=5.0):
     """Two-loop running coupling, Lambda = pi m_0."""

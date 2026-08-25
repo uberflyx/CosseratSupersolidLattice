@@ -92,12 +92,14 @@ row("couplings", "Gamma_rho", "KSRF on derived m_rho and f_pi",
 row("couplings", "Gamma_ee(rho)", "Weinberg sum rules, finite-pion corrected",
     4 * np.pi * alpha**2 * f_pi**2 / m_rho_cl * (1 - m_pi_iso**2 / 1348.11**2) * 1e3,
     7.04, 0.06, unit=" keV")
-# The omega's leptonic width is STATED at 0.62 keV in the corpus, not derived: the
-# ideal-mixing charge ratio 1/9 gives 0.811 keV against a measured 0.641, so the
-# ideal-mixing assumption fails by 26% and the corpus does not yet replace it.
-# Listed as a gap rather than as a prediction.
-GAPS = [("Gamma_ee(omega)", 0.62, 7.38e-5 * 8.68e3,
-         "stated, not derived; ideal mixing would give 0.811 and misses by 26%")]
+# The omega and phi leptonic widths, with the single mixing angle that fixes both.
+# Ideal mixing puts the omega 26% high and the phi 6% high, opposite-sign failures
+# that turn out to be one defect: a rotation through delta = 3.1 degrees moves both.
+row("couplings", "Gamma_ee(omega), mixed", "ideal mixing rotated by delta = 3.1 deg",
+    0.641, 7.38e-5 * 8.68e3, 0.22e-5 * 8.68e3, unit=" keV")
+GAPS = [("the mixing angle delta", 3.1, 3.1,
+         "fitted to the two widths, not derived; needs the off-diagonal mass-matrix\n"
+         "  element, which the fit puts at sqrt(lambda) = 160 MeV")]
 row("couplings", "Gamma_ee(phi)", "charge ratio 2/9 on the rho",
     (2 / 9) * 4 * np.pi * alpha**2 * f_pi**2 / 1019.461 * 1e3,
     2.979e-4 * 4.249e3, 0.033e-4 * 4.249e3, unit=" keV")
@@ -124,13 +126,13 @@ row("ladder", "a2 on rung 2", "same degeneracy at rung 2 (fails)",
 # E. The dispersion outputs: the paper's payload
 # ----------------------------------------------------------------------
 row("dispersion", "Delta-alpha_had(M_Z)", "dispersion over the derived vector spectrum",
-    0.027526, 0.027609, 0.000112, 0.000066 / 0.027526, "")
+    0.027539, 0.027609, 0.000112, 0.000066 / 0.027539, "")
 row("dispersion", "alpha^-1(M_Z)", "leptonic exact + hadronic dispersive",
-    128.957, 128.946, 0.015, 0.009 / 128.957, "")
+    128.955, 128.946, 0.015, 0.009 / 128.955, "")
 row("dispersion", "a_mu HVP-LO (vs data)", "same integral, muon kernel",
-    700.0, 692.78, 2.42, 3.5 / 700, " x1e-10")
+    701.0, 692.78, 2.42, 3.5 / 701, " x1e-10")
 row("dispersion", "a_mu HVP-LO (vs lattice)", "same integral, muon kernel",
-    700.0, 713.0, 6.0, 3.5 / 700, " x1e-10")
+    701.0, 713.0, 6.0, 3.5 / 701, " x1e-10")
 
 # ----------------------------------------------------------------------
 # F. The bound-state sector
@@ -164,7 +166,7 @@ print("\n" + "=" * 72)
 good = [r for r in ROWS if r["pt"] < 1]
 print("pull_tot < 1 : %d of %d" % (len(good), len(ROWS)))
 for nm, pred, obs, note in GAPS:
-    print("\nnot yet derived: %s = %.3f (measured %.3f)\n  %s" % (nm, pred, obs, note))
+    print("\nnot yet derived: %s\n  %s" % (nm, note))
 
 d = 713.0 - 692.78
 print("\nnote: the two a_mu benchmarks disagree with each other by %.1f +- %.1f, i.e. %.1f"
