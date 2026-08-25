@@ -187,6 +187,33 @@ needs m_a1^2/m_rho^2 = 3.26, or m_a1 = 1399 MeV, which no route in the corpus pr
 python3 wsr_tower_saturation.py
 ```
 
+### `parameter_inventory.py`
+
+Every constant entering the light vector sector, classified by what kind of thing it is,
+so that mechanising the framework's numbers does not turn into mechanising its
+bookkeeping.  If the lattice is ontological then every genuine degree of freedom means
+something, but not every number in a calculation is a degree of freedom, and three kinds
+are traps.
+
+A scheme convention is a choice of bookkeeping rather than a fact: the Breit-Wigner and
+pole masses of the same rho differ by 12 MeV, three residue conventions for c_0 span
+0.087 to 0.112, and Gamma_ee moves 3% according to whether vacuum polarisation is
+removed.  A mechanism attached to one of those is physics invented for a convention, and
+it dies the moment a reader uses the other one.  A composite is a number already fixed by
+others in the table, so mechanising it separately double-counts; five were found in this
+sector in a single audit, including the Regge slope, the rho' prediction and the a2
+offset.  A comparison value belongs to the experiment and needs verifying, not
+explaining.
+
+Of 35 entries: 12 are already mechanised, 5 are honest imports, 12 are schemes,
+composites or comparison values that must not be mechanised, and 6 are genuine targets.
+Those six are k, delta, alpha_s(IR), the factor of one half in m_q = N_c^2 m_0/2, c_2
+and B_pipi(rho').
+
+```
+python3 parameter_inventory.py
+```
+
 ### `footnote_gate.py`
 
 Standing gate against a defect nothing else catches: a monograph footnote pointing at a
