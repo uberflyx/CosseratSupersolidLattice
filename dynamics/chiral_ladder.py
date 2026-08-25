@@ -161,3 +161,39 @@ for nm, ct in (("corpus centre, sqrt(m_rho,cluster^2 + 2 pi sigma)", 1348.11),
           % (rp, 100 * (rp / 1465 - 1), abs(rp - 1465) / 25))
     print("     half-splitting %.4f against 0.3167 GeV^2  (%+.2f%%)"
           % (half, 100 * (half / 0.31666 - 1)))
+
+# ----------------------------------------------------------------------
+# 8. The degeneracy tested across the WHOLE rung, not a chosen pair
+# ----------------------------------------------------------------------
+print("\n=== 8. the full-rung test ===")
+print("Section 6 compared the leading J = N state with the J = 1 daughter centre and")
+print("found 1 MeV at rung 3 against 34 MeV at rung 2.  Neither figure should be read")
+print("alone: the amplitude puts EVERY spin from 0 to N on rung N, so the test is")
+print("whether all of them sit together.  Isovector states, rung by rung:\n")
+RUNG_STATES = {
+    2: [("a1(1260)", 1, 1230.0), ("b1(1235)", 1, 1229.5), ("a2(1320)", 2, 1318.2),
+        ("a0(1450)", 0, 1439.0), ("rho(1450)", 1, 1465.0)],
+    3: [("a1(1640)", 1, 1655.0), ("rho3(1690)", 3, 1688.8), ("a2(1700)", 2, 1706.0),
+        ("rho(1700)", 1, 1720.0)],
+}
+spreads = {}
+for N, st in RUNG_STATES.items():
+    m = np.array([x[2] for x in st])
+    spreads[N] = (m.max() - m.min()) / m.mean()
+    print("  rung %d: %s" % (N, ", ".join("%s J=%d %.0f" % (n, j, v) for n, j, v in st)))
+    print("     spread %.0f MeV = %.1f%% of the mean %.0f, ladder %.0f MeV (%+.1f%%)\n"
+          % (m.max() - m.min(), 100 * spreads[N], m.mean(),
+             1e3 * np.sqrt((2 * N - 1) * PS),
+             100 * (1e3 * np.sqrt((2 * N - 1) * PS) / m.mean() - 1)))
+print("  The degeneracy is broken by %.1f%% at rung 2 and %.1f%% at rung 3, improving by"
+      % (100 * spreads[2], 100 * spreads[3]))
+print("  a factor of %.1f in one step.  Two consequences, pulling opposite ways:"
+      % (spreads[2] / spreads[3]))
+print("    - the a2's 34 MeV is not a puzzle about the a2; it is one slice of a rung")
+print("      split by 236 MeV, and any pair from that rung would disagree similarly.")
+print("    - rung 3's 1 MeV is better than its own rung warrants, the four states")
+print("      there scattering over 65 MeV, so that pair agrees more closely than the")
+print("      prediction can support.")
+print("  What the ladder gets right is the trend.  It is spin-blind, and the departures")
+print("  are spin-dependent forces falling away with excitation; the framework does not")
+print("  compute them, so the rate of the fall is observed rather than predicted.")
