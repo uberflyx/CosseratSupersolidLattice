@@ -221,6 +221,37 @@ diagnostic and the corpus widths are not rescaled by it.
 python3 vector_normalisation.py
 ```
 
+### `regge_bend_mechanisms.py`
+
+Tests, against the spectrum rather than by argument, the three mechanisms proposed for
+the bend in the chiral ladder, and then asks whether the reported Regge slope defect is
+a defect at all.
+
+Massive endpoints are excluded elsewhere (regge_massive_endpoints.py).  The corpus's
+unitarity claim, that wider states are pulled further below their bare mass, is
+falsified on the rungs: the broadest states on the trajectory are the a1(1260) and
+rho(1450) at 400 MeV apiece and they sit on the rung the ladder places best, while the
+narrower a1(1640) and rho(1700) at 250 MeV sit on the rung it misses.  On the leading
+trajectory the widths do grow and a regularity survives for the a2, rho3 and a4 at
+0.62, 0.69 and 0.61 of Gamma M before the rho breaks it by a factor of ten.  A 1/N_c
+reading does not scale either, the rung with the largest Gamma/M showing the smallest
+departure.
+
+The last section is the useful one.  A linear Regge fit has two parameters, and fitting
+both to a bending trajectory spreads the bend across them, so part of the apparent
+slope error is the intercept absorbing curvature.  Holding the intercept at the Adler
+value of exactly 1/2 lets each rung state a tension of its own: the first returns
+2 pi sigma = 1.2136 GeV^2 against the derived 1.2163, agreeing to 0.23%, while the
+second and third fall to 1.1972 and 1.1460 as the trajectory bends.  So the derived
+string tension is confirmed to a quarter of a per cent where the trajectory is straight,
+and the "-7% Regge slope" is the bend counted twice rather than a separate defect.  No
+single tension can absorb the bend in any case, since the M^2 deficits divided by
+(N - 1/2) run 0.0027, 0.0191, 0.0703 and are not constant.
+
+```
+python3 regge_bend_mechanisms.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
