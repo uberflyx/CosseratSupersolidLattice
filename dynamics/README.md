@@ -240,6 +240,36 @@ diagnostic and the corpus widths are not rescaled by it.
 python3 vector_normalisation.py
 ```
 
+### `ribbon_breaking_length.py`
+
+The fifth candidate for the bend in the chiral ladder, and the first that survives.  The
+four excluded in regge_bend_mechanisms.py and regge_massive_endpoints.py share an
+assumption: each treats the meson as a string.  It is not one.  It is a patch of stacking
+fault with a partial dislocation at each end, and a ribbon carries something a string does
+not, a length at which it stops being one object.  The framework already states the
+condition, that the ribbon breaks only by nucleating a fresh partial-antipartial pair, so
+breaking arrives at L* = 2 m_q / sigma = 0.642 fm on the derived m_q = N_c^2 m_0/2 and
+sigma = (2 pi m_0)^2, with nothing fitted.
+
+A rotating ribbon with light ends has L = 2M/(pi sigma), putting the three light rungs at
+0.51, 0.87 and 1.10 fm.  The first is below L* and the other two above, which is where the
+ladder stops working, and it explains why the width tests failed: the ribbon's length
+decides it, not the state's decay rate.
+
+The tension cancels in the ratio, leaving L/L* = M/(pi m_Q), so passing breaking depends
+only on the mass and the constituent mass at the ends.  The light rungs give 0.79, 1.35
+and 1.71; every charmonium state runs 0.66 to 0.80 and every bottomonium state 0.64 to
+0.70, all below breaking.  The picture therefore predicts heavy-quark trajectories are
+straighter than light ones, which the spectroscopy has long found and a string picture
+alone leaves unexplained.
+
+Status: this names the scale and gets the ordering right, and does not compute the drift.
+No simple power of the excess length reproduces the sizes.
+
+```
+python3 ribbon_breaking_length.py
+```
+
 ### `regge_bend_mechanisms.py`
 
 Tests, against the spectrum rather than by argument, the three mechanisms proposed for
