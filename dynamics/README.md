@@ -125,11 +125,18 @@ amplitude's residue carries spins 0 to N, all degenerate, so the leading J = N s
 and the J = 1 daughter must sit together; the J = 1 daughter is an axial/vector pair
 split by chiral symmetry breaking, whose centre is the doublet construction the corpus
 already uses.  At N = 3 the two land on top of each other, rho3(1690) at 1688.8 against
-the a1(1640)/rho(1700) centre at 1687.8, a tenth of a standard deviation between two
-multiplets that share no state and with nothing imposing it.  At N = 2 it is broken at
-1.5 sigma, the a2 sitting low.  The ladder's own centre also tightens the corpus's rho'
-prediction from -0.42% to -0.09% and its half-splitting from -1.8% to +0.44%.
-Observation status: not yet in the monograph.
+the a1(1640)/rho(1700) centre at 1687.8, and at N = 2 the a2 sits 34 MeV low.  Neither
+figure survives being read alone, and the script's full-rung test says why: the
+amplitude puts EVERY spin from 0 to N on rung N, so the test is whether all of them sit
+together.  Rung 2 spreads over 236 MeV, 17.6% of its mean; rung 3 over 65 MeV, 3.8%.
+The degeneracy is badly broken low and nearly exact high, improving by a factor of 4.6
+in one step.  That cuts both ways: the a2's 34 MeV is one slice of a badly split rung
+rather than a puzzle about the a2, and rung 3's 1 MeV is closer than its own rung
+warrants.  What the ladder gets right is the trend, being a spin-blind construction
+whose departures are spin-dependent forces that fall with excitation at a rate the
+framework observes rather than predicts.  The ladder's own centre also tightens the
+corpus's rho' prediction from -0.42% to -0.09% and its half-splitting from -1.8% to
++0.44%.
 
 ```
 python3 chiral_ladder.py
