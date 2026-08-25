@@ -235,7 +235,10 @@ narrower a1(1640) and rho(1700) at 250 MeV sit on the rung it misses.  On the le
 trajectory the widths do grow and a regularity survives for the a2, rho3 and a4 at
 0.62, 0.69 and 0.61 of Gamma M before the rho breaks it by a factor of ten.  A 1/N_c
 reading does not scale either, the rung with the largest Gamma/M showing the smallest
-departure.
+departure.  Nor does the square-root trajectory alpha(s) = 1/2 + a1(sqrt(s0) -
+sqrt(s0-s)), the form analyticity motivates: with the framework's slope imposed, each
+rung solves for s0 separately and returns 67, 29 and 13 GeV^2, three scales falling by a
+factor of five rather than one scale.  Four mechanisms excluded by calculation.
 
 The last section is the useful one.  A linear Regge fit has two parameters, and fitting
 both to a bending trajectory spreads the bend across them, so part of the apparent

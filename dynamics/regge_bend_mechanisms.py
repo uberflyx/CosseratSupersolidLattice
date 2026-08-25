@@ -99,6 +99,7 @@ print("the bend across them, so part of the apparent slope error is the intercep
 print("absorbing curvature.  The chiral ladder fixes the intercept independently at")
 print("exactly 1/2, which lets each rung state a tension of its own.\n")
 TPS_GEV = 2 * np.pi * (2 * np.pi * 0.51099895069e-3 * 137.035999177)**2
+PS = TPS_GEV / 2.0
 ISO = {1: [775.26, 782.66], 2: [1230., 1229.5, 1318.2, 1439., 1465.],
        3: [1655., 1688.8, 1706., 1720.]}
 M2 = {N: np.mean([(v * 1e-3)**2 for v in st]) for N, st in ISO.items()}
@@ -117,3 +118,21 @@ d = [TPS_GEV * (n - 0.5) - M2[n] for n in (1, 2, 3)]
 print("  And no single tension can absorb it: the M^2 deficits divided by (N-1/2) run")
 print("  %s, which is not constant."
       % ", ".join("%.4f" % (x / (n - 0.5)) for x, n in zip(d, (1, 2, 3))))
+
+
+# ----------------------------------------------------------------------
+# 5. The standard analyticity form, which is the fourth candidate
+# ----------------------------------------------------------------------
+print("\n=== square-root trajectory: alpha(s) = 1/2 + a1(sqrt(s0) - sqrt(s0-s)) ===")
+print("This is the form analyticity and unitarity motivate: linear at low s, bending to")
+print("sqrt(s) asymptotically, with one new parameter s0 setting where the bend begins.")
+print("Hold the low-s slope at the framework's own value and each rung then solves for")
+print("s0 on its own, via s0 = u^2 / (2u - M^2) with u = (N - 1/2) pi sigma.\n")
+for n in (1, 2, 3):
+    u = (n - 0.5) * PS
+    s0 = u * u / (2 * u - M2[n])
+    print("  rung %d  ->  s0 = %7.2f GeV^2   (sqrt(s0) = %.1f GeV)" % (n, s0, np.sqrt(s0)))
+print("\n  Not one scale but three, falling by a factor of five, so the form is excluded")
+print("  as soon as the framework's slope is imposed.  Letting the slope float fits, as")
+print("  two parameters on three points must, and buys nothing: the slope it then wants")
+print("  is low by the same margin a straight line wanted.  Fourth candidate, excluded.")
