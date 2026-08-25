@@ -187,6 +187,25 @@ needs m_a1^2/m_rho^2 = 3.26, or m_a1 = 1399 MeV, which no route in the corpus pr
 python3 wsr_tower_saturation.py
 ```
 
+### `footnote_gate.py`
+
+Standing gate against a defect nothing else catches: a monograph footnote pointing at a
+script that was never pushed.  Rendering does not see it, the cross-reference validator
+does not see it, and the literal audit does not see it, because none of them looks
+outside its own repository.  Three such references accumulated before anyone checked.
+Run it against a checkout of the monograph:
+
+```
+python3 footnote_gate.py /path/to/CosseratSupersolid
+```
+
+It reports both directions.  Dangling references (cited in the corpus, absent here) fail
+the run, since a reader following one finds nothing.  Orphans (present here, cited
+nowhere) are reported without failing, since a script may legitimately precede the text
+that will cite it, but each one is either a lost footnote or a script with no reader.
+It checks git-tracked files rather than the working tree, so an uncommitted script does
+not pass.
+
 ### `vector_normalisation.py`
 
 Asks whether the 3.5% excess on Gamma_ee(rho) belongs to the rho or to the whole light
