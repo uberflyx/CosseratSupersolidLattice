@@ -86,6 +86,25 @@ python3 formfactor_truncation_independent.py
 
 Monograph Chapter 10 (Dynamics), Sections on the two-loop QED programme, Landau pole elimination, and the electroweak radiative correction programme.
 
+### `regge_massive_endpoints.py`
+
+Solves the classical rotating Nambu-Goto string with massive endpoints exactly, on the
+framework's fixed inputs (sigma = (2 pi m_0)^2, m_q = 315 MeV), against the leading
+light trajectory rho(770), a2(1320), rho3(1690), a4(1970) and the chiral doublet
+centres.  Written to test the corpus claim that endpoint masses close the -7% Regge
+slope gap; it disproves it.  Massive ends raise every M^2 step above 2 pi sigma and
+push the fitted slope to 0.71-0.77 GeV^-2, away from the observed 0.92, while the
+measured steps (1.137, 1.114, 1.017 GeV^2) sit below 2 pi sigma and shrink, a pattern
+that tracks the growth of the widths along the trajectory (unitarity self-energy, sized
+in the script at Gamma M / pi = 0.04-0.20 GeV^2 against step deficits of 0.08-0.20)
+rather than any endpoint mass.  A labelled one-parameter diagnostic inversion is
+included; it returns m = 0 as the best fit at fixed sigma, which is the same exclusion
+read backwards.
+
+```
+python3 regge_massive_endpoints.py
+```
+
 ### `rho_sector_audit.py`
 
 Audits the rho sector, which supplies the single most consequential number in the
