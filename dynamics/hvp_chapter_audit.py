@@ -284,8 +284,8 @@ chk("  a pure beta^3 moves it by", 4.4, 100 * (1 - 2.28307 / 2.38918), tol=0.06,
 # ======================================================================
 print("\n=== the spin read backwards ===")
 AINV0 = 1.0 / alpha
-DA_LEP3, DA_HAD, DA_TOP = 0.031498, 0.027539, -0.7e-4
-chk("alpha^-1(M_Z), the framework's value", 128.955,
+DA_LEP3, DA_HAD, DA_TOP = 0.031498, 0.027591, -0.7e-4
+chk("alpha^-1(M_Z), the framework's value", 128.948,
     AINV0 * (1 - DA_LEP3 - DA_HAD - DA_TOP), tol=0.0011)
 d_ferm = AINV0 - 128.946
 chk("Delta-alpha^-1 a Dirac fermion must supply", 8.090, d_ferm, tol=0.0011)
@@ -322,13 +322,13 @@ chk("1/w in energy", 155.0, m_0 / w, tol=3.0, unit=" MeV")
 # ======================================================================
 print("\n=== the closure census ===")
 resid = AINV0 * (1 - DA_LEP3 - DA_HAD - DA_TOP) - 128.946
-sig = np.hypot(0.009, 0.015)
-chk("residual against the measurement", 0.009, resid, tol=0.0011)
+sig = np.hypot(0.010, 0.015)   # framework +-0.010 on alpha^-1, measurement +-0.015
+chk("residual against the measurement", 0.002, resid, tol=0.0011)
 chk("  its uncertainty, in quadrature", 0.018, sig, tol=0.0011)
-bound = 0.009 + 2 * sig            # two-sigma ceiling on an unaccounted contribution
-chk("  two-sigma ceiling on a missed species", 0.044, bound, tol=0.0011)
-for m, pr_nq, pr_q in ((131.0, 0.036, 0.19), (148.0, 0.037, 0.19),
-                       (1e3, 0.056, 0.24), (1e4, 0.147, 0.38), (45e3, 0.702, 0.84)):
+bound = resid + 2 * sig            # two-sigma ceiling on an unaccounted contribution
+chk("  two-sigma ceiling on a missed species", 0.038, bound, tol=0.0011)
+for m, pr_nq, pr_q in ((131.0, 0.032, 0.18), (148.0, 0.032, 0.18),
+                       (1e3, 0.049, 0.22), (1e4, 0.128, 0.36), (45e3, 0.611, 0.78)):
     nq = bound / dalpha_inv(MZ**2, m)
     chk("  N_c Q^2 bound at %6.0f MeV" % m, pr_nq, nq, tol=0.0011)
     chk("    as a charge, colour singlet", pr_q, np.sqrt(nq), tol=0.006, unit=" e")

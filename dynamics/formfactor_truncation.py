@@ -63,7 +63,15 @@ def build(c2):
         0.3, 2.5, xtol=1e-14)
     return R_of(c0), c0, 1.0 - c0 - c2
 
-def observables(Rp):
+def observables(Rp, c1=None):
+    """Integrate the anomaly and the running for one member of the c_2 family.
+
+    c_1 is passed in because the recurrence's two-pion branching is not a free
+    input alongside c_2: ew.gamma_pipi_recurrence reads it off c_1 itself, so
+    holding B fixed while c_2 moves would count one freedom twice and would
+    make the sweep disagree with the chapter's own table.
+    """
+    B = ew.B_PIPI_RHO1 if c1 is None else ew.gamma_pipi_recurrence(c1=c1)/ew.GAMMA_RHO1
     out = {}
     for N in ew.N_ADMISSIBLE:
         sm = min(m_rho**2 + (N+0.5)*TPS, SC)
@@ -80,7 +88,7 @@ def observables(Rp):
             for n, r in enumerate(Rt[1:], 1):
                 mn = np.sqrt(m0V**2 + n*TPS)
                 if mn**2 >= sm: continue
-                w = (1.0-ew.B_PIPI_RHO1) if (n==1 and abs(m0V-m_rho)<1.0) else 1.0
+                w = (1.0-B) if (n==1 and abs(m0V-m_rho)<1.0) else 1.0
                 gn = ew.gee_tower(k, n, mn, G, r)
                 a += w*ew.amu_narrow(mn, gn); d += w*ew.narrow(mn, gn)
         if sm < SC:
@@ -99,11 +107,17 @@ def observables(Rp):
 print("\n  c_2       a_mu (N band)          Delta-alpha_had")
 allA, allD = [], []
 R0, c0_0, c1_0 = build(0.0)
-c2max = abs(c1_0)*f2/f1
-print("  (c_1 = %.4f at c_2 = 0, so the bound is |c_2| <= %.4f)" % (c1_0, c2max))
+c2flat = abs(c1_0)*f2/f1                       # flat pion coupling up the tower: the ceiling
+# c_1 measures the pion coupling at the first recurrence rather than assuming it:
+# g_1/g_0 = (c_1/c_0)/(f_1/f_0).  Extrapolating one step and padding by two gives the
+# adopted bound; the flat-tower figure is kept as the ceiling if that step fails.
+g1g0   = abs(c1_0/c0_0)/f1
+c2max  = 2.0*abs(c1_0)*(f2/f1)*g1g0
+print("  (c_1 = %.4f at c_2 = 0; g_1/g_0 = %.3f, so |c_2| <= %.4f, ceiling %.4f)"
+      % (c1_0, g1g0, c2max, c2flat))
 for c2 in (0.0, -0.5*c2max, -c2max, +0.5*c2max, +c2max):
     Rp, c0, c1 = build(c2)
-    o = observables(Rp)
+    o = observables(Rp, c1=c1)
     av = [o[n][0] for n in ew.N_ADMISSIBLE]; dv = [o[n][1] for n in ew.N_ADMISSIBLE]
     allA += av; allD += dv
     print("  %+.3f   %.0f to %.0f            %.5f to %.5f"

@@ -583,10 +583,12 @@ def delta_alpha_lep(M2):
 GAMMA_RHO1 = 400.0        # MeV, the rho(1450) width; sensitivity quoted above
 # Because the first recurrence now sits INSIDE F_pi, its pi pi strength is already in
 # R_pipi and the tower pole must carry only its remaining decays, or that strength is
-# counted twice.  The rho(1450) goes dominantly to four pions and the PDG records
-# rho(1450) -> pi pi only as 'seen', so the branching is a bounded systematic: over
-# 0.10 to 0.25 it moves a_mu by -2 to -7 x 1e-10, and 0.15 is carried.
-B_PIPI_RHO1 = 0.15
+# counted twice.  That branching is NOT a free input: c_1 is already fixed by charge
+# conservation and the rho-peak condition, and c_1 IS the recurrence's photon coupling
+# times its pion coupling, so the same Breit-Wigner identity that fixes c_0 returns
+# Gamma(V_1 -> pi pi) when it is read at the recurrence instead of at the rho.  See
+# b_pipi_recurrence below.  The PDG records rho(1450) -> pi pi only as 'seen', so there
+# is nothing to import and the 0.15 carried previously was an assertion.
 #
 # TRUNCATION.  F_pi is a tower sum and it is truncated at the first recurrence, which is
 # a choice rather than a derivation: c_n is the product of the state's coupling to the
@@ -595,8 +597,9 @@ B_PIPI_RHO1 = 0.15
 # what the quoted uncertainty rests on.  Taking the pion coupling to be the same for
 # every tower member is the most generous assumption, because the physical recurrences
 # decay dominantly to four pions and so couple to two pions LESS as n rises; it gives
-# c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.146 with the renormalised c_1 = -0.172 (residue conventions
-# carrying mass factors give 0.088 to 0.113; the envelope is quoted).
+# c_2/c_1 = f_2/f_1 with f_n proportional to sqrt(Gamma_ee,n m_n), hence |c_2| <= 0.112
+# on c_1 = -0.132 (the two other residue conventions, f_n ~ sqrt(Gee_n) and
+# sqrt(Gee_n/m_n), tighten it to 0.099 and 0.087; the loosest is carried).
 #
 # Across that range a_mu responds smoothly and quadratically, with the recovered
 # leptonic width holding at its target throughout, which is the signature of genuine
@@ -714,6 +717,51 @@ def c0_normalisation(Gee_target, mpi=None, G1=None):
                      / (alpha**2 * beta_pi(sR, mpi)**3 * Gamma_rho))
     return optimize.brentq(
         lambda c: abs(c*A0(sR) + (1.0 - c)*A1(sR)) - target, 0.5, 2.0, xtol=1e-14)
+
+def gamma_pipi_recurrence(c1=None, mpi=None, G1=None, m1=None, Gee1=None):
+    """Gamma(V_1 -> pi pi), read off the coefficient c_1 that is already fixed.
+
+    The Breit-Wigner identity behind c0_normalisation is
+
+        (beta^3/4) |c_n A_n(m_n^2)|^2 = 9 Gee_n Gamma_pipi,n / (alpha^2 Gamma_n^2),
+
+    the resonance's own contribution to R at its own mass.  At the rho it is imposed,
+    to fix c_0 from the derived Gee(rho).  At the recurrence there is nothing left to
+    impose, because c_1 = 1 - c_0 and Gee(V_1) both follow already, so the identity
+    RETURNS the two-pion width instead.
+
+    One difference from the rho decides the prescription.  There the whole form factor
+    is used, because |c_1 A_1| is 3.2 per cent of |c_0 A_0| at s = m_rho^2 and the
+    interference is a real correction to a real peak.  Here the rho's tail is 126 per
+    cent of |c_1 A_1| and sits 109 degrees away, and R(s) has no local maximum at the
+    recurrence at all: it falls monotonically from the rho through 1.9 GeV, the
+    recurrence entering as a shoulder because c_1 is negative.  A peak identity needs a
+    peak, so only the resonance's own term can be read, and using the sum would charge
+    the recurrence for strength that belongs to the rho.
+
+    Note that Gamma_1 cancels between |A_1(m_1^2)| ~ m_1/Gamma_1 and the Gamma_1^2 on
+    the right, so the PARTIAL width barely moves with the recurrence width and only the
+    branching inherits it.
+    """
+    mpi = m_pi if mpi is None else mpi
+    G1  = GAMMA_RHO1 if G1 is None else G1
+    c1  = (1.0 - c0_normalisation(Gee_rho, mpi, G1)) if c1 is None else c1
+    if m1 is None or Gee1 is None:
+        masses, ratios = tower_ratios()
+        m1   = masses[1] if m1 is None else m1
+        Gee1 = Gee_rho*ratios[1] if Gee1 is None else Gee1
+    A1r = gs_amplitude(m1, G1, mpi)
+    A1  = A1r(m1*m1)/A1r(0.0)
+    return (0.25*beta_pi(m1**2, mpi)**3 * abs(c1*A1)**2
+            * alpha**2 * G1**2 / (9.0*Gee1))
+
+def b_pipi_recurrence(**kw):
+    """The same width as a branching fraction of the recurrence's total."""
+    G1 = kw.get('G1') or GAMMA_RHO1
+    return gamma_pipi_recurrence(**kw)/G1
+
+GAMMA_PIPI_RHO1 = gamma_pipi_recurrence()      # MeV
+B_PIPI_RHO1     = GAMMA_PIPI_RHO1/GAMMA_RHO1   # derived, not imported
 
 def gee_rho_pole():
     """Diagnostics on the two-pion normalisation: c_0 and the bare channel width.
