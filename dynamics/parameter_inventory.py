@@ -72,20 +72,25 @@ INVENTORY = [
      "TARGET. omega-phi mixing away from ideal. Needs the off-diagonal element of the"
      " isoscalar mass matrix, which the framework does not supply. Check it already"
      " passes: the nonet angle lands at 38.4 degrees against the standard 39."),
-    ("alpha_s(IR)", "0.50", "stated",
-     "TARGET. Light-sector coupling in the Cornell solve. Affects the tower, which"
-     " carries about 7% of a_mu, so the corpus tolerates it; it is still a number the"
-     " lattice should produce."),
-    ("m_q", "N_c^2 m_0 / 2 = 315 MeV", "stated",
-     "TARGET, partially. The N_c^2 counting is structural, the factor 1/2 is not"
-     " derived in the corpus. It now carries more weight than it did, since L* depends"
-     " on it directly."),
-    ("c_2", "|c_2| <= 0.112", "stated",
-     "TARGET. Second recurrence coupling to pions. Bounded, not derived; the bound is"
-     " what makes the truncation systematic one-sided."),
-    ("B_pipi(rho')", "0.15", "stated",
-     "TARGET. Two-pion branching of the first recurrence, asserted from the observed"
-     " dominance of 4 pi."),
+    ("alpha_s(IR)", "0.50", "input",
+     "RECLASSIFIED, not a target by the obvious route. The Cornell Coulomb term is"
+     " one-gluon exchange, so the closed procedure is to solve, read the momentum scale"
+     " inside the meson, re-evaluate the framework's own running there and iterate. It"
+     " converges to 0.93 at <1/r> = 416 MeV, near the Landau pole of the same running,"
+     " so running is the wrong tool at that scale. The corpus reaches this already and"
+     " across all three sectors. What the Cornell solve needs is the FROZEN infrared"
+     " coupling, a different object, and 0.50 is imported from that literature. Bounded"
+     " rather than derived: alpha_s = 0.30 to 0.70 moves |c_2| only 0.114 to 0.111."),
+    ("m_q", "N_c^2 m_0 / 2 = 315 MeV", "derived",
+     "CLOSED. The factor of one half was never free. The K_{9,9} cell-pair Hamiltonian"
+     " places its sixteen non-bonding states at eps_0 = N_c^2 m_0 = 630 MeV, and a quark"
+     " occupies one node of a two-node pair, so it carries half. Fully mechanised."),
+    ("c_2 and B_pipi(rho')", "<= 0.112 and 0.15", "stated",
+     "ONE TARGET, not two. Both need the PION coupling of the tower. The framework"
+     " derives the tower's PHOTON couplings, through the Cornell wave functions at the"
+     " origin, which is exactly why c_2 can be bounded but not predicted. Nothing in the"
+     " corpus computes a recurrence's coupling to two pions, and that single missing"
+     " object is what both entries are waiting on."),
 
     # ---- imported measurements ------------------------------------------
     ("m_omega, m_phi", "782.66, 1019.46 MeV", "input",

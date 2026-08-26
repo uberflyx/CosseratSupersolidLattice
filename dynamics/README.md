@@ -205,10 +205,22 @@ sector in a single audit, including the Regge slope, the rho' prediction and the
 offset.  A comparison value belongs to the experiment and needs verifying, not
 explaining.
 
-Of 35 entries: 12 are already mechanised, 5 are honest imports, 12 are schemes,
-composites or comparison values that must not be mechanised, and 6 are genuine targets.
-Those six are k, delta, alpha_s(IR), the factor of one half in m_q = N_c^2 m_0/2, c_2
-and B_pipi(rho').
+Of 34 entries: 13 are already mechanised, 6 are honest imports, 12 are schemes,
+composites or comparison values that must not be mechanised, and 3 are genuine targets.
+
+Working the original six targets reduced them to three, and none of the four reductions
+was a derivation.  The factor of one half in m_q = N_c^2 m_0/2 was never free: the
+K_{9,9} cell-pair Hamiltonian puts the non-bonding states at N_c^2 m_0 = 630 MeV and a
+quark occupies one node of a two-node pair.  alpha_s(IR) is not a target by the obvious
+route, since the closed self-consistent procedure converges to 0.93 at the meson's own
+momentum scale, near the Landau pole of the same running, so what the Cornell solve needs
+is the frozen infrared coupling and that is a different object; it is bounded instead,
+moving |c_2| only from 0.114 to 0.111 across a factor of two.  And c_2 and B_pipi(rho')
+are one target rather than two, both waiting on the tower's PION coupling, where the
+framework derives only its photon coupling.
+
+The three that remain are k, the omega-phi mixing angle delta, and the tower's coupling
+to pions.
 
 ```
 python3 parameter_inventory.py
