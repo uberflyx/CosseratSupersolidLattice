@@ -28,12 +28,23 @@ every candidate regime with the framework's own scales.  Four regimes:
      causal bound.  Underproduces catastrophically by the time the chirality
      window closes at T_geom.
 
-  D. Coarsening arrested by Peierls pinning.  A stacking-chirality wall is a
-     crystallographic object and sees the lattice corrugation.  Curvature
-     pressure falls as sigma/L, so growth self-arrests at L_pin where the
-     pressure equals the pinning stress.  The arrest length is a pure lattice
-     number, and the question becomes what wall width the required 235 ell
-     implies through the Peierls-Nabarro exponential.
+  D. Coarsening arrested by pinning, with thermal activation included.  A
+     stacking-chirality wall is a crystallographic object and sees the lattice
+     corrugation, so curvature-driven growth can self-arrest.  But a Peierls
+     barrier only pins if it survives kT, and at T_c a kink-pair barrier is
+     five orders below kT, so no pinning strength holds a wall at small L.
+     The two requirements are not independent, and eliminating the pinning
+     strength gamma_P between them leaves a length with no free parameter:
+
+         arrest    sigma/L <= gamma_P/ell        (curvature vs pinning)
+         survival  gamma_P L^2 >= kT             (barrier vs thermal hop)
+         ------------------------------------------------------------
+         L >= L_star = kT/(ell sigma) = ell (T/T_R),  kT_R = sigma ell^2
+
+     Below L_star any pinning strong enough to arrest is weak enough to be
+     thermally hopped, so the network coarsens freely; at L_star it locks.
+     L_star is the ratio of the temperature to the wall roughening
+     temperature, in lattice units.
 
 The point of the exercise is that A, B and C fail by four to sixty orders in
 three different directions, which forces D or something like it: the domain
@@ -149,3 +160,27 @@ if __name__ == "__main__":
           " spare,\n     so the ordering gamma_P: curvature < gamma_P < bias"
           " is the whole\n     requirement, and it spans many orders of"
           " admissible gamma_P.")
+
+
+def thermal_arrest():
+    """Regime D done properly: eliminate the pinning strength, keep kT."""
+    sigma = 0.085                     # MeV/fm^2, order-disorder, measured
+    L_star = T_c / (ell * sigma)      # fm
+    T_R = sigma * ell**2              # MeV, wall roughening temperature
+    print("\nD (corrected). Thermal-activation floor on arrested coarsening\n")
+    print(f"   kT_R = sigma ell^2 = {T_R:.3f} MeV,  T_c/T_R = {T_c/T_R:.1f}")
+    print(f"   L_star = kT_c/(ell sigma) = {L_star:.1f} fm "
+          f"= {L_star/ell:.1f} ell")
+    print(f"   required                   = {xi_req:.1f} fm "
+          f"= {xi_req/ell:.1f} ell")
+    print(f"   agreement {(L_star/xi_req - 1)*100:+.1f} per cent, "
+          "with no parameter adjusted.")
+    nB = delta / (L_star**3 * s_ent)
+    print(f"\n   n_B/s predicted = {nB:.2e}   observed = {nB_s_obs:.2e}"
+          f"   factor {nB/nB_s_obs:.2f}")
+    print("   Scales as sigma^3, and sigma carries 15 per cent, so the")
+    print("   prediction carries a factor 1.5 either way.")
+
+
+if __name__ == "__main__":
+    thermal_arrest()
