@@ -185,7 +185,7 @@ def mu_prime(khat, r, ds=1e-3, relaxed=True):
     return (mp - mm) / (Pp - Pm)
 
 
-if __name__ == "__main__":
+def validation_report():
     LAM = 1.0 / (2.0 * VOL0)                 # Born prefactor V'' l^2 / (2 Omega)
     r_star = 1.0 / (3.0 * np.pi - 5.0)
     k100 = np.array([1.0, 0.0, 0.0])
@@ -222,3 +222,68 @@ if __name__ == "__main__":
         split = np.sqrt(w[1] / w[0]) - 1.0
         print(f"  e = {3*(s-1):+6.3f}  [110]: vT1^2 = {w[0]:.6f}  "
               f"vT2^2 = {w[1]:.6f}   dn/n = {split:.3e}")
+
+# ---------------------------------------------------------------------------
+# Recrystallised dilation: the whole four-dimensional lattice regrows at the
+# new spacing.  Every bond scales alike, so the direction cosines never move,
+# the shell's isotropy identity holds at every scale, and no bond carries a
+# force (V'(R_0) = 0), which removes the tension term.
+# ---------------------------------------------------------------------------
+def blocks_recryst(kvec, s, r):
+    HUU = np.zeros((3, 3), complex)
+    HUW = np.zeros((3, 3), complex)
+    HWW = np.zeros((3, 3), complex)
+    for b in range(24):
+        Rs, c4 = SP[b] * s, CP[b] * s        # compact leg scales too
+        L = np.sqrt(Rs @ Rs + c4 * c4)
+        kn, kt = V2f(L), r * V2f(L)          # curvature at the new spacing
+        m = Rs / L
+        ph = np.exp(1j * (kvec @ Rs))
+        a, s2 = ph - 1.0, 1.0 + ph
+        X = cross_mat(Rs / 2.0)
+        Pp = np.eye(3) - np.outer(m, m)
+        HUU += kn * np.outer(m, m) * (a.conjugate() * a)
+        HUU += kt * Pp * (a.conjugate() * a)
+        HUW += kt * (a.conjugate() * s2) * (Pp @ X)
+        HWW += kt * (s2.conjugate() * s2) * (X.T @ Pp @ X)
+    return 0.5 * HUU, 0.5 * HUW, 0.5 * HWW
+
+
+def relaxed_recryst(khat, s, r, kmag=1e-4):
+    HUU, HUW, HWW = blocks_recryst(khat * kmag, s, r)
+    if r == 0.0:
+        Heff = HUU
+    else:
+        Heff = HUU - HUW @ np.linalg.solve(HWW, HUW.conjugate().T)
+    return np.sort(np.linalg.eigvalsh(Heff).real / (kmag**2 * VOL0 * s**3))
+
+
+def recryst_report():
+    """The softening exponent, the isotropy, and mu' under recrystallisation."""
+    xi = -3.0 * A_M
+    r_star = 1.0 / (3.0 * np.pi - 5.0)
+    k100 = np.array([1.0, 0.0, 0.0])
+    k110 = np.array([1.0, 1.0, 0.0]) / np.sqrt(2.0)
+    k111 = np.array([1.0, 1.0, 1.0]) / np.sqrt(3.0)
+    h = 1e-3
+    print("\nRecrystallised dilation (the whole 4D lattice regrows):\n")
+    print("     r     dln(mu_bar)/dln(s)   xi - 1    isotropy spread at s = 1.02")
+    for r in (0.0, r_star):
+        m0 = relaxed_recryst(k110, 1.0, r)[0]
+        slope = (relaxed_recryst(k110, 1.0 + h, r)[0]
+                 - relaxed_recryst(k110, 1.0 - h, r)[0]) / (2 * h) / m0
+        iso = [relaxed_recryst(k, 1.02, r)[0] for k in (k100, k110, k111)]
+        print(f"  {r:6.4f}        {slope:+9.5f}       {xi - 1:+5.1f}"
+              f"          {max(iso) / min(iso) - 1:.2e}")
+    print("\n  mu' = (1 - xi)/3 * mu_bar/K, with mu_bar/K = 3(1+2r)/(5+r):\n")
+    for nm, r in (("Cauchy  r = 0     ", 0.0),
+                  ("rolling r = 0.2264", r_star)):
+        mk = 3.0 * (1.0 + 2.0 * r) / (5.0 + r)
+        print(f"    {nm}  mu_bar/K = {mk:.4f}   mu' = {(1 - xi) / 3 * mk:.4f}")
+    print("\n  light deflection requires mu' = 2.")
+
+
+
+if __name__ == "__main__":
+    validation_report()
+    recryst_report()
