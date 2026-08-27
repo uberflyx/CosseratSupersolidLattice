@@ -4,24 +4,42 @@ gw_spectrum_crystallisation.py — GW spectrum from the vacuum phase transition
 =============================================================================
 M. A. Cox, University of the Witwatersrand (2026)
 
-The vacuum crystallisation (fluid → FCC Cosserat supersolid) is a first-order
-phase transition whose four thermodynamic parameters are all determined by the
-lattice mechanics:
+CAUTION, read before quoting any number below.  This script is named for the
+crystallisation transition but is parameterised for the *deconfinement* one,
+and the two are different events at different temperatures:
 
-    α   = 0.94   transition strength (bag model, g_QGP - g_had)
-    β/H = 7.5    inverse duration (CNT barrier / T_c)
-    v_w = c/√3   wall velocity (fluid sound speed)
-    T*  = 156 MeV nucleation temperature (D4 Polyakov loop)
+  crystallisation   fluid -> FCC Cosserat supersolid, near Lambda_QCD = 220 MeV.
+                    First order by nature, since crystallisation always is, and
+                    its latent heat is the lattice binding energy.  NOT priced
+                    anywhere yet.
+  deconfinement     the Z_3 stacking order melts, T_c = 156.1 MeV, the D_4
+                    Polyakov loop.  This is what the parameters below describe.
 
-The dominant GW source is the sound-wave mechanism (Hindmarsh et al. 2014).
-Bubble collisions are negligible (κ_wall ≈ 2e-19; the crystal is incompressible
-and absorbs the wall kinetic energy). Turbulence is subdominant.
+For the deconfinement transition the strength is bracketed, not known, and the
+two ends of the bracket differ by three orders of magnitude:
 
-The PEAK FREQUENCY (~354 nHz) is robust — set by nucleation geometry alone.
-The PEAK AMPLITUDE (h²Ω ≤ 2.6e-10) is an UPPER BOUND — the standard sound-wave
-efficiency κ_v was derived for a classical fluid pushed by expanding bubbles,
-but the lattice crystallises by material addition at the front, which may
-generate less anisotropic stress.
+  alpha_PT = 0.94    bag model, handing the transition the entire QGP-hadron
+                     energy budget.  An upper bound, and a loose one: full QCD
+                     at physical quark masses is a crossover, so most of that
+                     budget is never released discontinuously.
+  alpha_PT = 1.3e-3  the stacking sector's own latent heat, measured from the
+                     three-state FCC Potts model at coexistence
+                     (potts_fcc_transition_observables.py): L_v = 1.4 MeV/fm^3
+                     against a radiation bath of 1.1 GeV/fm^3 at T_c.
+
+The lattice is simply too sparse to compete with a relativistic plasma: one
+stacking variable per (2.8 fm)^3 cell against a bath whose thermal wavelength
+is half that.  At the measured end the transition gives beta/H* = 8e5, an
+undercooling of 4e-4, a peak near 0.04 Hz and h^2 Omega ~ 3e-30, which is
+unobservable by any instrument built or proposed.
+
+The honest reading is therefore a NULL for the nanohertz band: whatever the
+pulsar timing arrays are seeing, the framework does not attribute it to this
+transition.  Any nanohertz signal would have to come from crystallisation,
+which is a genuinely first-order event with a far larger latent heat, and
+which nothing here prices.
+
+The peak frequency for a given (alpha, beta/H) is robust; the amplitude is not.
 
 Usage:
     python gw_spectrum_crystallisation.py
@@ -50,10 +68,22 @@ g_had   =  3.0    # hadronic (pions only)
 g_nonQCD = 14.2   # non-QCD (photons, leptons, neutrinos)
 g_star  = g_QGP + g_nonQCD
 
-# Transition strength from the bag model:
-# L = (π²/90)(g_QGP - g_had)T_c⁴ = latent heat
-# α = L / ρ_rad = 4(g_QGP - g_had) / (3 g_star)
-alpha_PT = 4 * (g_QGP - g_had) / (3 * g_star)
+# Transition strength, upper bound: the bag model, which assumes the whole
+# QGP-hadron energy difference is released discontinuously.
+# L = (π²/90)(g_QGP - g_had)T_c⁴ ;  α = L/ρ_rad = 4(g_QGP - g_had)/(3 g_star)
+alpha_PT_bag = 4 * (g_QGP - g_had) / (3 * g_star)      # ≈ 0.94
+
+# Transition strength, measured: the stacking sector's own latent heat from
+# the three-state FCC Potts model at coexistence, 0.533 J per site with
+# J = K_c k_B T_c, converted at the FCC site density sqrt(2)/ell^3.
+# See potts_fcc_transition_observables.py.
+L_v_measured = 1.358                                   # MeV/fm^3
+rho_rad = (np.pi**2 / 30) * g_star * 156.1**4 / hbar_c**3
+alpha_PT_potts = L_v_measured / rho_rad                # ≈ 1.3e-3
+
+# Which one the script runs on.  Default to the measured value; set to
+# alpha_PT_bag to reproduce the earlier upper-bound spectrum.
+alpha_PT = alpha_PT_potts
 
 # Nucleation temperature and barrier
 T_c = 156.1  # MeV (D4 Polyakov loop)
@@ -132,10 +162,12 @@ print(f"  {'─'*6}  {'─'*11}  {'─'*11}  {'─'*20}")
 for a, note in [(0.03, "shear only"),
                 (0.10, "intermediate"),
                 (0.30, "strong"),
-                (alpha_PT, "bag model (derived)")]:
+                (alpha_PT, "Potts-measured"),
+                (alpha_PT_bag, "bag model")]:
     bH = DeltaG / T_c
     _, fp, hp = gw_spectrum(1, T_c, a, g_star, bH)
-    marker = "  ◄ UPPER BOUND" if a == alpha_PT else ""
+    marker = ("  ◄ MEASURED" if a == alpha_PT else
+              "  ◄ UPPER BOUND" if a == alpha_PT_bag else "")
     print(f"  {a:6.3f}  {fp:11.0f}  {hp:11.2e}  {note:>20}{marker}")
 
 
