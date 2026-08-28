@@ -10,10 +10,10 @@ and propagates theoretical uncertainties via Monte Carlo.
 
 No experimental neutrino data are used as input.  The sole measured
 quantity is the electron mass m_e.  The fine-structure constant alpha is
-derived from FCC Cosserat geometry (monograph Ch. 4).
+derived from the FCC Cosserat geometry.
 
 See monograph Secs. 4.7 (chirality derivation and error budget)
-and Ch. 13 (Z3 cyclic Hamiltonian, mixing angles) for full derivations.
+and the Z3 cyclic Hamiltonian for the full derivations.
 """
 
 import numpy as np
@@ -22,7 +22,7 @@ import numpy as np
 # INPUTS
 # ══════════════════════════════════════════════════════════════
 
-# Fine-structure constant (derived from FCC Cosserat geometry, monograph Ch. 4)
+# Fine-structure constant (derived from the FCC Cosserat geometry)
 alpha = 1.0 / 137.035999177
 
 # Electron mass (CODATA 2022) — the framework's sole dimensional input
@@ -43,7 +43,7 @@ N2      = 1.0 / np.pi                  # Cosserat coupling number (rolling conta
 
 
 # ══════════════════════════════════════════════════════════════
-# NEUTRINO-SECTOR PARAMETERS (all derived, monograph Sec. 4.7)
+# NEUTRINO-SECTOR PARAMETERS (all derived)
 # ══════════════════════════════════════════════════════════════
 
 # Lattice chirality: theta_ch = alpha^2 / (2*pi)
@@ -96,12 +96,22 @@ sum_nu       = m1 + m2 + m3
 Dm21_sq      = m2**2 - m1**2
 Dm31_sq      = m3**2 - m1**2
 
-# Experimental values for comparison
-Dm21_exp, Dm21_err = 7.50e-5, 0.12e-5     # JUNO 2025
-Dm31_exp, Dm31_err = 2.534e-3, 0.023e-3   # NuFit 6.0 (normal ordering)
+# Experimental values for comparison.
+# Single anchor: NuFIT 6.1 (v61 parameter table), IC24 with SK-atm, Normal
+# Ordering. 6.1 already folds in the JUNO first result, so the solar pair
+# comes from the global fit rather than from JUNO as well. Errors are
+# asymmetric; each pull takes the sigma on the side the prediction falls.
+Dm21_exp, Dm21_up, Dm21_dn = 7.537e-5, 0.094e-5, 0.10e-5
+Dm31_exp, Dm31_up, Dm31_dn = 2.511e-3, 0.021e-3, 0.020e-3
 
-pull_21 = (Dm21_sq - Dm21_exp) / Dm21_err
-pull_31 = (Dm31_sq - Dm31_exp) / Dm31_err
+
+def _pull(pred, central, up, dn):
+    return (pred - central) / (up if pred > central else dn)
+
+
+pull_21 = _pull(Dm21_sq, Dm21_exp, Dm21_up, Dm21_dn)
+pull_31 = _pull(Dm31_sq, Dm31_exp, Dm31_up, Dm31_dn)
+Dm21_err, Dm31_err = Dm21_dn, Dm31_up   # for the printed +/- summary only
 
 
 # ══════════════════════════════════════════════════════════════
@@ -114,7 +124,7 @@ pull_31 = (Dm31_sq - Dm31_exp) / Dm31_err
 # propagated ± on each observable.
 #
 # The uncertainties are estimates of uncalculated higher-order
-# corrections (monograph Sec. 4.7), not experimental errors.
+# corrections, not experimental errors.
 # ══════════════════════════════════════════════════════════════
 
 N_samples  = 200_000
@@ -187,19 +197,19 @@ print(f"  Dirac/Majorana:   Dirac (m_bb = 0)")
 print(f"\n{'=' * 70}")
 print(f"COMPARISON WITH EXPERIMENT")
 print(f"{'=' * 70}")
-print(f"  Dm^2_21:  pred {Dm21_sq:.4e},  JUNO {Dm21_exp:.4e} +/- {Dm21_err:.2e}")
+print(f"  Dm^2_21:  pred {Dm21_sq:.4e},  NuFIT 6.1 {Dm21_exp:.4e} (+{Dm21_up:.2e}/-{Dm21_dn:.2e})")
 print(f"            pull = {pull_21:+.2f} sigma")
-print(f"  Dm^2_31:  pred {Dm31_sq:.4e},  NuFit {Dm31_exp:.4e} +/- {Dm31_err:.2e}")
+print(f"  Dm^2_31:  pred {Dm31_sq:.4e},  NuFIT 6.1 {Dm31_exp:.4e} (+{Dm31_up:.2e}/-{Dm31_dn:.2e})")
 print(f"            pull = {pull_31:+.2f} sigma")
 print(f"  Combined chi^2 = {pull_21**2 + pull_31**2:.3f}  (2 dof)")
 
-print(f"\n--- Mixing angles (monograph Ch. 13-14) ---")
-print(f"  sin^2(theta_12) = 0.310   (pull +0.1 sigma vs JUNO)")
-print(f"  sin^2(theta_23) = 0.556   (pull -0.3 sigma vs NuFit 6.0)")
-print(f"  sin^2(theta_13) = 0.0222  (pull +0.0 sigma vs NuFit 6.0)")
-print(f"  delta_CP         = 183 deg (pull +0.3 sigma vs NuFit 6.0)")
+print(f"\n--- Mixing angles: not computed here ---")
+print(f"  The angles come from the exponentiated flavour-side generator, and")
+print(f"  pmns_construction.py builds and confronts them. This script covers")
+print(f"  the mass sector only, so quoting angle pulls here would duplicate a")
+print(f"  chain it does not run and risk drifting from it.")
 
-print(f"\n--- Error budget (monograph Sec. 4.7) ---")
+print(f"\n--- Error budget ---")
 print(f"  dm1/m1 = {dm1_rel*100:.1f}%  [O(alpha) corrections to theta_ch]")
 print(f"  ddelta/delta = {ddelta_rel*100:.2f}%  [NLO screening ambiguity]")
 print(f"  drho/rho = {drho_rel*100:.2f}%  [h/A derivation precision]")

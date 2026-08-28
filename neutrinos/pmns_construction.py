@@ -32,8 +32,23 @@ Exact linear-order statements (verified symbolically and numerically below):
 
 The script prints the exponentiated (all-orders) observables for both torsion
 orientations, the mass-squared splittings from the Z3 stacking ring, pulls
-against JUNO (arXiv 2511.14593) and NuFit 6.0 (JHEP 12 (2024) 216, IC19 w/o
-SK-atm, NO), and machine-precision checks of unitarity and isospectrality.
+against a single anchor, and machine-precision checks of unitarity and
+isospectrality.
+
+The anchor is NuFIT 6.1 (v61 parameter table, IC24 with SK-atm, Normal
+Ordering).  6.1 already folds in the JUNO first result, so the solar pair is
+taken from it rather than from JUNO separately; quoting JUNO alongside a
+global fit that has absorbed it would enter the same measurement twice.
+
+Two cautions the printout enforces rather than states:
+
+  1. Errors are asymmetric, so each pull uses the sigma on the side the
+     prediction falls.
+  2. delta_CP is an angle and its likelihood is far from Gaussian.  The 3-sigma
+     interval runs 125 -> 365 degrees about a best fit of 212, which is not
+     three times the quoted 1-sigma error of +26.  A Gaussianised pull is
+     therefore reported only for orientation, and the operative statement is
+     containment in the 3-sigma interval, evaluated modulo 360 degrees.
 
 Run:  python3 pmns_construction.py
 """
@@ -59,13 +74,36 @@ U_TBM = np.array([[np.sqrt(2 / 3), 1 / np.sqrt(3), 0],
                   [-1 / np.sqrt(6), 1 / np.sqrt(3), -1 / np.sqrt(2)]])
 assert np.max(np.abs(U_TBM @ U_TBM.T - np.eye(3))) < 1e-14, "TBM not orthogonal"
 
-# experimental anchors (2026)
-JUNO_S12, JUNO_S12_ERR = 0.3092, 0.0087            # arXiv 2511.14593
-JUNO_DM21, JUNO_DM21_ERR = 7.50e-5, 0.12e-5
-NUFIT_S23, NUFIT_S23_ERR = 0.561, 0.015            # +0.012 -0.015; use lower
-NUFIT_S13, NUFIT_S13_ERR = 0.02195, 0.00058        # +0.00054 -0.00058
-NUFIT_DCP, NUFIT_DCP_ERR = 177.0, 19.0
-NUFIT_DM31, NUFIT_DM31_ERR = 2.534e-3, 0.023e-3
+# ----------------------------------------------------------------------
+# experimental anchor: NuFIT 6.1, IC24 with SK-atm, Normal Ordering.
+# Each entry is (central, sigma_up, sigma_down); the 3-sigma ranges are the
+# fit's own and are not (central -/+ 3 sigma).
+# ----------------------------------------------------------------------
+NUFIT = {
+    "s12sq":  (0.3088,  0.0067,  0.0066),
+    "s23sq":  (0.470,   0.017,   0.014),
+    "s13sq":  (0.02248, 0.00055, 0.00059),
+    "dcp":    (212.0,   26.0,    36.0),
+    "dm21":   (7.537e-5, 0.094e-5, 0.10e-5),
+    "dm31":   (2.511e-3, 0.021e-3, 0.020e-3),
+}
+# 3-sigma intervals, NO, from the same table (with SK-atm column)
+NUFIT_3SIG = {
+    "s23sq": (0.435, 0.584),      # spans both octants: the octant is unresolved
+    "dcp":   (125.0, 365.0),      # wraps past 360; evaluate modulo 360
+}
+
+
+def pull(pred, key):
+    """Pull in units of the experimental sigma on the side the prediction falls."""
+    central, up, down = NUFIT[key]
+    return (pred - central) / (up if pred > central else down)
+
+
+def within_3sigma_angle(pred_deg, key):
+    """Containment test for an angle, checked at both pred and pred + 360."""
+    lo, hi = NUFIT_3SIG[key]
+    return any(lo <= x <= hi for x in (pred_deg, pred_deg + 360.0))
 
 
 def build_pmns(z13_signed):
@@ -116,8 +154,8 @@ def main():
     print("=" * 72)
     print("Z3 stacking-ring spectrum (zero parameters)")
     print(f"  m1={m1:.3f}  m2={m2:.3f}  m3={m3:.2f} meV   sum={m1+m2+m3:.1f} meV")
-    print(f"  Dm2_21={dm21:.4e} eV^2  pull {(dm21-JUNO_DM21)/JUNO_DM21_ERR:+.2f}s (JUNO)")
-    print(f"  Dm2_31={dm31:.4e} eV^2  pull {(dm31-NUFIT_DM31)/NUFIT_DM31_ERR:+.2f}s (NuFit 6.0)")
+    print(f"  Dm2_21={dm21:.4e} eV^2  pull {pull(dm21,'dm21'):+.2f}s")
+    print(f"  Dm2_31={dm31:.4e} eV^2  pull {pull(dm31,'dm31'):+.2f}s")
 
     print("=" * 72)
     print("PMNS from U = exp(iA) U_TBM  (flavour-side generator, closed form)")
@@ -135,17 +173,25 @@ def main():
         iso = np.max(np.abs(ev - [M_E, M_MU, M_TAU])
                      / np.array([M_E, M_MU, M_TAU]))
         s12sq, s23sq, s13sq, J, delta = observables(U)
-        print(f"  [{name}] s12^2={s12sq:.4f} ({(s12sq-JUNO_S12)/JUNO_S12_ERR:+.2f}s)"
-              f"  s23^2={s23sq:.4f} ({(s23sq-NUFIT_S23)/NUFIT_S23_ERR:+.2f}s)"
-              f"  s13^2={s13sq:.5f} ({(s13sq-NUFIT_S13)/NUFIT_S13_ERR:+.2f}s)")
+        inside = "in" if within_3sigma_angle(delta, "dcp") else "OUT of"
+        print(f"  [{name}] s12^2={s12sq:.4f} ({pull(s12sq,'s12sq'):+.2f}s)"
+              f"  s23^2={s23sq:.4f} ({pull(s23sq,'s23sq'):+.2f}s)"
+              f"  s13^2={s13sq:.5f} ({pull(s13sq,'s13sq'):+.2f}s)")
         print(f"      J={J:+.5f}  delta_CP={delta:.1f} deg"
-              f" ({(delta-NUFIT_DCP)/NUFIT_DCP_ERR:+.2f}s)"
+              f" ({pull(delta,'dcp'):+.2f}s nominal, {inside} the 3-sigma interval)"
               f"   unitarity={unit:.0e}  isospectrality={iso:.0e}")
     print("=" * 72)
     print("Structural statement: the mu-tau mirror forces the torsion real, so J")
     print("vanishes at first order and delta_CP falls at a CP-conserving point,")
     print("delta ~ 0 (+b torsion) or delta ~ 182 deg (-b). The stacking handedness")
-    print("selects -b; NuFit 6.0 independently excludes the +b branch.")
+    print("selects -b, and the data do not settle the choice: both branches lie")
+    print("inside the 3-sigma interval, because that interval runs 125 -> 365 deg")
+    print("and 2.1 deg is 362.1 deg. The nominal -5.8 sigma on the +b branch is an")
+    print("artefact of Gaussianising a wrapped, strongly non-Gaussian likelihood.")
+    print("Separating the branches needs DUNE or Hyper-K, not the present fits.")
+    print("The octant is likewise open: the 3-sigma range for sin^2 th23 is")
+    print(f"{NUFIT_3SIG['s23sq'][0]}-{NUFIT_3SIG['s23sq'][1]}, which spans maximal mixing, so the")
+    print("agreement of both NuFIT 6.1 variants on 0.470 is not a resolved octant.")
 
 
 if __name__ == "__main__":
