@@ -237,7 +237,6 @@ R2_NEUTRON_ESTIMATE = -(W_CORE**2) * C_TRANS * (1 - 2/BETA_TRANS**2)  # ~-0.28 f
 #
 # Both components underestimate the BMW values, but the NET is
 # closer because the errors partially cancel.
-_NU_POISSON = 1/3  # isotropic FCC Poisson ratio
 DM_STACKING = M0 * (math.exp(-2*math.sqrt(3)) - math.exp(-3*math.sqrt(3)))  # 1.80 MeV
 DM_COULOMB  = ALPHA * M0 * math.log(math.pi)                                 # 0.58 MeV
 DM_PN_PRED  = DM_STACKING - DM_COULOMB                                       # 1.22 MeV

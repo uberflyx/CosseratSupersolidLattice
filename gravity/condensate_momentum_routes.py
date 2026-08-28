@@ -66,10 +66,14 @@ m0     = m_e / alpha               # node mass, kg
 rho    = m0 / ell**3               # node density = total mass density, kg/m^3
 rho_s  = f_s * rho                 # superfluid density, kg/m^3
 mubar  = rho * c**2                # true shear modulus = crystal energy density, Pa
-K_cr   = (5.0 / 3.0) * mubar       # crystal bulk modulus, Pa
+N2     = 1.0 / np.pi               # Cosserat coupling number
+# The contacts violate the Cauchy relation by C_12 - C_44 = -kappa_c/2, so the
+# D_4 Born sums give K_cr/mubar = (5-8N^2)/[3(1-N^2)] = 1.200, not 5/3, and
+# C_11/C_44 = (3-4N^2)/(1-N^2) = 2.533, not 3.
+K_cr   = (5.0 - 8.0*N2)/(3.0*(1.0 - N2)) * mubar   # crystal bulk modulus, Pa
 K_sf   = c**4 / (G * ell**2)       # condensate bulk modulus, Pa
 gamma_G = 7.0 / 6.0                # lattice Grueneisen parameter
-v2     = np.sqrt(3.0) * c          # second sound speed (sec-second-sound-speed)
+v2     = np.sqrt((3.0 - 4.0*N2)/(1.0 - N2)) * c    # second sound (sec-second-sound-speed)
 
 print("=" * 72)
 print("PUSHING ON THE VACUUM: three routes, priced")

@@ -13,7 +13,10 @@ any v, so the free-streaming kernels generalise by k*tau -> v*k*tau alone:
 The kernel's mean vanishes exactly ((2/5)*1 - (3/5)*(2/3) = 0), which is why
 the coefficient collapses at large s: the streamer's drive averages out over
 its own crossing time. Anchor: f(c) = 0.602 vs literature 0.600.
-Headline: f(3sqrt2 c) = 0.062, suppression 9.7, dl = 0.03 at dNeff = 0.029.
+Headline: f(1.592 c) = 0.325, suppression 1.85, dl = 2.3 at dNeff = 0.546.
+The speed is v_2 = sqrt(C_11/C_44) c with the D_4 Born sums carrying the
+tangential contact stiffness, C_11/C_44 = (3-4N^2)/(1-N^2) at N^2 = 1/pi.
+Both crystal modes ride one inertia, so no superfluid fraction enters.
 """
 import numpy as np
 from scipy.special import spherical_jn
@@ -51,14 +54,18 @@ def f_of_v(v):
     return 2.0*B_at(s, 6400.0) - B_at(s, 3200.0)
 
 
+N2 = 1.0/np.pi                        # Cosserat coupling number
+V2 = ((3.0 - 4.0*N2)/(1.0 - N2))**0.5  # second sound speed / c = 1.5916
+
 if __name__ == "__main__":
     f_nu = f_of_v(1.0)
-    print(f"anchor  f(c)     = {f_nu:.4f}   (literature 0.600)")
-    f2 = f_of_v(18.0**0.5)
-    print(f"result  f(3sqrt2 c)= {f2:.4f}   suppression {f_nu/f2:.2f}")
-    dneff = (4/7)*(11/4)**(4/3)*(1/18)**1.5   # v2 = 3 sqrt2 c (C11 = 3 mu, f_n = 1/6)
+    print(f"anchor  f(c)      = {f_nu:.4f}   (literature 0.600)")
+    f2 = f_of_v(V2)
+    print(f"result  f({V2:.3f} c) = {f2:.4f}   suppression {f_nu/f2:.2f}")
+    dneff = (4/7)*(11/4)**(4/3)/V2**3
     eps2 = (dneff/A_NU)/(1.0 + (3.046 + dneff)/A_NU)
     th2 = f2*eps2
-    print(f"eps_2 = {eps2:.5f}  theta_2 = {th2:.3e} rad  dl = {th2/np.pi*330:.3f}")
+    print(f"dNeff = {dneff:.4f}  eps_2 = {eps2:.5f}  "
+          f"theta_2 = {th2:.3e} rad  dl = {th2/np.pi*330:.2f}")
     print(f"phase-active fraction = {f2/f_nu:.3f}  ->  (dNeff, Nfluid) = "
-          f"({f2/f_nu*dneff:.4f}, {(1-f2/f_nu)*dneff:.4f})")
+          f"({f2/f_nu*dneff:.2f}, {(1-f2/f_nu)*dneff:.2f})")
