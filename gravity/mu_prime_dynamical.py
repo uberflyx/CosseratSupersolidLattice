@@ -164,8 +164,10 @@ if __name__ == "__main__":
             mp = mu_prime(sp, cp, r, VOL0)
             print(f"  {nm:8s} {r:6.4f}   {mt:10.5f}      {mp:8.4f}")
 
-    print("\n  The gravitational sector quotes mu' = (3 - xi)/5 = "
-          f"{(3 - xi) / 5:.4f}.")
+    print("\n  The gravitational sector no longer quotes (3 - xi)/5: that 5 is\n"
+          "  the Cauchy value of 3K/mu, and the contact moves it.  The current\n"
+          "  reading is mu' = (1 - xi)/3 * mu_bar/K_cr = 2.2227 at the rolling\n"
+          "  point, against the 2 that light deflection requires.")
 
     print("\nDirection dependence of mu' on the D_4 shell "
           "(isotropy carries through):")
