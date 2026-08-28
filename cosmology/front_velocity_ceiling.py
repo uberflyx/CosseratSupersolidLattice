@@ -27,7 +27,7 @@ cosmology chapter ("The growing crystal: expansion without stretching"):
 
 3. Bath temperature. Depositing the latent heat (one node mass m0 per node)
    into the gapless bath (two transverse branches at c, plus second sound at
-   3.65 c) gives a newborn temperature of ~131 MeV, below the 156-220 MeV
+   1.592 c) gives a newborn temperature of ~123 MeV, below the 156-220 MeV
    melting band: the front is never heat-choked, and second sound clears the
    latent heat backward at 3.65 c, ~6x faster than the front lays it down.
 
@@ -38,7 +38,7 @@ from scipy.integrate import quad
 from scipy.optimize import brentq
 
 m0 = 70.025            # MeV, node rest energy m0 = m_e / alpha
-v2 = 3.65              # second sound speed [c]
+v2 = 1.591558          # second sound speed [c], sqrt((3-4N2)/(1-N2)) at N2=1/pi
 CS = 1.0 / np.sqrt(3)  # radiation-gas sound speed [c]
 
 # ---------------------------------------------------------------------------
