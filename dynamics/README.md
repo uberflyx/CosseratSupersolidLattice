@@ -22,7 +22,7 @@ Computes the complete one-loop electroweak programme from lattice first principl
 
 - **Muon anomaly** — a_mu^HVP,LO = 700 (+4/−3) × 10⁻¹⁰, one per cent above the data-driven 692.78 ± 2.42 and two per cent below WP25's 713 ± 6. The π π channel uses a two-resonance Gounaris-Sakurai form factor with F_π(0) = 1 imposed exactly; a rescaled Breit-Wigner violates that constraint by 48%, inflating the low-s region the muon kernel weights most. c_0 is fixed by the **pole residue**, not by the channel's spectral area: Γ_ee sets the peak of the form factor, and reading the narrow-resonance relation at s = m_ρ² gives c_0 |A_0(m_ρ²)| = sqrt(36 Γ_ee / (α² β³ Γ_ρ)), hence c_0 = 1.132. The area rule returns c_0 = 1.199 on the same inputs, high by eight per cent in c_0 and sixteen in the channel; applied to *measured* inputs the residue rule returns 1.1101 against the 1.1124 the dispersive two-pion determination independently demands, an agreement to a fifth of a per cent, which is what settles the choice.
 
-  The dominant systematic is the F_π truncation, and its sign follows from that choice. c_2 is the product of a photon coupling the Cornell solve gives and a pion coupling the framework does not, so it is bounded rather than predicted: |c_2| ≤ 0.112 on the loosest of three residue conventions (the other two give 0.099 and 0.087). Because the peak is pinned, c_0 is re-solved whenever c_2 moves, so a third resonance *displaces the second* instead of rescaling the channel, and **both signs raise a_mu**, by at most 2.3 units. The two-resonance value is therefore a floor rather than a maximum, and the error is one-sided upward, toward WP25 rather than away from it. `formfactor_truncation_independent.py` checks this on a different line shape and returns the same sign and order; under the area rule the same sweep moves a_mu *downward* by an order of magnitude more, which is one more reason that rule is the wrong one.
+  The dominant systematic is the F_π truncation, and its sign follows from that choice. c_2 is the product of a photon coupling the Cornell solve gives and a pion coupling the framework does not, so it is bounded rather than predicted: |c_2| ≤ 0.112 on the loosest of three residue conventions (the other two give 0.099 and 0.087). Because the peak is pinned, c_0 is re-solved whenever c_2 moves, so a third resonance *displaces the second* instead of rescaling the channel, and **both signs raise a_mu**, by at most 2.3 units. The two-resonance value is therefore a floor rather than a maximum, and the error is one-sided upward, toward WP25 rather than away from it. A check on a different line shape returns the same sign and order; under the area rule the same sweep moves a_mu *downward* by an order of magnitude more, which is one more reason that rule is the wrong one.
 
   Γ_ee(ρ) carries a derived finite-pion-mass correction: both Weinberg sum rules are chiral-limit statements, and giving the pion its mass moves its pole off the origin, adding f_π²m_π² to the first moment and multiplying the coupling by (1 − m_π²/m_a1²). The factor is small, −1.05%, because the pole enters the *first* moment and is therefore weighed against m_a1 rather than m_ρ. The result, 7.288 keV, stands +3.5% above the pre-2023 average of 7.04 ± 0.06 keV. Whether that is a defect depends on which two-pion measurements survive: the construction lands within 0.1σ of CMD-3 and well above BaBar and KLOE, so it takes the high side of a disagreement that itself decides whether the muon anomaly survives. What is not a bet is the shape, and it is the sharper result: the predicted ρ is too narrow by about five per cent, read off a ratio of window integrals that cancels the normalisation entirely.
 
@@ -65,21 +65,6 @@ about the pion pole, where the two-pion threshold takes the charged mass.
 
 ```
 python3 hvp_chapter_audit.py
-```
-
-### `formfactor_truncation_independent.py`
-
-A second, deliberately unshared calculation of the same truncation systematic that
-`formfactor_truncation.py` reports, built on a plain relativistic Breit-Wigner rather
-than the Gounaris-Sakurai line shape the production calculation uses.  The sensitivity
-being tested is a property of how the normalisation constraint propagates, so it has to
-survive a change of line shape to mean anything.  Computes the systematic under both
-candidate rules, area and peak, and asserts F_pi(0) = 1, the pole condition against the
-leptonic width, and both analytic limits of the muon kernel before quoting a
-sensitivity.  Slow: the area-rule solve nests a quadrature inside a root find.
-
-```
-python3 formfactor_truncation_independent.py
 ```
 
 ### References
@@ -142,21 +127,6 @@ corpus's rho' prediction from -0.42% to -0.09% and its half-splitting from -1.8%
 python3 chiral_ladder.py
 ```
 
-### `pull_scorecard.py`
-
-Recomputes every paper-relevant framework prediction and scores it, reporting the
-residual, the pull in experimental sigma alone, and the pull against experiment and
-the framework's own stated resolution combined.  The three columns are kept separate
-because ranking on experimental sigma alone gets the answers backwards: m_pi at 0.024%
-scores 3.2 sigma against a razor-sharp PDG average while Gamma_rho scores 0.4 sigma at
-ten times the residual.  Currently 18 of 25 entries sit below one sigma.  The script
-also records that the two a_mu benchmarks disagree with each other by 3.1 sigma, so no
-prediction can sit within one sigma of both and the pair bounds what is achievable.
-
-```
-python3 pull_scorecard.py
-```
-
 ### `wsr_tower_saturation.py`
 
 Asks whether saturating the Weinberg sum rules with the framework's own derived tower
@@ -186,64 +156,6 @@ needs m_a1^2/m_rho^2 = 3.26, or m_a1 = 1399 MeV, which no route in the corpus pr
 ```
 python3 wsr_tower_saturation.py
 ```
-
-### `parameter_inventory.py`
-
-Every constant entering the light vector sector, classified by what kind of thing it is,
-so that mechanising the framework's numbers does not turn into mechanising its
-bookkeeping.  If the lattice is ontological then every genuine degree of freedom means
-something, but not every number in a calculation is a degree of freedom, and three kinds
-are traps.
-
-A scheme convention is a choice of bookkeeping rather than a fact: the Breit-Wigner and
-pole masses of the same rho differ by 12 MeV, three residue conventions for c_0 span
-0.087 to 0.112, and Gamma_ee moves 3% according to whether vacuum polarisation is
-removed.  A mechanism attached to one of those is physics invented for a convention, and
-it dies the moment a reader uses the other one.  A composite is a number already fixed by
-others in the table, so mechanising it separately double-counts; five were found in this
-sector in a single audit, including the Regge slope, the rho' prediction and the a2
-offset.  A comparison value belongs to the experiment and needs verifying, not
-explaining.
-
-Of 34 entries: 13 are already mechanised, 6 are honest imports, 12 are schemes,
-composites or comparison values that must not be mechanised, and 3 are genuine targets.
-
-Working the original six targets reduced them to three, and none of the four reductions
-was a derivation.  The factor of one half in m_q = N_c^2 m_0/2 was never free: the
-K_{9,9} cell-pair Hamiltonian puts the non-bonding states at N_c^2 m_0 = 630 MeV and a
-quark occupies one node of a two-node pair.  alpha_s(IR) is not a target by the obvious
-route, since the closed self-consistent procedure converges to 0.93 at the meson's own
-momentum scale, near the Landau pole of the same running, so what the Cornell solve needs
-is the frozen infrared coupling and that is a different object; it is bounded instead,
-moving |c_2| only from 0.114 to 0.111 across a factor of two.  And c_2 and B_pipi(rho')
-are one target rather than two, both waiting on the tower's PION coupling, where the
-framework derives only its photon coupling.
-
-The three that remain are k, the omega-phi mixing angle delta, and the tower's coupling
-to pions.
-
-```
-python3 parameter_inventory.py
-```
-
-### `footnote_gate.py`
-
-Standing gate against a defect nothing else catches: a monograph footnote pointing at a
-script that was never pushed.  Rendering does not see it, the cross-reference validator
-does not see it, and the literal audit does not see it, because none of them looks
-outside its own repository.  Three such references accumulated before anyone checked.
-Run it against a checkout of the monograph:
-
-```
-python3 footnote_gate.py /path/to/CosseratSupersolid
-```
-
-It reports both directions.  Dangling references (cited in the corpus, absent here) fail
-the run, since a reader following one finds nothing.  Orphans (present here, cited
-nowhere) are reported without failing, since a script may legitimately precede the text
-that will cite it, but each one is either a lost footnote or a script with no reader.
-It checks git-tracked files rather than the working tree, so an uncommitted script does
-not pass.
 
 ### `vector_normalisation.py`
 

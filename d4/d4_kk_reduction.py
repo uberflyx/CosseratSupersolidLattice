@@ -15,7 +15,9 @@ Part 1 (zero compact momentum).  The static elastic response is the full
 stiffen the <100> cube axes, lifting C11 from 2 to 3 and driving the Zener
 anisotropy ratio from 2 to 1 (exact isotropy).  The combination mu_V/(3K) = 1/5
 is unchanged, so the acoustoelastic Schwarzschild condition
-mu' = (3 - xi)/5 = 2 (with xi = -7) survives the reduction.
+mu' survives the reduction.  Its value is no longer (3 - xi)/5: that 5 is the
+Cauchy 3K/mu, and the contact stiffness moves it, giving
+mu' = (1 - xi)/3 * mu_bar/K_cr = 2.2227 at xi = -7.
 
 Part 2 (compact direction).  The lightest mode that varies along the compact
 direction sets the Kaluza-Klein scale.  The close-packed layers are spaced by
@@ -131,7 +133,10 @@ if __name__ == "__main__":
     print(f"  Zener ratio A = 2 C44/(C11 - C12) = {A:.4f}    (bare FCC slice gives 2)")
     print(f"  mu_V/(3K) = {ratio:.4f}    (target 1/5 = {1/5:.4f})")
     xi = -7.0
-    print(f"  acoustoelastic mu' = (3 - xi)/5 = {(3.0 - xi)/5.0:.3f}    (xi = {xi:.0f})")
+    N2 = 1.0/np.pi
+    K_over_mu = (5 - 8*N2)/(3*(1 - N2))          # 1.1997, not the Cauchy 5/3
+    print(f"  acoustoelastic mu' = (1 - xi)/3 * mubar/K_cr = "
+          f"{(1.0 - xi)/3.0/K_over_mu:.3f}    (xi = {xi:.0f}; required 2)")
     print("  -> the twelve inter-layer bonds isotropise the response (A: 2 -> 1)")
     print("     without disturbing mu', so the Schwarzschild condition mu' = 2")
     print("     holds for the full D4 lattice as well as the slice.")

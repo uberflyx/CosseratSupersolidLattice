@@ -97,7 +97,7 @@ def test_fine_structure():
 
     for lab, k in [("hop step,  k = 2 pi/d", 2 * np.pi / D_PARTIAL),
                    ("lattice,   k = 2 pi/ell", 2 * np.pi),
-                   ("core,      k = 1/w", 1 / 0.590)]:
+                   ("core,      k = 1/w", 1 / 0.453)]:   # screw core half-width
         n2 = rotational_share(k)
         err = abs(alpha_inv(n2) - ALPHA_INV_MEAS) / ALPHA_INV_MEAS
         print(f"  {lab:24s}: N^2_eff = {n2:.6f}, alpha^-1 = "

@@ -26,7 +26,7 @@ makes the equilibrium ratio strain-independent (eta_t = 7).
 
 The analytic_bracket() routine at the foot of this file localises eta_t
 symbolically: the contact-radius response cancels in the stiffness ratio,
-the Poisson value nu = 1/4 follows from mu_V/(3K) = 1/5, the central sector
+the Poisson value nu follows from mu_V/(3K), the central sector
 is dilation-stationary, and the closed bracket 7 - eta_t = 100/189 -
 (10/63) eta_K gives eta_t = 7 when the bulk modulus tracks the shear one,
 and |7 - eta_t| < 1 otherwise.
@@ -189,10 +189,24 @@ def analytic_bracket():
 
     print("ANALYTIC HANDOVER BRACKET:")
     print(f"  nu (from mu_V/3K = 1/5)          : {nu_star}")
-    print(f"  k_t/k_n at nu = 1/4 (Mindlin)    : {sp.nsimplify(ratio.subs(nu, sp.Rational(1,4)))}"
-          f" = {float(ratio.subs(nu, sp.Rational(1,4))):.4f}")
+    # nu = 1/4 is the central-force value; the vacuum sits at 0.1739 once the
+    # tangential contact breaks the Cauchy relation (C_12 - C_44 = -kappa_c/2).
+    for lab, nu_val in (("1/4 (central force)", sp.Rational(1, 4)),
+                        ("0.1739 (with contact)", sp.Rational(1739, 10000))):
+        print(f"  k_t/k_n at nu = {lab:22s}: "
+              f"{float(ratio.subs(nu, nu_val)):.4f}")
     print(f"  d ln(k_t/k_n)/dnu at nu = 1/4    : {dln_ratio_at} = {float(dln_ratio_at):+.4f}")
-    print(f"  eta_mu = 2K/mu (from mu' = 2)    : {eta_mu} = {float(eta_mu):.4f}")
+    # CAVEAT.  eta_mu = 2K/mu = 10/3 was a back-fit from insisting mu' = 2 at the
+    # Cauchy ratio K/mu = 5/3.  The tangential contact breaks the Cauchy relation
+    # (C_12 - C_44 = -kappa_c/2), moving K_cr/mubar to 1.1997 and nu to 0.1739, and
+    # the recrystallisation law then reads eta_mu = (1 - xi)/3 = 8/3 straight off
+    # the potential.  The bracket below was derived at nu = 1/4 and vanishes at
+    # eta_K = 10/3, so this route to eta_t = 7 has not been re-derived at the
+    # corrected Poisson ratio.  eta_t = 7 stands on the independent fixed-point
+    # argument of the alpha-environment section (the contact law has loop gain at
+    # most 1/12, so k_t tracks k_n and eta_t = -xi), not on this bracket.
+    print(f"  eta_mu = 2K/mu at the Cauchy ratio: {eta_mu} = {float(eta_mu):.4f}"
+          "   [retired: see the caveat in the source]")
     print(f"  7 - eta_t (in eta_K)             : {seven_minus_etat}")
     for val in (sp.Rational(10, 3), 5, 7):
         smt = float(seven_minus_etat.subs(eta_K, val))

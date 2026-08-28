@@ -2,8 +2,11 @@
 """Predicted second-sound energy leak per beta decay, and its confrontation
 with the tritium Q-value comparison.
 
-E_2nd = (1/2) C_11 eps^2 V  with C_11 = 3 mubar, V = N ell^3, mubar ell^3 = m_0 c^2
-      = (3/2) eps^2 N m_0 c^2
+E_2nd = (1/2) C_11 eps^2 V  with V = N ell^3 and mubar ell^3 = m_0 c^2, so
+      = (C_11 / 2 mubar) eps^2 N m_0 c^2 = 1.2665 eps^2 N m_0 c^2.
+C_11 / mubar = (3 - 4 N2)/(1 - N2) = 2.5331 at the coupling number N2 = 1/pi.
+The central-force value would be 3, giving the retired coefficient 3/2; the
+contact stiffness that breaks the Cauchy relation is what lowers it.
 
 eps = theta_ch = alpha^2/(2 pi)   the chiral monopole projection of a beta flip
 N   = 13                          nodes in a nucleon coordination cluster
@@ -16,14 +19,16 @@ import numpy as np
 
 alpha  = 1/137.035999
 th_ch  = alpha**2/(2*np.pi)
+N2     = 1/np.pi                      # Cosserat coupling number
+COEF   = 0.5*(3 - 4*N2)/(1 - N2)      # (1/2) C_11 / mubar = 1.2665
 m0c2   = 70.04e6          # eV, node rest energy
 N      = 13               # nodes per nucleon cluster
 
 def leak(eps=th_ch, N=N):
-    return 1.5*eps**2*N*m0c2
+    return COEF*eps**2*N*m0c2
 
 print(f"theta_ch = {th_ch:.4e}")
-print(f"normalisation check, eps=1 N=1 : {1.5*1.0**2*1*m0c2/1e6:.1f} MeV  (corpus: 105 MeV)")
+print(f"normalisation check, eps=1 N=1 : {COEF*1.0**2*1*m0c2/1e6:.1f} MeV  (corpus: 89 MeV)")
 print(f"PREDICTED LEAK  = {leak()*1e3:.1f} meV per beta decay, independent of Q\n")
 
 Q_pt, dQ_pt = 18592.071, 0.022     # Medina Restrepo & Myers, PRL 131, 243002 (2023)

@@ -7,10 +7,12 @@ The screw (electron) core half-width follows from the canonical PN equilibrium
 with K(k) the anti-plane Cosserat surface kernel.  The neutrino is built from
 edge-dislocation modes, and in plane strain the elastic kernel of the slip
 plane carries the classical Poisson enhancement 1/(1 - nu).  The Poisson ratio
-is the crystalline skeleton's own, nu = 1/4 from the Cauchy relation of its
-central-force bonds (the condensate's near-incompressible bulk modulus
-decouples by counterflow), so the edge kernel is (4/3) K(k) to all relevant
-digits.  The Frenkel misfit stiffness on the right is a property of the glide
+is the crystalline skeleton's own, nu = 0.1739, which is NOT 1/4: the tangential
+contact stiffness that generates kappa_c also breaks the Cauchy relation, by
+C_12 - C_44 = -kappa_c/2, and drags the Poisson ratio down from the central-force
+1/4 to (1-2N2)/(4-6N2) = 0.1739.  The condensate's near-incompressible value
+decouples by counterflow and is not the one a skeleton defect answers to.  So the
+edge kernel is 1/(1-nu) = 1.2104 times the screw kernel, not 4/3.  The Frenkel misfit stiffness on the right is a property of the glide
 plane and is common to both characters.
 
 The script verifies the two known limits before producing the new number:
@@ -18,7 +20,9 @@ The script verifies the two known limits before producing the new number:
   (ii) Cosserat screw at the vacuum point N^2 = 1/pi: w = 0.454 ell
        (w/d = 0.78616 with d = ell/sqrt(3) the partial period),
        the value quoted in the alpha chapter.
-It then solves the same equilibrium with the 4/3-enhanced kernel for the edge.
+It then solves the same equilibrium with the 1.2104-enhanced kernel for the
+edge, returning w_edge = 0.540 ell = 0.936 d.  The screw is untouched, because
+anti-plane shear never meets the Poisson factor at all.
 
 Units: lengths in ell (nearest-neighbour spacing), moduli in the Eringen
 shear modulus mu.
@@ -44,7 +48,7 @@ RHS = MU_BAR / (2.0 * D111)            # Frenkel misfit stiffness, 1.149 mu/ell
 
 
 def kernel(k, factor=1.0):
-    """Cosserat surface kernel K(k); factor=4/3 gives the edge (nu = 1/4)."""
+    """Cosserat surface kernel K(k); factor=1/(1-nu) gives the edge."""
     return factor * 0.5 * MU_TOT * k * (k * k + P2) / (k * k + Q2)
 
 
@@ -72,10 +76,12 @@ if __name__ == "__main__":
     print(f"Cosserat screw: w = {w_s:.5f} ell = {w_s / D_PARTIAL:.5f} d "
           f"(alpha chapter: 0.454 ell, 0.78616 d)")
 
-    # New number: Cosserat edge (nu = 1/4, kernel enhanced by 4/3)
-    w_e = solve_width(factor=4.0/3.0)
+    # New number: Cosserat edge (nu = 0.1739, kernel enhanced by 1/(1-nu))
+    NU_SKEL = (1 - 2*N2)/(4 - 6*N2)          # 0.17385, from the D_4 Born sums
+    w_e = solve_width(factor=1.0/(1.0 - NU_SKEL))
     print(f"Cosserat edge:  w = {w_e:.5f} ell = {w_e / D_PARTIAL:.5f} d")
-    print(f"edge/screw ratio = {w_e / w_s:.5f} (classical value 1/(1-nu) = 4/3)")
+    print(f"edge/screw ratio = {w_e / w_s:.5f} "
+          f"(kernel factor 1/(1-nu) = {1/(1-NU_SKEL):.5f} at nu = {NU_SKEL:.5f})")
 
     ELL_FM = 2.8179403205                      # lattice spacing = r_e [fm]
     print(f"\nneutrino transverse half-width L_b = {w_e * ELL_FM:.3f} fm "
@@ -97,7 +103,7 @@ def make_figure(path="edge_core_balance.pdf"):
     ax.plot(w_grid, lhs_screw, color="#1f77b4", lw=1.8,
             label=r"screw kernel $\hat K(k)$")
     ax.plot(w_grid, lhs_edge, color="#922b21", lw=1.8,
-            label=r"edge kernel $\tfrac{4}{3}\hat K(k)$  ($\nu = 1/4$)")
+            label=r"edge kernel $1.21\,\hat K(k)$  ($\nu = 0.174$)")
     ax.axhline(RHS, color="0.25", lw=1.2, ls="--",
                label=r"misfit pinning $\bar\mu/(2d_{111})$")
     for w0, c in [(w_s, "#1f77b4"), (w_e, "#922b21")]:
@@ -113,6 +119,8 @@ def make_figure(path="edge_core_balance.pdf"):
     ax.legend(frameon=False, fontsize=9.5)
     fig.tight_layout()
     fig.savefig(path)
+    if path.endswith(".pdf"):                     # Quarto consumes SVG
+        fig.savefig(path[:-4] + ".svg")
     print(f"wrote {path}")
 
 

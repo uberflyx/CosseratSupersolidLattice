@@ -34,7 +34,7 @@ THE PHYSICS, IN THREE STEPS
    which this script shows happens AFTER electron-positron annihilation has
    heated the photons. The thimble is therefore sealed at the full photon
    temperature, and the relic is
-       Delta N_eff = (4/7) (11/4)^(4/3) (c/v2)^3 = 0.034.
+       Delta N_eff = (4/7) (11/4)^(4/3) (c/v2)^3 = 0.55.
 
 LITERATURE INPUTS (verified via journal/arXiv sources)
 ------------------------------------------------------
@@ -76,8 +76,13 @@ re         = 2.8179403262             # classical electron radius [fm]
 Mpl        = 1.22091e22               # Planck mass [MeV]
 zeta3      = 1.2020569
 
-V2_OVER_C  = 18.0**0.5              # second sound speed / c: sqrt(C11/(mu f_n))
-                                      # = sqrt(3/(1/6)) = 3 sqrt2, C11 = 3 mu on D4
+N2_COUPLING = 1.0/np.pi               # Cosserat coupling number
+V2_OVER_C  = ((3 - 4*N2_COUPLING)/(1 - N2_COUPLING))**0.5
+                                      # second sound / c = sqrt(C11/C44) = 1.5916.
+                                      # Both crystal modes ride one inertia, so no
+                                      # superfluid fraction enters; and C11/C44 is
+                                      # 2.533 rather than 3 because the contact
+                                      # stiffness breaks the Cauchy relation.
 V1_OVER_C  = 1.1e20                   # first sound (pilot wave) speed / c
 ETA_B      = 6.12e-10                 # baryon-to-photon ratio
 
