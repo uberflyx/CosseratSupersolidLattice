@@ -36,6 +36,18 @@ expands as
 
 so C_456 = d^3 W / d(eta_4) d(eta_5) d(eta_6), with eta_4 = 2 eta_23 etc.
 
+The second-order block doubles as a validation gate and carries a result of its
+own: with k_t on, the lattice violates the Cauchy relation by exactly half the
+Cosserat coupling,
+
+    C_12 - C_44 = -kappa_c/2 = -N^2 mu_tot,
+
+on the 24-bond D_4 shell and the 12-bond slice alike, at every r.  Since
+N^2 = 1/pi is what fixes alpha, the Cauchy discrepancy measured against the
+lattice-scale shear modulus IS the fine structure constant's coupling number.
+Note that mu_tot = mubar + kappa_c/2 is the lattice-scale modulus and C44 is
+the relaxed one; conflating them is a factor (1+5r)/(1+2r) on D_4.
+
 Method: exact numerical energy as a function of the three shear components,
 differentiated by a mixed central-difference stencil.  Richardson extrapolation
 in the step size separates a true zero from a small nonzero value, which is the
@@ -171,14 +183,27 @@ if __name__ == "__main__":
     for tag, kind in (("D_4 (24 bonds)", "d4"), ("FCC slice (12)", "fcc")):
         sp, cp = shell(kind)
         print(f"\n=== {tag} ===")
-        print("\nValidation, second order (expect D_4: C11=3+3r, "
-              "C12=1-r, C44=1+5r, in units Lambda)\n")
+        # Closed forms, in units of Lambda, with the microrotation relaxed:
+        #   D_4 : C11 = 3(1+r), C12 = 1-r, C44 = mubar = 1+2r, kappa_c = 6r
+        #   slice: C11 = 2(1+r), C12 = 1-r, C44 = mubar = 1+r,  kappa_c = 4r
+        # The lattice-scale modulus is mu_tot = mubar + kappa_c/2, which is
+        # 1+5r on D_4 and 1+3r on the slice; it is NOT C44.  The Cauchy defect
+        # is C12 - C44 = -kappa_c/2 on both shells and at every r.
+        kap = 6.0 * (kind == "d4") + 4.0 * (kind == "fcc")
+        c11 = 3.0 if kind == "d4" else 2.0
+        c44 = 2.0 if kind == "d4" else 1.0
+        print("\nValidation, second order (expect "
+              f"C11={c11:.0f}+{c11:.0f}r, C12=1-r, C44=1+{c44:.0f}r, "
+              "in units Lambda)\n")
         print(f"{'r':>8}{'C11/L':>10}{'C12/L':>10}{'C44/L':>10}"
-              f"{'C12-C44':>11}{'-kappa_c':>11}")
+              f"{'C12-C44':>11}{'-kap_c/2':>11}{'mu_tot':>10}{'N^2':>9}")
         for r in (0.0, 0.1, r_star, 0.3):
             C11, C12, C44 = second_order(sp, cp, r, A_M, VOL0)
+            kc = kap * r * LAM
+            mu_tot = C44 + kc / 2.0
             print(f"{r:8.4f}{C11/LAM:10.5f}{C12/LAM:10.5f}{C44/LAM:10.5f}"
-                  f"{(C12-C44)/LAM:11.5f}{-6*r:11.5f}")
+                  f"{(C12-C44)/LAM:11.5f}{-kc/(2*LAM):11.5f}"
+                  f"{mu_tot/LAM:10.5f}{kc/(2*mu_tot):9.5f}")
 
         print("\nThird order: the C_456 selection rule\n")
         print(f"{'r':>8}{'C_456':>16}{'relative to C44':>18}")
