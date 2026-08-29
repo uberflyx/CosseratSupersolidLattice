@@ -77,11 +77,13 @@ def edge_C_calibrated(N2v=1/np.pi, qmax=np.pi, dressed=True):
     s2 = q2*(1-N2v) if dressed else q2
     ths = np.linspace(0, 2*np.pi, 1440, endpoint=False)
     c1, s1 = np.cos(ths), np.sin(ths)
-    Fxx = -(1/(3*np.pi))*np.sin(ths) - (1/(6*np.pi))*np.sin(3*ths)
-    Fyy =  (1/(6*np.pi))*np.sin(3*ths)
-    Fxy =  (1/(6*np.pi))*np.cos(ths) + (1/(6*np.pi))*np.cos(3*ths)
-    B = (Fxx*c1 + Fxy*s1)**2 + (Fxy*c1 + Fyy*s1)**2
-    ang = np.trapezoid(B, ths)
+    # Fourier-space harmonics carry (-i)^l, so the l=1 x l=3 cross terms
+    # enter with the OPPOSITE sign to the naive real-space contraction.
+    # Certified exactly in sympy (2026-08-28): the correct angular integral
+    # is 1/(36 pi); the in-phase version this script first used is 5/(36 pi),
+    # exactly five times too large. The closed form is used directly.
+    ang = 1.0/(36*np.pi)
+    _ = (c1, s1)   # retained for readers extending the angular structure
     rad = 0.5*np.log(1 + qmax**2/s2)         # closed form of Int q dq/(q^2+s^2)
     return 2.0*ang*rad/gam, ang, rad
 
@@ -111,19 +113,16 @@ def main():
      the wrong gamma gave 1/N^2. The paper's cancellation claim survives
      with the certified moduli; the earlier 'gateway placement' question
      was an artefact of the wrong gamma and is withdrawn.
-  2. The far-field coefficient is C_far = {C:.3f}, and the calibration
-     has removed the convention excuse: the propagator side reproduces
-     the screw's exact kernel. The core region, which this continuum
-     treatment regularises away, carries an order-of-magnitude weight of
-     ~{core:.2f}, roughly {core/C:.0f} times the far field. The total is
-     therefore O(0.3-1): consistent with the claimed unity inside the
-     core estimate's honesty, and not a confirmation of it.
-  3. The question is now localised, which is the session's real yield:
-     the unit coefficient of m_1 = theta_ch^2 m_0 is core-dominated, the
-     far field supplies a computed floor of {C:.3f}, and the decisive
-     object is the tensor-complete core computation with the relaxed
-     misfit profile, which is precisely the variational absorption the
-     paper named. The 2 per cent budget stands; nothing here shrinks or
-     inflates it, and open_items records the split.""")
+  2. The far-field coefficient with the certified phases is C_far =
+     {C:.4f} (the exact angular factor is 1/(36 pi); an earlier version
+     of this script used the in-phase 5/(36 pi), exactly 5x too large).
+     The tensor-complete PN-resolved core run (edge_core_absorption.py)
+     confirms the continuum channel saturates near this level.
+  3. The structural conclusion moved: the continuum second-order
+     response supplies only ~0.01 of the claimed unit coefficient, so
+     the coefficient must be carried by the discrete channel, the
+     localised core modes of the chirally dressed Peierls potential,
+     the same object class as the screw's own mass. See
+     edge_core_absorption.py for the full statement.""")
 if __name__ == "__main__":
     main()
