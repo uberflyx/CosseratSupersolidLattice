@@ -107,6 +107,20 @@ def main():
     print("current residuals for orientation: Dm2_21 at -0.66 sigma (low),")
     print("Dm2_31 at +0.59 sigma (high), ratio R at -0.87 sigma.")
     print()
+    # The monograph's second inter-sector channel: virtual climb through a
+    # vacancy--anti-vacancy pair (vacancy mass m_0 = 70 MeV). It couples to
+    # the breathing mode alone, so it shifts m_3 only, and the data cap it
+    # at |dm3/m3| <= 2e-3 (central) to 4e-3 (1 sigma). Pricing the vertex
+    # with the same g^2/Delta structure and Delta = 2 m_0:
+    m0 = 0.51099895*137.035999177*1e6/1e3  # meV -> use eV consistently below
+    m0_ev = 0.51099895*137.035999177*1e6
+    for lab, cap in [("central", 2e-3), ("1sigma ", 4e-3)]:
+        g_cl = np.sqrt(cap*(M3*1e-3)*(2*m0_ev))
+        print(f"virtual-climb vertex bound ({lab}): g_climb <= {g_cl:.0f} eV"
+              f"  ({g_cl/932:.2f} of the chiral-scale vertex 932 eV)")
+    print("so the climb coupling must sit at least 5-8x below the chiral")
+    print("vertex, a derivable target for the vacancy-sector chapter.")
+    print()
     print("CONCLUSION. The mechanics brackets |t| between 7e-6 and 1.5e-2 meV,")
     print("inside the 0.040 meV data bound everywhere, so the protection")
     print("theorem's consistency check closes: no angle moves, and the sum")
