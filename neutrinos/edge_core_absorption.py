@@ -50,7 +50,12 @@ P2   = QS2*(1-N2)            # u_z-dressed       (= 2.388)
 D111 = np.sqrt(2/3)
 LXI  = 1.73                  # brane loop length [ell], monograph
 
-# exact edge strain harmonics (coefficient of 1/r, unit b), hand-verified
+# Edge strain harmonics (coefficient of 1/r, unit b), hand-verified against the
+# textbook field.  NOTE: this table is the nu = 1/4 central-force case.  The
+# framework's Poisson ratio is nu = (1-2N^2)/(4-6N^2) = 0.1739 (Cauchy
+# violation), at which the dilatation amplitude falls by 1.876 and this
+# script's coefficient by 2.5.  The conclusion (continuum response two orders
+# below unity) is unchanged and strengthened; see neutrinos/core_form_factor.py.
 H = {
  'xx': {(1,'s'): -1/(3*np.pi), (3,'s'): -1/(6*np.pi)},
  'yy': {(3,'s'):  1/(6*np.pi)},
