@@ -46,17 +46,16 @@ constricted state is not yet derived, so |t| is bracketed by the two
 structures the mechanics allows:
   upper (elastic gate):    |t| = h * (g / Delta_f)     one vertex, one gap
   lower (second order):    |t| = h^2 / Delta_f         the hop itself twice
-The two ends tell different stories, and the honest close of the item is
-the map between them rather than a single verdict. At the lower end t is
-invisible at any foreseeable precision. At the upper end 6 t (m2 - m1) is
-0.6 per cent of the solar splitting, 0.45 of the experimental error, which
-is exactly the order the paper's next-order analysis asks a correction to
-supply. The sign is physics, not convention: a bonding gate (symmetric
-combination lowered) gives t < 0 and pushes the solar splitting further
-below the data; an antibonding gate gives t > 0 and closes most of the
--0.66 sigma residual. The gate vertex is thereby promoted from nuisance to
-candidate next-order physics, and deriving its sign and magnitude becomes
-the sharpest cheap test the twelve-mode sector offers.
+The sign is now derived (interfamily_gate_sign.py) and it is BONDING,
+t < 0, on two independent grounds: superexchange through an intermediate
+above the manifold gives t = -g_x^2/Delta_f for either sign of the gate
+vertex, and the four families form K_4, whose isotropic singlet at 3t is
+the ground state only if t < 0. So all three masses fall together, the
+solar splitting falls with them, and the -0.66 sigma residual DEEPENS.
+The earlier suggestion that an antibonding gate might supply +0.45 sigma
+is withdrawn: no antibonding gate is available. What the bracket becomes
+instead is a one-sided constraint, |t| < 3.4e-3 meV if the degradation is
+to stay inside 0.1 sigma, which excludes its own top on data grounds.
 """
 
 import numpy as np
@@ -103,6 +102,9 @@ def main():
             print(f"  {name:5s} {lab:16s}: dDm21/Dm21 = {d21:+.1e} "
                   f"({d21/0.013:+.2f} exp sigma), dDm31/Dm31 = {d31:+.1e} "
                   f"({d31/0.0084:+.2f}), d(sum) = {9*t:+.2e} meV")
+    print()
+    print("NOTE: the sign is derived, t < 0 (interfamily_gate_sign.py), so only")
+    print("the t<0 rows above are physical; the t>0 rows are shown for contrast.")
     print()
     print("current residuals for orientation: Dm2_21 at -0.66 sigma (low),")
     print("Dm2_31 at +0.59 sigma (high), ratio R at -0.87 sigma.")
