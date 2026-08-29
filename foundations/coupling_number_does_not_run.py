@@ -51,8 +51,16 @@ ALPHA_INV_ERR = 2.1e-8           # CODATA 2022 standard uncertainty
 
 
 def rotational_share(k):
-    """N^2_eff(k) from mu_eff(k) = mu + kappa k^2/(k^2 + q^2)."""
-    kap_over_mu = N2 / (1 - N2)
+    """N^2_eff(k) from mu_eff(k) = mu + kappa k^2/(k^2 + q^2).
+
+    Convention note (2026-08-28): the alpha paper's relation is
+    kappa_c = 2 N^2 mu / (1 - 2 N^2), i.e. kappa/(mu+kappa) = 2 N^2,
+    certified in neutrinos/screw_vertex_calibration.py against the
+    printed kernel. The earlier kap_over_mu = N2/(1-N2) understated
+    kappa by ~2.4x; the screening scale Q = 1.87, which the tests
+    actually pivot on, was taken as an input and is correct, so the
+    no-go's conclusions stand, but the internal formula now matches."""
+    kap_over_mu = 2 * N2 / (1 - 2 * N2)
     x = k**2 / (k**2 + Q**2)
     return kap_over_mu * x / (1 + kap_over_mu * x)
 
