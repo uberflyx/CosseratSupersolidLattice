@@ -31,9 +31,15 @@ elements and is block-diagonal too.  Hence
 
 and both terms are rational.
 
-What is left is divisibility, not irrationality.  The denominator divides the
-group order times the block denominator, so a host with a large residual group
-gives an integer and a host with a small one can give a fraction.  That is the
+What is left is divisibility, not irrationality, and that is settled in three
+lines.  The one-dimensional irreps have characters +-1 and every group element
+acts as a signed permutation matrix, so |H| tr(P M) is an integer combination of
+entries of M.  Every entry of the two diagonal blocks lies in (1/B)Z for an
+integer B read off the geometry, so the denominator divides B|H|.  With one bond
+length B = 8, halves from rhat (x) rhat and eighths from C^T A C; activating
+voids adds a bond of squared length 3/4 rather than 2, which brings in thirds
+and lifts B to 24.  A host with a large residual group gives an integer and a
+host with a small one can give a fraction.  That is the
 pattern the chapter records without explaining: the crossed fault at |H| = 8
 gives quarters and halves, and the coordination shell at |H| = 48 gives
 integers.  Integrality is a property of the group order, not of how many roots
@@ -48,6 +54,9 @@ the shell, the cross terms carry a product of two different lengths and the
 trace need not be rational at all.  The script tests both families and reports
 the split.
 
+The run reports B and |H| for each host and checks that every observed
+denominator divides B|H|.
+
 Run:  python3 trace_rationality.py
 """
 
@@ -55,6 +64,7 @@ import itertools
 import os
 import sys
 from fractions import Fraction as Q
+from math import gcd
 
 import numpy as np
 
@@ -394,25 +404,34 @@ def main():
         note = (f"  [{len(lengths)} bond length(s) {[str(x) for x in lengths]}; "
                 f"matrix {'carries' if surds else 'free of'} sqrt6 entries]")
         print(f"{name:22s}{note}")
+        block_den = 1
+        for row in m_uu:
+            for x in row:
+                for part in x.c:
+                    block_den = block_den * part.denominator // gcd(block_den, part.denominator)
+        for row in m_pp:
+            for x in row:
+                block_den = block_den * x.denominator // gcd(block_den, x.denominator)
         for channel in ('A_1g', 'A_2g', 'A_1u', 'A_2u'):
             t_uu, t_pp, order = projected_traces(sites, m_uu, m_pp, channel)
             total = t_uu + Surd(t_pp)
             assert total.is_rational(), f"surd survived in {name} {channel}: {total}"
             total = total.c[0]
             den = total.denominator
-            bound = 8 * order
+            bound = block_den * order
             ok = bound % den == 0
             status = ("integer" if den == 1
-                      else f"denominator {den} divides 8|H|={bound}: "
-                           f"{'yes' if ok else 'NO'}")
+                      else f"denominator {den} divides B|H| = {block_den}x{order}"
+                           f" = {bound}: {'yes' if ok else 'NO'}")
             print(f"{name:22s} {order:4d} {channel:>7s} {str(total):>14s} "
                   f"{den:12d}  {status}")
         print()
 
     print("Every trace above is exactly rational, computed in Fraction arithmetic.")
     print("No eigenvalue was ever formed, so no surd had the chance to appear.")
-    print("The block denominator is 8: rhat (x) rhat contributes halves and")
-    print("C^T A C contributes eighths, so every denominator divides 8|H|.")
+    print("The block denominator B is read off the geometry: 8 with one bond")
+    print("length, 24 once voids add a bond of squared length 3/4.  Every")
+    print("denominator above divides B|H|, as the three-line argument requires.")
     _cross_check()
 
 
