@@ -145,3 +145,29 @@ if __name__ == "__main__":
         print(f"{lab:10s} N={N:2d}: {pred:8.1f} MeV  obs {obs:8.2f}  {res[-1]:+6.2f}%")
     res = np.array(res)
     print(f"mean {res.mean():+.2f}%, rms {np.sqrt((res ** 2).mean()):.2f}%")
+    print("\n== how much the rung is worth: required eigenvalue across the catalogue ==")
+    rows = [("pi",2,138.039),("K",7,493.677),("eta",8,547.862),("rho",11,775.26),("omega",11,782.66),
+            ("K*",13,891.66),("eta_prime",14,957.78),("phi",14,1019.461),("a0",14,980.0),("f0",14,990.0),
+            ("eta(1295)",18,1294.0),("b1",18,1229.5),("a1",18,1230.0),("f2",18,1275.4),("K1(1270)",18,1253.0),
+            ("f1(1285)",18,1281.86),("a2",18,1318.2),("K1(1400)",20,1403.0),("h1(1415)",20,1409.0),
+            ("K2*(1430)",20,1429.85),("f1(1420)",21,1428.4),("f2p(1525)",21,1517.3),
+            ("N",13,938.919),("Lambda",16,1115.683),("Sigma",17,1193.15),("Xi",19,1318.29),
+            ("Delta",17,1232.0),("Sigma*",19,1384.4),("Xi*",21,1530.0),("Omega",24,1672.45),
+            ("N(1440)",19,1370.0),("N(1535)",21,1510.0),("N(1520)",21,1510.0),("Lambda(1600)",22,1600.0),
+            ("Delta(1600)",21,1520.0),("Sigma(1660)",23,1660.0),("dstar",33,2380.0),("2H",26,1875.613),
+            ("3H",39,2808.921),("4He",52,3727.379)]
+    Ns = np.array([r[1] for r in rows], float)
+    ms = np.array([r[2] for r in rows])
+    lam = 4 + (ms - Ns * M_0) / (Ns * M_E)
+    inband = [(rows[i][0], round(lam[i], 2)) for i in range(len(rows)) if 3.0 <= lam[i] <= 3.9]
+    rng = np.random.default_rng(0)
+    null = np.array([np.sum((4 + (ms - Ns[rng.permutation(len(rows))] * M_0)
+                             / (Ns[rng.permutation(len(rows))] * M_E) >= 3.0)) for _ in range(1)])
+    shuffled = []
+    for _ in range(20000):
+        p = rng.permutation(len(rows))
+        l = 4 + (ms - Ns[p] * M_0) / (Ns[p] * M_E)
+        shuffled.append(np.sum((l >= 3.0) & (l <= 3.9)))
+    shuffled = np.array(shuffled)
+    print(f"required lambda: {lam.min():.2f}..{lam.max():.2f}, mean {lam.mean():.2f}")
+    print(f"in the rung band 3.0-3.9: {len(inband)} {inband}; shuffled node counts give {shuffled.mean():.1f} +/- {shuffled.std():.1f}")
