@@ -43,8 +43,11 @@ the microrotation-block irrep on the parent shell).
 T_1 has 13 distinct eigenvalues at alpha = 1.  Four are stiff
 (lambda > 4) and phi-dominant (>= 90%), at lambda in {6.66, 9.05,
 9.91, 18.26}.  Two structural criteria fix the rest-mass mode:
-  (i)  shell-concentrated (void localisation < 5%) -- inheritance
-       from the proton's bare-shell T_{1g} phi-block at lambda = 8.07.
+  (i)  shell-concentrated (void localisation < 5%) -- the mode
+       descends from the bare shell's T_{2u} stiff phi-block at
+       lambda = 8.036 (T_{2u} of O_h restricts to T_1 of T_d; adiabatic
+       tracing with the void bonds switched off returns 8.036 exactly,
+       and the embedded 8.036 triplet puts 0.75 of its weight here).
   (ii) lowest such root -- mirrors the proton's selection of
        lambda^{A_2u}_+ = 8.303 over higher A_2u stiff partners.
 Of the four candidates the void-localisations are {21.7, 0.1, 79.1,
