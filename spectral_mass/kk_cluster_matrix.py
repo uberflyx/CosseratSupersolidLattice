@@ -22,7 +22,12 @@ Checks and results:
     count, and the u_4-dominant band sits at 3.0 to 3.5 on every host;
   * the accommodated hyperons (Lambda 3.204, Xi 3.055, Omega 3.369) all read
     inside that band, so at leading order m = N (m_0 - m_e): Lambda -0.31 %,
-    Xi +0.19 %, Omega -0.25 %; the nucleon and kaon do not (-3.75 %, -1.43 %).
+    Xi +0.19 %, Omega -0.25 %; the nucleon and kaon do not (-3.75 %, -1.43 %);
+  * the same rung carried to the heavy baryons, core plus dressing plus
+    N (m_0 - m_e), gives seven states at mean -0.14 % and rms 0.50 % with no
+    eigenvalue used anywhere (Lambda_c to Omega_b and the Xi_cc);
+  * the mixed rotations phi_i4 carry a second band whose floor is
+    3 + alpha_Cos = 4 plus a boundary dressing, unoccupied in the catalogue.
 
 Depends on spectral_classifier, delta_first_principles and omega_triple_bilayer
 in this directory.
@@ -127,3 +132,16 @@ if __name__ == "__main__":
         lreq = 4 + (mobs - N * M_0) / (N * M_E)
         print(f"{label:18s} N={N:2d}: u4 band {min(band):.3f}..{max(band):.3f}; uniform seed {rq:.4f} = 3 + {boundary_count(c):.4f}; "
               f"lambda_req {lreq:.3f}; N(m0-me) = {N*(M_0-M_E):.1f} vs {mobs} ({100*(N*(M_0-M_E)/mobs-1):+.2f}%)")
+    print("\n== the rung carried to the heavy baryons ==")
+    CHARM, BOT, DRESS = 18 * M_0, 6 * np.pi ** 2 * M_0, 5 / 3 * M_0
+    heavy = [("Lambda_c", CHARM + DRESS, 13, 2286.46), ("Xi_c", CHARM + DRESS, 16, 2469.08),
+             ("Omega_c", CHARM + DRESS, 19, 2695.2), ("Lambda_b", BOT + DRESS, 19, 5619.57),
+             ("Xi_b", BOT + DRESS, 22, 5794.35), ("Omega_b", BOT + DRESS, 25, 6045.8),
+             ("Xi_cc", 2 * CHARM + 8 / 3 * M_0, 13, 3621.6)]
+    res = []
+    for lab, core, N, obs in heavy:
+        pred = core + N * (M_0 - M_E)
+        res.append(100 * (pred / obs - 1))
+        print(f"{lab:10s} N={N:2d}: {pred:8.1f} MeV  obs {obs:8.2f}  {res[-1]:+6.2f}%")
+    res = np.array(res)
+    print(f"mean {res.mean():+.2f}%, rms {np.sqrt((res ** 2).mean()):.2f}%")
