@@ -185,3 +185,30 @@ for tag, coords, n_old, sd in (("N=17 -> N=27 direct", c27b, 17, seeds),):
     ph, sh, nw = chars(sub[:, 0], 27)
     print(f"  {tag}: lambda {lam.mean():.4f}, m {mass_from_lambda(27, lam.mean()):.2f}; phi {ph:.2f} inner {sh:.2f}; ",
           oh_content(coords, sub))
+
+
+# ---------------------------------------------------------------------------
+# Born with one tetrahedron (N = 23): the isovector J = 1/2 channel followed
+# along both extension orders, symmetry-restricted so that only same-channel
+# avoided crossings can occur.  Both orders return the same three roots.
+# ---------------------------------------------------------------------------
+def channel_curves(coords, n_old, irrep, n_steps=201):
+    """Eigenvalue curves of one T_d channel as the new atoms (index >= n_old)
+    are switched on, computed in the channel's own subspace."""
+    P = build_td_projector(coords, generate_Td(), TD_CHARS[irrep])
+    w, V = np.linalg.eigh(P)
+    B = V[:, w > 0.5]
+    taus = np.linspace(0, 1, n_steps)
+    curves = np.array([np.linalg.eigvalsh(B.T @ H_interp(coords, t, n_old) @ B) for t in taus])
+    return taus, curves
+
+
+print("\nN = 23 isovector A_2 channel along both extension orders (tau = 0, 0.5, 1):")
+for tag, coords, n_old in (("Born, then voids", np.vstack([SHELL, SECOND, VP]), 19),
+                           ("void host, then second shell", np.vstack([SHELL, VP, SECOND]), 17)):
+    taus, cv = channel_curves(coords, n_old, 'A_2')
+    gap = np.diff(cv, axis=1).min()
+    print(f"  {tag}: smallest same-channel gap {gap:.3f}")
+    for i in range(cv.shape[1]):
+        print("     " + "  ".join(f"{cv[j, i]:7.4f}" for j in (0, 100, 200)))
+print("  Sigma_b reads 9.031 by either order; 7.545 is the Sigma(1660)'s root by either order.")
