@@ -11,14 +11,14 @@ Cluster: N=21 with full O_h symmetry.
   - 8 tetrahedral interstitial voids (BOTH T_d orbits)
 
 The Delta(1232) at N=17 with T_d symmetry sits on T_1 of T_d at lambda=9.052.
-Under inversion restoration (dual orbit), this T_1 splits into:
-  T_1g (gerade): both void orbits move IN PHASE  -> SOFTER mode
-  T_1u (ungerade): both void orbits move OUT OF PHASE -> STIFFER mode
+Under inversion restoration (dual orbit) a T_1 of T_d can only become T_1g or
+T_2u of O_h, since those are the O_h irreps that restrict to T_1 (T_1u and
+T_2g restrict to T_2).  Adiabatic continuation (delta_adiabatic.py) shows the
+Delta(1232) root lands in T_2u at lambda = 10.1085, m = 1536.08 MeV; the
+T_1u triplet at 10.2156 nearby descends from the T_2 triplet at 9.1485 and
+is not the Delta's.
 
-Prediction: Delta(1600) at lambda_T1g(gerade) ~ 7-8 on N=21.
-
-Verification: diagonalise, decompose under O_h, find T_1g modes, identify
-the one with phi-dominant shell-concentrated character.
+This script diagonalises the N=21 cluster and decomposes it under O_h.
 """
 
 import numpy as np
