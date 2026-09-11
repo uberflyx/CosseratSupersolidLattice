@@ -383,7 +383,7 @@ def uncertainty_budget(alpha, bare_inv):
         ("Rank-1 breaking (pre-absorption)",  rank1_ppb,
          f"cos ϑ = {cos_theta}, Σ₋ = {sigma_minus:.2e}"),
         ("Scheme A vs B raw offset",          scheme_ppb,
-         f"resolved by rank-1 argument to ~0.09 ppb"),
+         f"rank-1 residual after absorption ~0.03 ppb, at most 0.1 ppb"),
         ("Fourth-order on-site (T⁴/π)",       fourth_ppb,
          "leading uncalculated term"),
         ("Second-shell inter-valley (12T⁵/π²)", second_ppb,
@@ -619,7 +619,7 @@ def main():
             unit = "ppb"
         print(f"  {source:<45s}  {val:>10.3f} {unit:>12s}  ({note})")
 
-    print(f"\n  Total quantified (alpha): ~0.01 ppb")
+    print(f"\n  Total quantified (alpha): ~0.1 ppb (rank-1 residual; fourth-order floor 0.007 ppb)")
     print(f"  Total quantified (G):     ~0.4 ppm residual after absorption")
     print(f"  Dominant unquantified:    rolling-contact assumption")
 
