@@ -101,9 +101,6 @@ def vertex_and_profile():
     fG = N2 / (1 + Gw ** 2 / q2)
     print(f"C0 at k -> 0: {1 + N2:.4f};  C0 at G = 2 pi/d: {1 + fG:.4f} "
           f"(ratio {(1 + fG) / (1 + N2):.3f})")
-    K_over_mu = 1.1997
-    print(f"mu'_n = 2 requires gamma_d = 2K/mu = {2 * K_over_mu:.3f}, "
-          f"xi = -2 - 6K/mu = {-2 - 6 * K_over_mu:.3f}")
     G = 2 * np.pi
     shapes = {"Lorentzian": lambda k, w: np.exp(-abs(k) * w),
               "sech (sine-Gordon)": lambda k, w: 1 / np.cosh(np.pi * k * w / 2),
@@ -114,7 +111,35 @@ def vertex_and_profile():
               f"{f(19 * G, w) / f(G, w) ** 19:.3e}")
 
 
+def compton_inertia_and_budget():
+    """Index coefficient with each node's mass set locally by the Compton identity
+    m v l = hbar, jointly with the Born sum v^2 = S2 V''(l) l^2/(2m); the xi that
+    mu'_n = 2 requires; walk-count radius of the cluster series; precision budget."""
+    import sympy as sp
+    s_, xi = sp.symbols("s xi", positive=True)
+    V2 = sp.Function("V2")
+    v = s_ ** 3 * V2(s_)                           # joint solution, up to constants
+    rho = 1 / (v * s_ ** 4)                        # m/(s l)^3 with m = hbar/(v s l)
+    sub = {sp.Derivative(V2(s_), s_): xi * V2(s_) / s_}
+    dv = sp.simplify((s_ * sp.diff(sp.log(v), s_)).subs(sub))
+    dr = sp.simplify((s_ * sp.diff(sp.log(rho), s_)).subs(sub))
+    print(f"d ln v/d ln s = {dv},  d ln rho_n/d ln s = {sp.expand(dr)}")
+    N2 = 1 / np.pi
+    K = (5 - 8 * N2) / (3 * (1 - N2))              # K_cr/mubar
+    print(f"mu'_n = -2(xi+3)/(3K/mu): {-2 * (-7 + 3) / 3 / K:.4f} at xi = -7; "
+          f"mu'_n = 2 at xi = -(8pi-11)/(pi-1) = {-(8 * np.pi - 11) / (np.pi - 1):.5f}")
+    W = born_cluster_weights(np.array([1.0, 0, 0]), 1.0, 1.0)   # r = 1: every bond present
+    A = (W > 0).astype(float)
+    lam = np.linalg.eigvalsh(A).max()
+    print(f"cluster adjacency lambda_max = {lam:.3f}; radius {1 / lam:.3f}; "
+          f"alpha inside by {1 / lam / ALPHA:.1f}x")
+    print(f"budget: 17a/18 = {17 * ALPHA / 18 * 1e6:.0f} ppm; a^3 = {ALPHA ** 3 * 1e6:.2f} ppm; "
+          f"inputs ~ {21 * 0.15 + 2 * 0.3:.1f} ppb; xi from 22 ppm: +/- {22e-6 * 3.5992:.1e}")
+
+
 def main():
+    compton_inertia_and_budget()
+    print()
     vertex_and_profile()
     print()
     ratios, a0 = peierls_harmonics()
