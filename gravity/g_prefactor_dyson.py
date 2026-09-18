@@ -22,8 +22,12 @@ the two degenerate rigid states is
     P = sum over the 19! orderings of prod_{k=1}^{18} 1 / cut(S_k),
 
 and P is evaluated exactly by dynamic programming over the 2^19 subsets.
-The result is a pure number for each spring model; what the monograph does not
-yet supply is E_ref, which enters to the eighteenth power.
+The Peierls-Nabarro functional pins E_ref: Poisson resummation of the discrete
+misfit sum gives every harmonic of the Peierls potential as W_m/W_0 = alpha^m with
+W_0 = E_mis = Gamma d^2 w/(2 pi), so per node E_ref = E_mis * ell and, with the hop
+over the misfit period d, E_ref/E_cut = w/(2 pi d111) = 1/(8 sqrt 2). The script
+checks the harmonics against a direct row sum and evaluates the Dyson prefactor
+with that ratio; it falls short of the 1.31 the measured G needs by 1e16 or more.
 """
 import itertools
 import math
@@ -76,17 +80,35 @@ def ordering_sum(W):
     return sum(g[full ^ (1 << i)] for i in range(N)), cut
 
 
+def peierls_harmonics(w_over_d=np.pi / 4, n_rows=200000, n_u=512):
+    """Harmonic ratios W_m/W_0 of the discrete Lorentzian row sum (d = 1)."""
+    n = np.arange(-n_rows, n_rows + 1)
+    u = np.linspace(0.0, 1.0, n_u, endpoint=False)
+    W = np.array([np.sum(1.0 / ((n - ui) ** 2 + w_over_d ** 2)) for ui in u])
+    F = np.abs(np.fft.rfft(W))
+    return [F[m] / F[0] for m in (1, 2, 3)], np.exp(-2 * np.pi * w_over_d)
+
+
 def main():
-    cases = [("central springs, nearest neighbours only", [1, 1, 0], 0.0, 0.0),
-             ("rolling contact r = 0.2264, k2 = k1", [1, 1, 0], 0.2264, 1.0),
-             ("rolling contact, hop along [100]", [1, 0, 0], 0.2264, 1.0)]
-    print(f"{'spring model':44s} {'P':>10s} {'alpha^19 P':>12s} {'E_ref/E_cut for 1.31':>22s}")
+    ratios, a0 = peierls_harmonics()
+    print("Peierls harmonics W_m/W_0 against alpha_0^m:")
+    for m, r in enumerate(ratios, 1):
+        print(f"   m={m}: {r:.8e}  {a0 ** m:.8e}")
+    d, d111 = 1 / np.sqrt(3), np.sqrt(2 / 3)
+    eratio = (np.pi / 4 * d) / (2 * np.pi * d111)
+    print(f"E_ref/E_cut = w/(2 pi d111) = {eratio:.6f} (1/(8 sqrt2) = {1 / (8 * np.sqrt(2)):.6f})\n")
+
+    cases = [("central springs, hop along <110>", [1, 1, 0], 0.0, 0.0),
+             ("central springs, hop along <112>", [1, 1, -2], 0.0, 0.0),
+             ("rolling contact r = 0.2264, k2 = k1, <112>", [1, 1, -2], 0.2264, 1.0),
+             ("rolling contact, hop along <110>", [1, 1, 0], 0.2264, 1.0)]
+    print(f"{'spring model':44s} {'P':>10s} {'Dyson C':>12s} {'E_ref/E_cut for 1.31':>22s}")
     for label, b, r, k2 in cases:
         bhat = np.array(b, float)
         bhat /= np.linalg.norm(bhat)
         P, cut = ordering_sum(born_cluster_weights(bhat, r, k2))
         need = (1.3092 / P) ** (1 / 18)
-        print(f"{label:44s} {P:10.3e} {ALPHA**19 * P:12.3e} {need:22.3f}")
+        print(f"{label:44s} {P:10.3e} {eratio ** 18 * P:12.3e} {need:22.3f}")
     print(f"\ntarget alpha_G = G m0^2/(hbar c) = 3.3e-41; 19! = {math.factorial(N):.3e}")
 
 
