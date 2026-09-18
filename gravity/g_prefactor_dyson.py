@@ -89,7 +89,34 @@ def peierls_harmonics(w_over_d=np.pi / 4, n_rows=200000, n_u=512):
     return [F[m] / F[0] for m in (1, 2, 3)], np.exp(-2 * np.pi * w_over_d)
 
 
+def vertex_and_profile():
+    """Vertex weight at zero wavevector against the misfit wavevector, the
+    anharmonicity that mu'_n = 2 then requires, and rigid versus independent
+    nineteen-node form factors for three core shapes (width set so each shape's
+    single-node form factor at G equals alpha)."""
+    from scipy.optimize import brentq
+    N2, kc = 1 / np.pi, 2 / (np.pi - 2)           # coupling number, kappa_c/mu
+    q2 = 2 * kc                                   # q^2 = 2 kappa_c / gamma, gamma = mu l^2
+    Gw = 2 * np.pi * np.sqrt(3)                   # misfit wavevector 2 pi/d, d = l/sqrt3
+    fG = N2 / (1 + Gw ** 2 / q2)
+    print(f"C0 at k -> 0: {1 + N2:.4f};  C0 at G = 2 pi/d: {1 + fG:.4f} "
+          f"(ratio {(1 + fG) / (1 + N2):.3f})")
+    K_over_mu = 1.1997
+    print(f"mu'_n = 2 requires gamma_d = 2K/mu = {2 * K_over_mu:.3f}, "
+          f"xi = -2 - 6K/mu = {-2 - 6 * K_over_mu:.3f}")
+    G = 2 * np.pi
+    shapes = {"Lorentzian": lambda k, w: np.exp(-abs(k) * w),
+              "sech (sine-Gordon)": lambda k, w: 1 / np.cosh(np.pi * k * w / 2),
+              "Gaussian": lambda k, w: np.exp(-(k * w) ** 2 / 2)}
+    for name, f in shapes.items():
+        w = brentq(lambda w: f(G, w) - ALPHA, 1e-3, 5)
+        print(f"   {name:20s} rigid/independent 19-node form factor = "
+              f"{f(19 * G, w) / f(G, w) ** 19:.3e}")
+
+
 def main():
+    vertex_and_profile()
+    print()
     ratios, a0 = peierls_harmonics()
     print("Peierls harmonics W_m/W_0 against alpha_0^m:")
     for m, r in enumerate(ratios, 1):
