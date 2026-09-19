@@ -22,9 +22,10 @@ Chain (no Koide input anywhere):
      all four directions.
   4. The pair potential dressed at sigma = sigma_W gives (exact
      Hermite-convolution derivatives) gamma3_eff, gamma4_eff; the D4
-     eta4 lattice sums then close the 0.46% Koide gap:
-     eta4 = 0.61-0.62 against the required 0.624, i.e. the
-     FCC-normalised gamma4 = 17.5 the monograph predicted.
+     eta4 lattice sums then cover about four fifths of the
+     0.46% Koide gap: eta4 = 0.51 against the required 0.627,
+     i.e. an FCC-normalised gamma4 = 15.0 against the 23.5
+     the closure would need.
 
 Inputs: c, hbar, m_e through alpha and the Morse constraint a*l = 7/3
 (gamma3 = -7 from the gravitational sector). Natural units l = 1,
@@ -99,11 +100,21 @@ def eta4_sums(roots):
     """Bond-stretch lattice sums for anti-plane shear {111}<110>."""
     b_hat = np.array([-1, 1, 0, 0]) / math.sqrt(2)
     xi_hat = np.array([1, 1, -2, 0]) / math.sqrt(6)
-    a1 = (roots @ b_hat) * (roots @ xi_hat)
-    a2 = 0.5 * (roots @ b_hat)**2 * (1 - (roots @ xi_hat)**2)
+    # Bond stretch to third order in the shear: expanding
+    #   |n + eps p xi| - 1 = a1 eps + a2 eps^2 + a3 eps^3 + ...
+    # with p = n.b and q = n.xi.  The fourth coefficient never enters,
+    # because it multiplies V'(l), which vanishes at equilibrium.
+    p = roots @ b_hat
+    q = roots @ xi_hat
+    a1 = p * q
+    a2 = 0.5 * p**2 * (1 - q**2)
+    a3 = -0.5 * p**3 * q * (1 - q**2)
     S2 = float(np.sum(a1**2))
+    # The geometric term takes the eps^4 part of delta_r^2, which is
+    # 2 a1 a3 + a2^2.  Dropping the cross term overstates it (0.6677
+    # rather than 113/192 on the slice, 127/192 rather than 107/192 on D4).
     return {"S2": S2,
-            "W4": float(np.sum(a2**2) / S2),
+            "W4": float(np.sum(2 * a1 * a3 + a2**2) / S2),
             "C3": float(np.sum(a1**2 * a2) / S2),
             "C4": float(np.sum(a1**4) / (12 * S2))}
 
@@ -278,8 +289,10 @@ def koide_chain(sigma, sums_d4, ndim=3):
     te_bare = 4 * W_OVER_D**2 / (1 + 4 * W_OVER_D**2)
     te = te_bare * (1 - eta4 * C_EFF)
     Q = 1.0 / 3.0 + 2.0 * te**2 / 3.0
-    # FCC-normalised equivalent quartic (the monograph's gamma4 = 17.5)
-    g4_fcc = (eta4 - (0.668 - 7 * 0.03967 - 0.019)) / 0.0142
+    # FCC-normalised equivalent quartic, against the requirement 23.5.
+    # Slice sums in closed form: W4 = 113/192, C3 = 19/480, C4 = 41/2880.
+    W4_FCC, C3_FCC, C4_FCC = 113/192, 19/480, 41/2880
+    g4_fcc = (eta4 - (W4_FCC + (-7) * C3_FCC - 0.019)) / C4_FCC
     return dict(d_eff=d, g3=g3, g4=g4, eta4=eta4, te=te, Q=Q, g4_fcc=g4_fcc)
 
 # ════════════════════════════════════════════════════════════════════
