@@ -1,69 +1,94 @@
 #!/usr/bin/env python3
 """
-second_order_index_bond_shape.py -- the second-order refractive index of the
-weak field against the shape of the internode bond.
+second_order_index_bond_shape.py -- the post-Newtonian beta of the lattice's
+weak field, from the bond's shape, the pre-stress law and the source.
 
-The first-order index rests on the speed law c ~ V''(l) l^3 (Born bond-stretch
-sum with the Compton identity applied locally). Its second order needs the
-bond's quartic shape parameter zeta = l^2 V''''/V'' alongside the anharmonicity
-xi = l V'''/V'', and two conventions the first order never chose:
-
-  map   : how pre-stress sets spacing beyond first order
-          'linear'        3 kappa ln s = Phi
-          'recrystallised' dP = -3 K(s) dy with K(s) ~ V''(s l)/s
-  source: Phi = eps + sigma eps^2, sigma = 1/2 with the field-energy iteration,
-          sigma = 0 without it.
-
-With mu'_n = 2 imposed (xi + 3 = -3 kappa, kappa = K_cr/mubar), the index is
-n = 1 + eps + a2 eps^2 and g00 = -n^-2 gives beta = 3/2 - a2. The script prints
-beta as a function of zeta for each convention, evaluates it for Morse,
-exponential and power-law bonds at the xi that G fixes, and checks that a
-power-law bond with the linear map gives n = exp(eps) to all orders.
+Speed law (Born bond-stretch sum with the Compton identity applied locally):
+    c/c0 = [V''(s l)/V''(l)] s^3                       (exact, any bond)
+Bond to second order, x = s - 1:
+    V''(s l)/V''(l) = 1 + xi x + zeta x^2/2,  xi = l V'''/V'',  zeta = l^2 V''''/V''
+With y = ln s:
+    ln(c/c0) = (xi + 3) y + D y^2/2,           D = zeta - xi^2 + xi
+Pre-stress map and source:
+    y = Phi/(3 kappa) + m Phi^2,  Phi = eps + sigma eps^2,  kappa = K_cr/mubar
+With mu'_n = 2 (xi + 3 = -3 kappa) and g00 = n^-2:
+    beta = 1 - sigma - 3 kappa m + D/(18 kappa^2)
+Pre-stress linear in the potential, bulk modulus following the bonds:
+    m = (1 - xi)/(18 kappa^2)
+Barometric pre-stress (ln P linear in Phi) with a power-law contact:
+    m = 0,  and n = exp(eps) to all orders.
 """
+import numpy as np
 import sympy as sp
+from scipy.optimize import brentq
 
-xi, zeta, kap, sig, eps = sp.symbols("xi zeta kappa sigma epsilon")
-KAPPA = (5 - 8 / sp.pi) / (3 * (1 - 1 / sp.pi))       # K_cr/mubar at N^2 = 1/pi
-XI_G = -3 * (1 + KAPPA)                               # xi fixed by G (mu'_n = 2)
+xi, zeta, kap, sig, eps, y, m, r, l = sp.symbols("xi zeta kappa sigma epsilon y m r ell")
+KAPPA = float((5 - 8 / sp.pi) / (3 * (1 - 1 / sp.pi)))
+XI_G = -3 * (1 + KAPPA)
 
 
-def beta_expr(recrystallised):
+def derive():
+    s = sp.exp(y)
+    lnc = sp.series(sp.log((1 + xi * (s - 1) + zeta * (s - 1) ** 2 / 2) * s ** 3), y, 0, 3).removeO()
+    print("ln(c/c0) =", sp.collect(sp.expand(lnc), y))
+    D = sp.Symbol("D")
     Phi = eps + sig * eps ** 2
-    y = Phi / (3 * kap)
-    if recrystallised:
-        y -= (xi - 1) / 2 * (Phi / (3 * kap)) ** 2
-    y = sp.series(y, eps, 0, 3).removeO()
-    x = y + y ** 2 / 2                                  # s - 1
-    c_ratio = (1 + xi * x + zeta * x ** 2 / 2) * (1 + 3 * y + sp.Rational(9, 2) * y ** 2)
-    n = sp.series(1 / c_ratio, eps, 0, 3).removeO()
-    a2 = sp.expand(n.coeff(eps, 2)).subs(xi, -3 * (1 + kap))
-    return sp.simplify(sp.Rational(3, 2) - a2)
+    lnn = -((xi + 3) * y + D * y ** 2 / 2).subs(y, Phi / (3 * kap) + m * Phi ** 2)
+    lnn = sp.expand(sp.series(lnn, eps, 0, 3).removeO().subs(xi, -3 - 3 * kap))
+    g00 = sp.expand(sp.series(sp.exp(-2 * lnn), eps, 0, 3).removeO())
+    beta = sp.simplify(g00.coeff(eps, 2) / 2)
+    print("ln n     =", sp.collect(lnn, eps))
+    print("beta     =", beta)
+    # map for a pre-stress linear in the potential, K(s) = K V''(s l)/(V''(l) s)
+    P = 3 * (y + (xi - 1) * y ** 2 / 2)            # |P|/K_cr, integrated
+    w = sp.Symbol("w")                               # w = Phi/(3 kappa)
+    y2 = sp.solve(sp.Eq(sp.series(P.subs(y, w + sp.Symbol("c2") * w ** 2), w, 0, 3).removeO(), 3 * w),
+                  sp.Symbol("c2"))
+    print("linear pre-stress: y = w + c2 w^2 with c2 =", y2, " -> m = (1 - xi)/(18 kappa^2)")
+    return beta
+
+
+def bond_families(xv):
+    print(f"\nbond families at xi = {xv:.4f}:")
+    fams = {"power law r^-p": xv ** 2 - xv, "Morse at minimum": 7 * xv ** 2 / 9,
+            "exponential e^(-r/rho)": xv ** 2, "Koide flat quartic": -(18 * xv + 9) / 3}
+    for name, z in fams.items():
+        print(f"   {name:24s} zeta = {z:7.3f}  D = {z - xv ** 2 + xv:+8.3f}")
+    return fams
+
+
+def stiffer_than_power(xv):
+    print("\nbonds stiffer than any power, tuned to the same xi:")
+    def shape(V):
+        V2 = sp.diff(V, r, 2)
+        return (float((r * sp.diff(V, r, 3) / V2).subs(r, 1)),
+                float((r ** 2 * sp.diff(V, r, 4) / V2).subs(r, 1)))
+    for rc in (0.1, 0.2, 0.3):
+        q = brentq(lambda qv: shape((r - rc) ** (-qv))[0] - xv, 0.05, 40)
+        x_, z_ = shape((r - rc) ** (-q))
+        print(f"   hard-core soft sphere r_c = {rc}: D = {z_ - x_ ** 2 + x_:+.2f}")
+    b = brentq(lambda bv: shape(sp.exp(bv / r))[0] - xv, 0.1, 20)
+    x_, z_ = shape(sp.exp(b / r))
+    print(f"   exp(b/r), b = {b:.2f}: D = {z_ - x_ ** 2 + x_:+.2f}")
 
 
 def main():
-    xv = float(XI_G)
-    families = {"Morse (7 xi^2/9)": 7 * xv ** 2 / 9,
-                "exponential / Toda (xi^2)": xv ** 2,
-                "power law r^-p (xi^2 - xi)": xv ** 2 - xv,
-                "Koide flat quartic -(18 xi + 9)/3": -(18 * xv + 9) / 3}
-    print(f"xi = {xv:.4f}, kappa = {float(KAPPA):.4f}\n")
-    for recr in (False, True):
-        b = beta_expr(recr)
-        print(("recrystallised K(s)" if recr else "linear map") + ":  beta =",
-              sp.collect(sp.expand(b), [zeta, sig]))
-        for s_ in (0, sp.Rational(1, 2)):
-            zreq = float(sp.solve(sp.Eq(b.subs(sig, s_), 1), zeta)[0].subs(kap, KAPPA))
-            print(f"   sigma = {s_}: beta = 1 needs zeta = {zreq:.2f}")
-            for name, z in families.items():
-                bv = float(b.subs({kap: KAPPA, sig: s_, zeta: z}))
-                print(f"      {name:36s} zeta = {z:6.2f}   beta = {bv:+.3f}")
-        print(f"   d beta/d zeta = {float(sp.diff(b, zeta).subs(kap, KAPPA)):.4f}; "
-              f"LLR |beta-1| < 5e-4 pins zeta to +/- {5e-4 / float(sp.diff(b, zeta).subs(kap, KAPPA)):.3f}\n")
-    # all-orders check for the power-law bond with the linear map and sigma = 0
-    s = sp.symbols("s", positive=True)
-    n_exact = s ** (-(XI_G + 3))                        # c/c0 = s^(xi+3) exactly
-    print("power law, linear map: n =", sp.simplify(n_exact.subs(s, sp.exp(eps / (3 * KAPPA)))),
-          f";  p = -xi - 2 = {float(-XI_G - 2):.4f} = 3(2pi-3)/(pi-1) = {float(3*(2*sp.pi-3)/(sp.pi-1)):.4f}")
+    beta = derive()
+    fams = bond_families(XI_G)
+    mlin = (1 - XI_G) / (18 * KAPPA ** 2)
+    for label, mv in (("pre-stress linear in potential", mlin), ("barometric pre-stress", 0.0)):
+        print(f"\n{label}: m = {mv:.4f}")
+        for sv in (0, 0.5):
+            need = float(sp.solve(sp.Eq(beta.subs({kap: KAPPA, m: mv, sig: sv}), 1), sp.Symbol("D"))[0])
+            row = "  ".join(f"{k.split()[0]}: {float(beta.subs({kap: KAPPA, m: mv, sig: sv, sp.Symbol('D'): z - XI_G ** 2 + XI_G})):+.3f}"
+                            for k, z in fams.items())
+            print(f"   sigma = {sv}: beta = 1 needs D = {need:.2f};  {row}")
+    stiffer_than_power(XI_G)
+    s_ = sp.symbols("s", positive=True)
+    n_exact = s_ ** (-(XI_G + 3))
+    print(f"\npower law, barometric: n = s^{-(XI_G + 3):.4f} with 3 kappa ln s = eps -> "
+          f"n = exp({float(-(XI_G + 3) / (3 * KAPPA)):.6f} eps)")
+    print(f"p = 3 kappa + 1 = {3 * KAPPA + 1:.4f} = 3(2pi-3)/(pi-1) = {3 * (2 * np.pi - 3) / (np.pi - 1):.4f}")
 
 
 if __name__ == "__main__":
