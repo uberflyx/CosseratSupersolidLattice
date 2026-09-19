@@ -72,7 +72,30 @@ def stiffer_than_power(xv):
     print(f"   exp(b/r), b = {b:.2f}: D = {z_ - x_ ** 2 + x_:+.2f}")
 
 
+def deflection_2pn():
+    """Second-order light deflection through the exponential and the isotropic
+    Schwarzschild metrics, by quadrature of Fermat's principle in N = sqrt(g_ij/g00)."""
+    from scipy.integrate import quad
+    N_exp = lambda rr, mm: np.exp(2 * mm / rr)
+    N_sch = lambda rr, mm: (1 + mm / (2 * rr)) ** 3 / (1 - mm / (2 * rr))
+    print("\nsecond-order deflection coefficient (d - 4 m/b)/(m/b)^2:")
+    for name, N in (("exponential", N_exp), ("Schwarzschild", N_sch)):
+        vals = []
+        for r0 in (4e3, 1.6e4):
+            L = N(r0, 1.0) * r0
+            f = lambda u: (L / r0) / np.sqrt(max(N(r0 / u, 1.0) ** 2 - (L * u / r0) ** 2, 1e-300))
+            d = 2 * quad(f, 0, 1, limit=400, epsabs=1e-15, epsrel=1e-13)[0] - np.pi
+            vals.append((d - 4 / L) * L ** 2)
+        print(f"   {name:14s} {vals[0]:.4f} -> {vals[1]:.4f}")
+    x = 1476.625 / 6.957e8
+    uas = 180 / np.pi * 3600e6
+    print(f"   4 pi = {4 * np.pi:.4f}, 15 pi/4 = {15 * np.pi / 4:.4f}; solar limb: GR term "
+          f"{15 * np.pi / 4 * x ** 2 * uas:.2f} uas, difference {np.pi / 4 * x ** 2 * uas:.3f} uas")
+
+
 def main():
+    import warnings
+    warnings.filterwarnings("ignore")
     beta = derive()
     fams = bond_families(XI_G)
     mlin = (1 - XI_G) / (18 * KAPPA ** 2)
@@ -89,6 +112,7 @@ def main():
     print(f"\npower law, barometric: n = s^{-(XI_G + 3):.4f} with 3 kappa ln s = eps -> "
           f"n = exp({float(-(XI_G + 3) / (3 * KAPPA)):.6f} eps)")
     print(f"p = 3 kappa + 1 = {3 * KAPPA + 1:.4f} = 3(2pi-3)/(pi-1) = {3 * (2 * np.pi - 3) / (np.pi - 1):.4f}")
+    deflection_2pn()
 
 
 if __name__ == "__main__":
