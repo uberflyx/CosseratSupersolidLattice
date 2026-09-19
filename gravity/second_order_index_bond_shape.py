@@ -93,6 +93,45 @@ def deflection_2pn():
           f"{15 * np.pi / 4 * x ** 2 * uas:.2f} uas, difference {np.pi / 4 * x ** 2 * uas:.3f} uas")
 
 
+def relativistic_prestress():
+    """Inertia of a stressed medium by a Lorentz boost, relativistic hydrostatics
+    dP/dPhi = -(eps + P), and the resulting beta for rest-energy-dominated and
+    pressure-proportional media."""
+    e_, P, v, c = sp.symbols("varepsilon P v c", positive=True)
+    g = 1 / sp.sqrt(1 - v ** 2 / c ** 2)
+    Lam = sp.Matrix([[g, g * v / c, 0, 0], [g * v / c, g, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+    T = Lam * sp.diag(e_, P, P, P) * Lam.T
+    print("\nboosted T^01/c =", sp.simplify(T[0, 1] / c))
+    Phi = sp.Symbol("Phi")
+    Pf = sp.Function("P")
+    sol = sp.dsolve(sp.Eq(Pf(Phi).diff(Phi), -(e_ + Pf(Phi))), ics={Pf(0): 0}).rhs
+    print("case 1: P(Phi) =", sp.simplify(sol), "; |P|/eps =", sp.series(-sol / e_, Phi, 0, 3).removeO())
+    D = sp.Symbol("D")
+    beta_rel = 1 - sig - 2 / (3 * kap) + D / (18 * kap ** 2)
+    print("case 1 beta = 1 - sigma - 2/(3 kappa) + D/(18 kappa^2); beta = 1 needs D = 12 kappa =",
+          f"{12 * KAPPA:.3f}")
+    xv = float(XI_G)
+    for name, z in (("power law", xv ** 2 - xv), ("exponential", xv ** 2), ("Morse", 7 * xv ** 2 / 9),
+                    ("Koide flat quartic", -(18 * xv + 9) / 3)):
+        print(f"   {name:20s} beta = {float(beta_rel.subs({kap: KAPPA, sig: 0, D: z - xv ** 2 + xv})):+.3f}")
+    print(f"case 2 (eps = c_e P, barometric): exact exponential; mu'_n = 2 needs c_e = 4/(3 kappa) = "
+          f"{4 / (3 * KAPPA):.3f}; power-law virial gives 3/p = {3 / (3 * KAPPA + 1):.3f}")
+
+
+def deflection_orbit_check():
+    """The orbit u = C + A cos(w phi) solves the ray equation exactly for N^2 quadratic
+    in u, and its swept angle expands to pi + 4 e + pi (2 + a2) e^2."""
+    u, ph, mm, L, a2, e = sp.symbols("u phi m L a_2 e", positive=True)
+    N2 = 1 + 4 * mm * u + (4 + 2 * a2) * mm ** 2 * u ** 2
+    w2 = 1 - (4 + 2 * a2) * mm ** 2 / L ** 2
+    C = (2 * mm / L ** 2) / w2
+    A = sp.sqrt(1 / (L ** 2 * w2) + C ** 2)
+    uu = C + A * sp.cos(sp.sqrt(w2) * ph)
+    ok = sp.simplify(sp.expand(sp.diff(uu, ph) ** 2 - (N2.subs(u, uu) / L ** 2 - uu ** 2))) == 0
+    defl = sp.series(((2 / sp.sqrt(w2)) * sp.acos(-C / A) - sp.pi).subs(mm, e * L), e, 0, 3).removeO()
+    print(f"\norbit satisfies the first integral: {ok}; deflection = {sp.simplify(defl)}")
+
+
 def main():
     import warnings
     warnings.filterwarnings("ignore")
@@ -112,7 +151,9 @@ def main():
     print(f"\npower law, barometric: n = s^{-(XI_G + 3):.4f} with 3 kappa ln s = eps -> "
           f"n = exp({float(-(XI_G + 3) / (3 * KAPPA)):.6f} eps)")
     print(f"p = 3 kappa + 1 = {3 * KAPPA + 1:.4f} = 3(2pi-3)/(pi-1) = {3 * (2 * np.pi - 3) / (np.pi - 1):.4f}")
+    deflection_orbit_check()
     deflection_2pn()
+    relativistic_prestress()
 
 
 if __name__ == "__main__":
