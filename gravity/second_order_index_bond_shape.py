@@ -11,6 +11,8 @@ With y = ln s:
     ln(c/c0) = (xi + 3) y + D y^2/2,           D = zeta - xi^2 + xi
 Pre-stress map and source:
     y = Phi/(3 kappa) + m Phi^2,  Phi = eps + sigma eps^2,  kappa = K_cr/mubar
+    (sigma = -s/4: the field-energy correction, +1/4 for negative field energy,
+     -1/4 for positive, from Poisson's equation with the field energy as source)
 With mu'_n = 2 (xi + 3 = -3 kappa) and g00 = n^-2:
     beta = 1 - sigma - 3 kappa m + D/(18 kappa^2)
 Pre-stress linear in the potential, bulk modulus following the bonds:
@@ -114,6 +116,9 @@ def relativistic_prestress():
     for name, z in (("power law", xv ** 2 - xv), ("exponential", xv ** 2), ("Morse", 7 * xv ** 2 / 9),
                     ("Koide flat quartic", -(18 * xv + 9) / 3)):
         print(f"   {name:20s} beta = {float(beta_rel.subs({kap: KAPPA, sig: 0, D: z - xv ** 2 + xv})):+.3f}")
+    for sv in (0.25, -0.25):
+        need = float(sp.solve(sp.Eq(beta_rel.subs({kap: KAPPA, sig: sv}), 1), D)[0])
+        print(f"   sigma = {sv:+.2f}: beta = 1 needs D = {need:.2f}")
     print(f"case 2 (eps = c_e P, barometric): exact exponential; mu'_n = 2 needs c_e = 4/(3 kappa) = "
           f"{4 / (3 * KAPPA):.3f}; power-law virial gives 3/p = {3 / (3 * KAPPA + 1):.3f}")
 
@@ -132,6 +137,20 @@ def deflection_orbit_check():
     print(f"\norbit satisfies the first integral: {ok}; deflection = {sp.simplify(defl)}")
 
 
+def field_energy_potential():
+    """Potential of the gravitating field energy rho_f = s G M^2/(8 pi c^2 r^4):
+    enclosed shells plus exterior shells, source radius R, then the source's own
+    field energy absorbed into M."""
+    G, M, c, r, R, rp, s_ = sp.symbols("G M c r R r' s", positive=True)
+    rho = s_ * G * M ** 2 / (8 * sp.pi * c ** 2 * rp ** 4)
+    m_enc = sp.integrate(4 * sp.pi * rp ** 2 * rho, (rp, R, r))
+    ext = -G * sp.integrate(4 * sp.pi * rp * rho, (rp, r, sp.oo))
+    Phi_f = sp.expand(-G * m_enc / r + ext)
+    renorm = sp.expand(Phi_f + G / r * s_ * G * M ** 2 / (2 * c ** 2 * R))
+    print("\nfield-energy potential after mass renormalisation:", sp.simplify(renorm),
+          "; Poisson check:", sp.simplify(sp.diff(r ** 2 * sp.diff(renorm, r), r) / r ** 2 - 4 * sp.pi * G * rho.subs(rp, r)) == 0)
+
+
 def main():
     import warnings
     warnings.filterwarnings("ignore")
@@ -140,7 +159,7 @@ def main():
     mlin = (1 - XI_G) / (18 * KAPPA ** 2)
     for label, mv in (("pre-stress linear in potential", mlin), ("barometric pre-stress", 0.0)):
         print(f"\n{label}: m = {mv:.4f}")
-        for sv in (0, 0.5):
+        for sv in (0, 0.25, -0.25):
             need = float(sp.solve(sp.Eq(beta.subs({kap: KAPPA, m: mv, sig: sv}), 1), sp.Symbol("D"))[0])
             row = "  ".join(f"{k.split()[0]}: {float(beta.subs({kap: KAPPA, m: mv, sig: sv, sp.Symbol('D'): z - XI_G ** 2 + XI_G})):+.3f}"
                             for k, z in fams.items())
@@ -151,6 +170,7 @@ def main():
     print(f"\npower law, barometric: n = s^{-(XI_G + 3):.4f} with 3 kappa ln s = eps -> "
           f"n = exp({float(-(XI_G + 3) / (3 * KAPPA)):.6f} eps)")
     print(f"p = 3 kappa + 1 = {3 * KAPPA + 1:.4f} = 3(2pi-3)/(pi-1) = {3 * (2 * np.pi - 3) / (np.pi - 1):.4f}")
+    field_energy_potential()
     deflection_orbit_check()
     deflection_2pn()
     relativistic_prestress()
