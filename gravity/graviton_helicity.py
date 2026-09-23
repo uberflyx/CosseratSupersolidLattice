@@ -1,6 +1,6 @@
 """Helicity content of candidate graviton fields in the elastic vacuum.
 
-Two exact statements, verified symbolically:
+Three statements, verified symbolically:
 
 1. NO-GO. For a plane wave (d_mu -> i k_mu, k along the propagation axis), any
    rank-2 field built from one derivative of a vector (strain of a displacement
@@ -9,17 +9,22 @@ Two exact statements, verified symbolically:
    the propagation axis; helicity is additive; a vector supplies only 0, +-1.
    No linear branch of an elastic medium is a graviton.
 
-2. THE CARRIER. The orientation covariance Sigma_ij = <phi_i phi_j> - (1/3) d_ij <phi^2>
-   (the tensor whose isotropic part is the Debye-Waller exponent) is rank-2 and
-   NOT a derivative of a vector. Its transverse components Q_xx - Q_yy and Q_xy
-   pick up exactly e^{-+ 2 i theta} under rotation by theta about the axis:
-   helicity +-2, the two gravitational-wave polarisations h_+ and h_x.
+2. A QUADRATIC CANDIDATE, NOT THE CARRIER. The orientation covariance
+   Sigma_ij = <phi_i phi_j> - (1/3) d_ij <phi^2> (the tensor whose isotropic
+   part is the Debye-Waller exponent) is rank-2 and NOT a derivative of a
+   vector. Its transverse components Q_xx - Q_yy and Q_xy pick up exactly
+   e^{-+ 2 i theta} under rotation by theta about the axis: helicity +-2, the
+   symmetry of the two polarisations h_+ and h_x.
 
-3. THE EDGE. Sigma_ij fluctuations are two-quantum states of the transverse branch
-   (omega = c|k| each). Two collinear quanta of helicity +1: total helicity +2
-   at omega = c(k1 + k2) = c k. The spin-2 spectral weight therefore reaches
-   the light cone exactly: the tensor channel is gapless because and only
-   because its constituents are.
+3. WHY IT FAILS. Sigma_ij fluctuations are two-quantum states of the
+   transverse branch (omega = c|k| each). Two collinear quanta of helicity +1
+   give total helicity +2 at omega = c(k1 + k2) = c k, so the spin-2 spectral
+   weight reaches the light cone. But the constituents are photon pairs: a
+   plasma screens them, and any wave quadratic in a field imprints far too
+   little strain for its energy density. The monograph excludes Sigma_ij as
+   the gravitational-wave carrier on both counts (sec-sigma-exclusion,
+   eq-second-moment-readout). The checks below are correct: Sigma_ij has the
+   carrier's symmetry, not its physics.
 """
 import sympy as sp
 
