@@ -10,10 +10,14 @@ propagates through the periodic Peierls-Nabarro potential.
 The system decouples by symmetry into 4 independent sectors:
   A: Compression   (u₁ alone)          → 2×2
   B: Axial torsion (φ₁ alone)          → 2×2
-  C: Anti-plane    (u₃, φ₂ coupled)    → 4×4   ← gives α
+  C: Anti-plane    (u₃, φ₂ coupled)    → 4×4   ← calibrated to α
   D: In-plane      (u₂, φ₃ coupled)    → 4×4   ← degenerate with C
 
 Total: 2 + 2 + 4 + 4 = 12.
+
+These are spatial Floquet multipliers of a linear static equation.
+The script does not construct a nineteen-node joint transfer operator,
+calculate a transmission probability, or derive Newton's constant.
 
 M. A. Cox, University of the Witwatersrand (2026)
 """
@@ -37,14 +41,15 @@ ell = 1.0            # lattice spacing (sets length scale)
 kappa_c = 2 * N2 * mu / (1.0 - 2 * N2)
 
 # Total shear modulus
-mu_tot = mu + kappa_c       # = (π+1)/(π-1) × μ
+mu_tot = mu + kappa_c       # = π/(π-2) × μ
 
 # Curvature modulus (from Born-Huang homogenisation, Suiker et al.)
 gamma_c = mu * ell**2       # = μℓ²
 
 # Bulk modulus — the vacuum is nearly incompressible
-# K/μ ~ 10⁴⁰ in reality; we use 10⁶ to show the effect
-# without numerical overflow
+# K/μ is a supplied input. The ~10⁴⁰ value in the gravitational reading
+# is inferred from G, not computed by this transfer matrix.
+# Use 10⁶ so its small attenuation is resolvable in double precision.
 K_over_mu = 1e6
 K = K_over_mu * mu
 lam = K - 2*mu/3            # Lamé first parameter
@@ -209,9 +214,13 @@ def compute_transfer_matrix(matrix_func, dim):
 
 
 def get_tunnelling_amplitudes(T_matrix):
-    """Extract evanescent eigenvalues (|λ| < 1) from transfer matrix."""
+    """Return decaying Floquet multipliers; the name is retained for callers.
+
+    A multiplier is not a transmission probability. Values within numerical
+    tolerance of the unit circle are unresolved here, not blocked modes.
+    """
     evals = np.linalg.eigvals(T_matrix)
-    evanescent = [(abs(lam), lam) for lam in evals if abs(lam) < 0.999]
+    evanescent = [(abs(lam), lam) for lam in evals if abs(lam) < 1.0 - 1e-10]
     evanescent.sort(key=lambda x: x[0])
     return evanescent, evals
 
@@ -233,7 +242,7 @@ def get_tunnelling_amplitudes(T_matrix):
 # ══════════════════════════════════════════════════════════════
 
 print("=" * 72)
-print("  STEP 1: CALIBRATE V₀ FROM THE ANTI-PLANE SECTOR")
+print("  STEP 1: CALIBRATE V₀ TO THE INPUT SHEAR AMPLITUDE")
 print("=" * 72)
 
 alpha_target = 1.0 / 137.035999177
@@ -301,14 +310,14 @@ print(f"\n  SECTOR C: ANTI-PLANE (u₃, φ₂) — electromagnetic channel")
 print(f"  ─────────────────────────────────────────────────────────")
 print(f"  Transfer matrix eigenvalues:")
 for i, lam in enumerate(all_C_sorted):
-    marker = " ◄ TUNNELLING" if abs(lam) < 0.99 else ""
-    marker = " ◄ RECIPROCAL" if abs(lam) > 1.01 else marker
-    if abs(abs(lam) - 1.0) < 0.01:
-        marker = " (propagating)"
+    marker = " ◄ DECAYING" if abs(lam) < 1.0 - 1e-10 else ""
+    marker = " ◄ RECIPROCAL" if abs(lam) > 1.0 + 1e-10 else marker
+    if abs(abs(lam) - 1.0) < 1e-10:
+        marker = " (unit circle within tolerance)"
     print(f"    λ_{i} = {lam.real:+12.6f} {lam.imag:+12.6f}i"
           f"    |λ| = {abs(lam):.8f}{marker}")
 if ev_C:
-    print(f"  Tunnelling amplitude: |λ_min| = {ev_C[0][0]:.8f}")
+    print(f"  Decaying multiplier: |λ_min| = {ev_C[0][0]:.8f}")
     print(f"  Target (α):                      {alpha_target:.8f}")
     print(f"  Ratio: {ev_C[0][0]/alpha_target:.6f}")
 
@@ -321,14 +330,14 @@ print(f"\n  SECTOR D: IN-PLANE (u₂, φ₃) — second transverse polarisation"
 print(f"  ──────────────────────────────────────────────────────────────")
 print(f"  Transfer matrix eigenvalues:")
 for i, lam in enumerate(all_D_sorted):
-    marker = " ◄ TUNNELLING" if abs(lam) < 0.99 else ""
-    marker = " ◄ RECIPROCAL" if abs(lam) > 1.01 else marker
-    if abs(abs(lam) - 1.0) < 0.01:
-        marker = " (propagating)"
+    marker = " ◄ DECAYING" if abs(lam) < 1.0 - 1e-10 else ""
+    marker = " ◄ RECIPROCAL" if abs(lam) > 1.0 + 1e-10 else marker
+    if abs(abs(lam) - 1.0) < 1e-10:
+        marker = " (unit circle within tolerance)"
     print(f"    λ_{i} = {lam.real:+12.6f} {lam.imag:+12.6f}i"
           f"    |λ| = {abs(lam):.8f}{marker}")
 if ev_D:
-    print(f"  Tunnelling amplitude: |λ_min| = {ev_D[0][0]:.8f}")
+    print(f"  Decaying multiplier: |λ_min| = {ev_D[0][0]:.8f}")
     if ev_C:
         print(f"  Ratio to sector C: {ev_D[0][0]/ev_C[0][0]:.8f}")
         print(f"  → DEGENERATE (same |λ|) confirms the two transverse")
@@ -339,26 +348,24 @@ T_A = compute_transfer_matrix(sector_A_matrix, 2)
 ev_A, all_A = get_tunnelling_amplitudes(T_A)
 all_A_sorted = sorted(np.linalg.eigvals(T_A), key=lambda x: abs(x))
 
-print(f"\n  SECTOR A: COMPRESSION (u₁) — gravitational channel (single node)")
+print(f"\n  SECTOR A: COMPRESSION (u₁) — linear longitudinal response")
 print(f"  ──────────────────────────────────────────────────────────────────")
 print(f"  Transfer matrix eigenvalues:")
 for i, lam in enumerate(all_A_sorted):
-    marker = " ◄ TUNNELLING" if abs(lam) < 0.99 else ""
-    marker = " ◄ RECIPROCAL" if abs(lam) > 1.01 else marker
+    marker = " ◄ DECAYING" if abs(lam) < 1.0 - 1e-10 else ""
+    marker = " ◄ RECIPROCAL" if abs(lam) > 1.0 + 1e-10 else marker
     print(f"    λ_{i} = {lam.real:+12.6f} {lam.imag:+12.6f}i"
           f"    |λ| = {abs(lam):.10f}{marker}")
 if ev_A:
-    print(f"  Tunnelling: |λ| = {ev_A[0][0]:.2e}")
+    print(f"  Decaying multiplier: |λ| = {ev_A[0][0]:.2e}")
     if ev_C:
         ratio = np.log(ev_A[0][0]) / np.log(ev_C[0][0])
         print(f"  ln|λ_A|/ln|λ_C| = {ratio:.2f}")
-        print(f"  → Single-node compression tunnelling is ~α^{ratio:.1f}")
-        print(f"  → The 19-node Born cluster gives α^19 = {alpha_target**19:.2e}")
+        print(f"  Linear attenuation expressed as α^{ratio:.6f}")
+        print(f"  Separate candidate α^19 = {alpha_target**19:.2e}; not an eigenvalue here.")
 else:
-    print(f"  No evanescent eigenvalue — compression barrier is TOO HIGH")
-    print(f"  for single-node tunnelling at K/μ = {K_over_mu:.0e}.")
-    print(f"  This confirms: gravity requires COOPERATIVE tunnelling")
-    print(f"  of the 19-node Born cluster.")
+    print(f"  No decay resolved outside the unit-circle tolerance at K/μ={K_over_mu:.0e}.")
+    print("  Increasing K sends the decaying multiplier towards one, not zero.")
 
 # Sector B: Axial torsion (φ₁)
 T_B = compute_transfer_matrix(sector_B_matrix, 2)
@@ -442,12 +449,12 @@ for lam in all_evals_sorted:
 print(f"\n  Distinct |λ| values (degeneracies in parentheses):")
 for lam_abs in sorted(distinct.keys()):
     deg = len(distinct[lam_abs])
-    if lam_abs < 0.99:
-        channel = "EVANESCENT (tunnelling)"
-    elif lam_abs > 1.01:
+    if lam_abs < 1.0 - 1e-10:
+        channel = "EVANESCENT (decaying)"
+    elif lam_abs > 1.0 + 1e-10:
         channel = "EVANESCENT (growing)"
     else:
-        channel = "PROPAGATING"
+        channel = "UNIT CIRCLE WITHIN TOLERANCE"
     print(f"    |λ| = {lam_abs:14.8f}  (×{deg})  {channel}")
 
 
@@ -456,7 +463,7 @@ for lam_abs in sorted(distinct.keys()):
 # ══════════════════════════════════════════════════════════════
 
 print(f"\n{'=' * 72}")
-print(f"  STEP 5: IRREP ASSIGNMENT AND FORCE IDENTIFICATION")
+print(f"  STEP 5: SECTOR IDENTIFICATIONS AND THEIR LIMITS")
 print(f"{'=' * 72}")
 
 alpha_val = alpha_target
@@ -474,9 +481,9 @@ if lam_D:
     print(f"  │ D: u₂,φ₃  │ T_{{1u}} (2nd pol)   │ {lam_D:.8f}       │ EM (α) ×2    │")
 
 if ev_A:
-    print(f"  │ A: u₁     │ A_{{1g}} (compress.) │ {ev_A[0][0]:.2e}          │ Gravity*     │")
+    print(f"  │ A: u₁     │ Longitudinal      │ {ev_A[0][0]:.2e}          │ Attenuation  │")
 else:
-    print(f"  │ A: u₁     │ A_{{1g}} (compress.) │ ~ 0 (blocked)     │ Gravity*     │")
+    print("  │ A: u₁     │ Longitudinal      │ near unit circle │ Unresolved   │")
 
 mass_evals = [(abs(e), e) for e in np.linalg.eigvals(T_B)]
 mass_evals.sort()
@@ -484,10 +491,10 @@ print(f"  │ B: φ₁     │ T_{{1g}} (torsion)  │ {mass_evals[0][0]:.8f} (g
 
 print(f"""  └────────────┴───────────────────┴────────────────────┴──────────────┘
 
-  * Single-node compression tunnelling is essentially ZERO because
-    M_long/μ_tot = {M_long/mu_tot:.0e}. The barrier is {M_long/mu_tot:.0e}× higher
-    than for shear. Gravity requires the 19-node Born cluster to
-    cooperate in SHEAR (each contributing α), giving α^19.
+  Longitudinal attenuation is weak: u₁″ = V(x)u₁/M_long.
+  Increasing M_long reduces the decay exponent; |λ_A| tends to one.
+  Low compliance under an applied force is a different quantity.
+  No nineteen-node transfer process is constructed by this script.
 
   DEGENERACY STRUCTURE:
   ──────────────────────
@@ -530,26 +537,13 @@ print(f"""
   It represents the mode where displacement and microrotation
   CANCEL each other — the edge dislocation's quadrupolar field.
 
-  CHIRALITY FROM THE CROSS-COUPLING:
-  ────────────────────────────────────
-  The off-diagonal element Σ₁₂ = α/√π couples the displacement
-  channel to the microrotation channel. At second order (because
-  centrosymmetry forces even order):
+  The proposed chirality scale θ_ch = α²/(2π) is supplied by a separate
+  self-energy argument; it is not an eigenvalue of the matrix above.
+  In particular, (α/√π)²/(2α) = α/(2π), not α²/(2π), so that previously
+  printed quotient cannot serve as its derivation.
+  Neither the weak coupling nor the gravitational normalisation is derived
+  by this numerical transfer calculation.
 
-    θ_ch = (Σ₁₂)² / (Σ₁₁ × constitutive norm)
-         = (α/√π)² / (α × 2)
-         = α²/(2π)
-         = {alpha_val**2/(2*np.pi):.6e}
-
-  This is the chirality parameter that sets the neutrino mass scale:
-
-    m₁ = θ_ch² × m₀ = α⁴/(4π²) × m_e/α = α³m_e/(4π²) = 5.03 meV
-
-  The weak force is weak because:
-    Step 1: Edge dislocation lives in the NULL space of Σ (zero coupling)
-    Step 2: Centrosymmetry forces coupling at SECOND order (α²)
-    Step 3: Constitutive normalisation adds 1/(2π) = N²/2
-    Result: θ_ch = α²/(2π) ≈ 10⁻⁵  (vs α ≈ 10⁻² for EM)
 """)
 
 
@@ -562,51 +556,19 @@ print(f"  COMPLETE SPECTRAL STRUCTURE OF THE FCC COSSERAT LATTICE")
 print(f"{'=' * 72}")
 
 print(f"""
-  12×12 Transfer matrix T decomposes into 4 sectors:
-  ──────────────────────────────────────────────────
+  COMPUTED:
+    T = T_A ⊕ T_D ⊕ T_C ⊕ T_B, with sizes 2 + 4 + 4 + 2.
+    Shear: calibrated |λ| = {alpha_target:.10f}, twice.
+    Torsion: |λ| = exp(-sqrt(2κ_c/γ)ℓ) = {mass_evals[0][0]:.8f}.
+    Compression: |λ| approaches one as the supplied K increases.
 
-  ┌──────────────────────────────────────────────────────────────────┐
-  │                                                                  │
-  │  T = T_A ⊕ T_D ⊕ T_C ⊕ T_B                                    │
-  │      2×2   4×4   4×4   2×2                                     │
-  │                                                                  │
-  │  Sector A (compression, u₁):                                    │
-  │    |λ| ≈ 0  (barrier M_long/μ ~ 10⁶)                          │
-  │    → Single-node compression FORBIDDEN                          │
-  │    → Gravity needs 19-node cluster: α^19 ≈ 10⁻⁴¹              │
-  │                                                                  │
-  │  Sector B (torsion, φ₁):                                       │
-  │    |λ| = e^{{-√(2κ_c/γ)ℓ}} (mass gap, no PN)                    │
-  │    → Massive spin-1 mode (not a force carrier)                  │
-  │                                                                  │
-  │  Sectors C,D (shear, u₃φ₂ and u₂φ₃):                          │
-  │    |λ| = α ≈ 1/137  (calibrated)                               │
-  │    → 2-fold degenerate: two transverse polarisations            │
-  │    → Electromagnetic coupling constant                          │
-  │                                                                  │
-  │  CROSS-COUPLING (Σ₁₂ of self-energy matrix):                   │
-  │    θ_ch = α²/(2π) ≈ 8.5 × 10⁻⁶                               │
-  │    → Chirality parameter → weak force / neutrino mass           │
-  │                                                                  │
-  │  STRONG FORCE (not in T — requires separate calculation):       │
-  │    Partial dislocation: commensurate → λ ~ 1                    │
-  │    Stacking-fault confinement energy → α_s ~ 1                  │
-  │                                                                  │
-  └──────────────────────────────────────────────────────────────────┘
+  NOT COMPUTED BY THIS OPERATOR:
+    The collective nineteen-node amplitude and its intermediate states.
+    Its coupling to the missing gravitational field.
+    The field's kinetic normalisation and universal source response.
+    Strong-defect interactions and the separate weak self-energy argument.
 
-  EIGENVALUE SPECTRUM (ordered by |λ|):
-  ─────────────────────────────────────
-    Force        Eigenvalue       Mechanism
-    ─────        ──────────       ─────────
-    Strong       ~ 1              Commensurate (no barrier)
-    EM           α ≈ 1/137       PN barrier (×2 polarisations)
-    Weak         α²/(2π) ~ 10⁻⁵  Centrosymmetry + constitutive
-    Gravity      α¹⁹ ~ 10⁻⁴¹     19-node cooperative tunnelling
-
-  TWO SPECTRAL RELATIONS:
-  ─────────────────────────
-    1. G ∝ α¹⁹   (exponent = Born cluster size)
-    2. G_F ∝ α⁴/(4π²)  (centrosymmetry + normalisation)
-
-  TWO INPUTS → FOUR FORCES → overconstrained → falsifiable.
+  The value α^19 = {alpha_target**19:.8e} is a proposed independent-product
+  amplitude, not an additional eigenvalue in the twelve-value spectrum.
+  See gravity/collective_transfer_matching.py for the operator distinctions.
 """)
