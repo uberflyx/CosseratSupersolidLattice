@@ -1,31 +1,43 @@
 """
 The Hagedorn skin of a black hole: where the tangle ensemble is prepared.
 
-Physics context (monograph, black-holes chapter; paper "Black holes as
-superfluid droplets"): outside the horizon the cost of adding one unit of
-mutual winding between two defect lines is the elastic winding gap
+Physics context (monograph, black-holes chapter, Hagedorn-skin subsection).
+Both quantities that cross in the skin are measured in one frame, that of a
+static observer.  Such an observer measures the crystal's own shear modulus
+at every radius, so the elastic cost of adding one unit of mutual winding
+between two defect lines is a fixed gap
 
-    epsilon(r) = epsilon_0 * psi(r),    psi = mu_eff/mu = 1 - r_s/r = xi^2,
+    epsilon(r) = epsilon_0,    r > r_s,
 
-because every elastic energy is linear in the shear modulus, while the
-temperature a static thermometer reads climbs by the Tolman-Ehrenfest law
+while the temperature a static thermometer reads climbs by the
+Tolman-Ehrenfest law
 
-    T_loc(r) = T_H / xi(r).
+    T_loc(r) = T_H / xi(r),    xi = sqrt(1 - r_s/r)  (the lapse).
 
-The free energy of one winding, Delta F = epsilon_0 xi^2 - k_B T_loc s_w,
-with s_w ~ 2 ln N the configurational entropy per winding (the choice of
-pair among ~N^2/2), therefore changes sign at a unique depth
+The free energy of one winding, Delta F = epsilon_0 - k_B T_loc s_w, with
+s_w ~ 2 ln N the configurational entropy per winding (the choice of pair
+among ~N^2/2), therefore changes sign at a unique depth
 
-    xi_*^3 = 2 ln N * k_B T_H / epsilon_0 ,
+    xi_* = 2 ln N * k_B T_H / epsilon_0 ,
 
 the local Hagedorn condition of the gauged permutation-invariant matrix
 model (O'Connor-Ramgoolam, JHEP 07 (2024) 152) realised as a physical
-skin.  Proper depth of the skin below r at redshift xi: rho ~ 2 r_s xi.
+skin.  Near the horizon the proper depth is rho = 2 r_s xi, and with
+k_B T_H = hbar c/(4 pi r_s) the Schwarzschild radius cancels:
 
-The script evaluates the skin depth for a range of hole masses, with and
-without the entropy factor, and the healing-length hierarchy at the skin
-edge.  epsilon_0 is taken at the node scale m_0 c^2 = m_e c^2 / alpha;
-the cube root makes the depth insensitive to its exact value.
+    rho_* = (ln N / pi) (hbar c / epsilon_0),
+
+about 80 fm at a solar mass, depending on the mass only through ln N.
+
+The script evaluates the depth for a range of hole masses, with and without
+the entropy factor, and its (linear) sensitivity to epsilon_0, which is
+taken at the node scale m_0 c^2 = m_e c^2 / alpha.
+
+The whole construction is conditional on the crystal's shear field near
+the horizon being in the state regular for infalling observers, which is
+what gives a Hawking temperature at all; the monograph leaves that state
+open (interior-geometry section), and on the other branch there is no
+T_H and no skin.
 """
 
 from math import log, pi
@@ -49,9 +61,8 @@ def skin(M, eps0=m0c2, entropy_factor=True):
     T_H = hbar * c**3 / (8 * pi * G * M * kB)
     N = (8 * pi / log(2)) ** 0.5 * M / M_P          # active line budget, k = 2
     s_w = 2 * log(N) if entropy_factor else 1.0
-    xi3 = s_w * kB * T_H / eps0
-    xi = xi3 ** (1 / 3)
-    rho = 2 * r_s * xi
+    xi = s_w * kB * T_H / eps0                    # linear, not a cube root
+    rho = 2 * r_s * xi                            # = (ln N / pi) hbar c / eps0
     return xi, rho, r_s, T_H, log(N)
 
 
@@ -59,7 +70,7 @@ if __name__ == "__main__":
     print(f"epsilon_0 = m0 c^2 = {m0c2/1.602176634e-13:.1f} MeV")
     print(f"{'M/M_sun':>10} {'r_s':>10} {'T_H [K]':>10} {'ln N':>7} "
           f"{'xi_*':>10} {'skin rho_* ':>12} {'zeta(skin) ':>12}")
-    for Ms in (1, 30, 4.3e6, 6.5e9):
+    for Ms in (1, 30, 4.0e6, 6.5e9):
         M = Ms * M_sun
         xi, rho, r_s, T_H, lnN = skin(M)
         zeta = ell / xi                      # healing length at the skin edge
@@ -71,10 +82,13 @@ if __name__ == "__main__":
             return f"{x:.2e} m"
         print(f"{Ms:>10.3g} {fmt(r_s):>10} {T_H:>10.2e} {lnN:>7.1f} "
               f"{xi:>10.2e} {fmt(rho):>12} {fmt(zeta):>12}")
-    # robustness: cube-root dependence on epsilon_0 and the entropy factor
+    # sensitivity: the depth is linear in the entropy factor and in 1/epsilon_0
     xi1, rho1, *_ = skin(M_sun, entropy_factor=False)
     xi2, rho2, *_ = skin(M_sun, eps0=10 * m0c2)
     _, rho0, *_ = skin(M_sun)
-    print(f"\nRobustness at 1 M_sun: rho_* = {rho0*100:.2f} cm (fiducial); "
-          f"{rho1*100:.2f} cm without the entropy factor; "
-          f"{rho2*100:.2f} cm with epsilon_0 x 10.")
+    fm = 1e-15
+    print(f"\nSensitivity at 1 M_sun: rho_* = {rho0/fm:.1f} fm (fiducial); "
+          f"{rho1/fm:.2f} fm without the entropy factor; "
+          f"{rho2/fm:.1f} fm with epsilon_0 x 10.")
+    print("Closed form check: (ln N/pi)(hbar c/eps0) =",
+          f"{log((8*pi/log(2))**0.5*M_sun/M_P)/pi*hbar*c/m0c2/fm:.1f} fm")

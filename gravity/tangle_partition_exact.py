@@ -2,8 +2,8 @@
 Exact canonical partition function of the interior tangle, from first
 principles, with brute-force verification and its two expansions.
 
-Physics context (monograph, black-holes chapter; paper "Black holes as
-superfluid droplets"): the tangle of n line defects carries one mode per
+Physics context (monograph, black-holes chapter, on the stated premise that
+lines inside the horizon carry no energy): the tangle of n line defects carries one mode per
 unordered pair, whose occupation number is that pair's winding class,
 truncated to k values.  The Hamiltonian is harmonic in the total winding,
 H = eps * sum_{i<j} n_ij with eps(r) = eps_0 * psi(r) the elastic winding
@@ -25,11 +25,13 @@ Checks and outputs:
   2. LIMITS: Z(x -> 1) = Omega(N, k) (the microstate count);
      Z(x -> 0) = 1 (frozen record); low-temperature coefficients are the
      stabilised multigraph numbers 1, 1, 3, 8, 23, 66, ... for N >= 2g.
-  3. SKIN BAND: with x(r) = exp(-2 ln N (xi/xi_*)^3) from the Tolman law
-     and the winding gap, the per-pair entropy rises from 0 to ln k
-     between the outer edge xi_* (first thermal winding) and the inner
-     edge xi_* (2 ln N)^(-1/3) (full mixing): the earlier robustness
-     bracket is the band structure of the exact Z.
+  3. SKIN BAND: with x(r) = exp(-eps_0 xi/(k_B T_H)) = exp(-2 ln N xi/xi_*)
+     = N^(-2 xi/xi_*) from the Tolman law and the fixed winding gap
+     (hagedorn_skin.py), the per-pair entropy rises from 0 to ln k between
+     the outer edge xi_* (first thermal winding, about 80 fm for a solar
+     mass) and the inner edge xi_*/(2 ln N) (full mixing, about 0.45 fm,
+     inside one lattice spacing, where the continuum description of the
+     lines has already ended).
 """
 
 from fractions import Fraction
@@ -137,9 +139,9 @@ if __name__ == "__main__":
     print("\nSkin band (stellar hole, 2 ln N = 178, k = 2): per-pair entropy")
     lnN2 = 178.0
     print(f"  {'xi/xi_*':>8} {'x(r)':>12} {'s/ln k':>8}")
-    for r in (2.0, 1.0, 0.5, 0.178, 0.05):
-        x = exp(-lnN2 * r ** 3)
+    for r in (2.0, 1.0, 0.5, 0.1, 0.02, 0.0056, 0.002):
+        x = exp(-lnN2 * r)
         s = per_pair_entropy(x, 2) / log(2)
         print(f"  {r:>8.3f} {x:>12.3e} {s:>8.4f}")
     print("  outer edge xi_*: first thermal winding; inner edge "
-          f"{(1/lnN2)**(1/3):.3f} xi_*: full mixing")
+          f"{1/lnN2:.4f} xi_*: full mixing (inside one lattice spacing)")

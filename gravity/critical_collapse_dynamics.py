@@ -14,14 +14,16 @@ THE GOVERNING EQUATION.  The gravitational carrier is the transverse
 microrotation / shear field psi(r,t), propagating at the shear speed c_T with
     c_T^2 / c^2 = (mu + kappa_c/2) / mu = (pi - 1)/(pi - 2) = 1.8760,
 the long-range effective shear modulus over the bare one.  The framework's own
-nonlinearity is acoustoelastic: local strain softens the local shear modulus, so
-the wave slows where the field is strong and the pulse self-focuses,
+nonlinearity is written as an acoustoelastic law: the local field strength
+lowers the local squared wave speed, so the wave slows where the field is
+strong and the pulse self-focuses,
     psi_tt = (1/r^2) d_r( r^2 v2(e) psi_r ),
     e = 1/2 ( psi_t^2 / c_T^2 + psi_r^2 ),     (local strain-energy density)
     v2(e) = c_T^2 * f(lambda_c e),             (field-dependent squared speed)
 where lambda_c is an O(1) strain-to-softening coupling and f is the
-acoustoelastic law.  The horizon is the solid-to-superfluid point e -> 1/2, where
-the effective modulus and hence v2 fall to zero.
+acoustoelastic law, adopted as an index law rather than derived from the
+crystal's bonds (the vacuum crystal is unstrained outside matter).  The
+horizon is the zero of the lapse, e -> 1/2, where v2 falls to zero.
 
 WHAT THE SCRIPT SHOWS, in three parts.
 
@@ -55,24 +57,25 @@ WHAT THE SCRIPT SHOWS, in three parts.
       zero ln(xi) oscillation, so the absence of echo is intrinsic to the SCALAR
       collapse model, not an artefact of the exponential's saturation.
 
-THE STRUCTURAL READING.  The scalar (Gordon-metric) picture imposes the
+THE STRUCTURAL READING.  The scalar (one-function) picture imposes the
 constraint g_00 g_rr = -c^2, packing the lapse and the conformal factor into a
 single function.  Full general relativity keeps them independent; the second
-function is the anisotropic (radial-vs-tangential, birefringent) acoustoelastic
-response, equivalently the full anharmonic Cosserat / Kleinert sector.  That
-second function is exactly what makes Choptuik echo: in the Price-Pullin
+function belongs to the missing sector's field equations, which the
+monograph adopts as a premise (the isotropic Schwarzschild metric is
+spatially conformally flat and every polarisation shares one null cone, so
+the second function is not a birefringence of the crystal).  That second
+function is exactly what makes Choptuik echo: in the Price-Pullin
 analysis (Phys. Rev. D 54, 3792, 1996) the echo is, in each region, a flat-space
 wave, and the discrete period is locked by the nonlinear matching across a moving
 edge where the independent lapse grows.  A single real field on the constraint
 surface has no such growing lapse, so it can only focus continuously.
 
-What period the lattice predicts.  The echoing period is not a free target.  The
-full anharmonic Cosserat action reduces to the Einstein-Hilbert action by the
-Deser uniqueness theorem (see the EFE-from-Cosserat section), and the
-gravitational microrotation branch is gapless, propagating at c.  So a
-two-function collapse run with the lattice's anisotropic response is the
-Einstein-massless-field collapse Choptuik solved, and its echoing period is the
-eigenvalue that problem returns, Delta = 3.4439.  The lattice predicts the
+What period the lattice predicts.  The echoing period is not a free target.  On
+the monograph's premise the missing sector's field equations are Einstein's
+(see the section on the Einstein field equations and the defect-geometry
+correspondence), and its wave travels at c by the second postulate.  So the
+two-function collapse is the Einstein-massless-field collapse Choptuik solved,
+and its echoing period is the eigenvalue that problem returns, Delta = 3.4439.  The lattice predicts the
 standard period as a consistency requirement, not a shifted one.  Caveat on
 notation: the ratio (pi-1)/(pi-2) = 1.876 that appears in the solver is
 mu_bar/mu, the long-range SHEAR-sector modulus ratio used in the fine-structure
@@ -245,10 +248,10 @@ def run_law_control():
 def report_predicted_period():
     delta_gr = 3.4439                              # Choptuik (Gundlach) eigenvalue
     print("\nWhat period the lattice predicts:")
-    print("    The full anharmonic Cosserat action reduces to Einstein-Hilbert")
-    print("    by the Deser uniqueness theorem (see the EFE-from-Cosserat section),")
-    print("    and the gravitational microrotation branch is gapless, propagating")
-    print("    at c. So the all-orders two-function collapse IS the Einstein-")
+    print("    On the monograph's premise the missing sector's field equations")
+    print("    are Einstein's (see the section on the Einstein field equations and")
+    print("    the defect-geometry correspondence), and its wave travels at c by")
+    print("    the second postulate. So the two-function collapse IS the Einstein-")
     print("    massless-field collapse Choptuik solved, and its echoing period is")
     print(f"    the eigenvalue that problem returns, Delta = {delta_gr}.")
     print("    The lattice does not predict a shifted period; it predicts the")
@@ -271,6 +274,6 @@ if __name__ == "__main__":
     print("\n" + "=" * 72)
     print("CONCLUSION: scalar lattice collapse is CRITICAL but CONTINUOUSLY")
     print("self-similar (single focus, no echo).  Discrete self-similarity")
-    print("(Choptuik echoing) requires the second metric function: the")
-    print("anisotropic acoustoelastic response / full anharmonic Cosserat sector.")
+    print("(Choptuik echoing) requires the second metric function, which")
+    print("belongs to the missing sector's field equations (Einstein premise).")
     print("=" * 72)

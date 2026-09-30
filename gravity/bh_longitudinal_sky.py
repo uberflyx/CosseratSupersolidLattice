@@ -1,14 +1,19 @@
 """
 The longitudinal sky: what the compression channel carries from black holes.
 
-The monograph establishes (sec:interior_knot_chemistry) that the event
-horizon is a shear-sector horizon only: first sound rides the condensate
-bulk stiffness, its impedance is continuous across the melt boundary, and
-interior compression waves transmit outward with an order-unity
-coefficient. This script prices the consequences:
+The monograph's black-holes chapter leaves open whether the condensate's
+waves feel the missing sector's lapse at all.  If they do not, the hole has
+no horizon on the longitudinal channel and its interior would be audible on
+that channel; if they do, they freeze at r_s like every other wave.  This
+script prices the first case, together with an estimate the chapter sets
+aside:
 
-  1. The channel-horizon hierarchy: trapping radius scales as (c/v)^2,
-     so each propagation channel sees a different sized hole.
+  1. The channel-horizon hierarchy of the "river" picture, in which a
+     wave of speed v is trapped where an inflow reaches v, giving a
+     trapping radius that scales as (c/v)^2.  The framework's vacuum does
+     not flow (the crystal is at rest in the static frame), so these radii
+     are the river-picture numbers the chapter sets aside, kept here for
+     comparison only.
   2. The steady hum of a fed hole: standing-tangle stock over a
      residence time. The stock is 1e-19 of Mc^2 (tex and the
      bh_vortex_reservoir.py computation agree at 5e-19; the earlier
@@ -38,7 +43,7 @@ v2 = 3.65 * c                    # second sound group velocity (derived)
 vp = 1e20 * c                    # first sound / pilot-wave speed (order)
 
 # ---------------------------------------------- 1. channel-horizon sizes
-print("=== 1. one hole, three horizons (10 Msun) ===")
+print("=== 1. river-picture trapping radii (10 Msun); set aside by the chapter ===")
 M = 10 * Msun
 rs = 2 * G * M / c**2
 for name, v in [("shear (light, matter)", c), ("second sound", v2),

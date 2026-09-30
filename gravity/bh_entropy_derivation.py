@@ -13,17 +13,25 @@ obtained from the first law of black hole mechanics:  dM = T dS.  The
 adiabatic accretion method derives the same result *without* assuming
 the first law:
 
-    1. The exact shear modulus profile  μ_eff(r) = μ(1 − r_s/r)  gives
-       a modulus gradient  dμ/dr|_{r_s} = μ / r_s  at the horizon.
+    1. The shear modulus the crystal's waves carry in the crystal's own
+       (static) frame is  μ_eff(r) = μ(1 − r_s/r) = −μ g_00 , the square of
+       the redshifted wave speed; it gives a modulus gradient
+       dμ/dr|_{r_s} = μ / r_s  at the horizon.  No local observer made of
+       excitations measures a changed modulus.
 
-    2. The surface gravity follows from the elastic constitutive relation
-       c = √(μ/ρ), which puts a factor of 2 between the modulus gradient
-       and the velocity gradient (chain rule: d√x/dx = 1/(2√x)):
+    2. The surface gravity follows from  c_eff = √(μ_eff/ρ) = c N, with N
+       the lapse; the square root puts a factor of 2 between the modulus
+       gradient and the velocity gradient (d√x/dx = 1/(2√x)):
 
            κ = c² / (2 r_s)
 
-    3. The Hawking temperature follows from the Unruh effect (QFT on the
-       lattice phonon vacuum, not GR):
+       The 1/2 is general relativity's own, the lapse being √(−g_00).
+
+    3. The Hawking temperature follows from the Unruh effect for a static
+       observer, on the premise that the crystal's shear field near the
+       horizon is in the state regular for infalling observers (the
+       monograph leaves that state open; the static crystal's own ground
+       state would give no radiation):
 
            T_H = ℏκ / (2π c k_B) = ℏ c³ / (8π G M k_B)
 
@@ -36,7 +44,7 @@ the first law:
            S/k_B = (8πG/ℏc) ∫₀ᴹ M' dM' = 4πGM²/(ℏc) = A/(4ℓ_P²)
 
 The coefficient 1/4 = (1/2) × (1/2), where:
-    • First 1/2:  elastic square-root law (Step 2)
+    • First 1/2:  the square-root law c_eff = c N = c √(−g_00) (Step 2)
     • Second 1/2: accretion integral ∫M' dM' = M²/2 (Step 4)
 
 The first law dM = T dS is recovered as a consequence, not assumed.
@@ -119,7 +127,7 @@ class BlackHoleThermo:
     def kappa(self) -> float:
         """Surface gravity  κ = c²/(2 r_s)  [m s⁻²].
 
-        The factor of 2 is the elastic square-root law:
+        The factor of 2 is the square-root law c_eff = c sqrt(-g_00):
         c = √(μ/ρ)  ⟹  dc/dμ = 1/(2√(μρ))  ⟹  velocity gradient
         is half the modulus gradient.
         """
@@ -133,7 +141,7 @@ class BlackHoleThermo:
 
         This uses only:
             • κ from the lattice modulus gradient (Step 2)
-            • the Unruh effect (QFT, not GR) (Step 3)
+            • the Unruh effect for a static observer (Step 3)
         The first law dM = T dS is NOT used.
         """
         return hbar * self.kappa / (2 * np.pi * c * k_B)
@@ -212,7 +220,7 @@ def main():
     # ── Physical origin of 1/4 ───────────────────────────────────
     print("\n── Physical origin of the 1/4 coefficient ──")
     print("  1/4 = (1/2) × (1/2)")
-    print("  First  1/2 : elastic square-root law  c = √(μ/ρ)")
+    print("  First  1/2 : square-root law  c_eff = √(μ_eff/ρ) = c √(−g_00)")
     print("                → velocity gradient = ½ × modulus gradient")
     print("                → κ = c²/(2 r_s), not c²/r_s")
     print("  Second 1/2 : accretion virial theorem")

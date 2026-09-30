@@ -27,7 +27,7 @@ state fit for external review.
   → reproduced by [`pn_variational.py`](pn_variational.py), which computes the fine
   structure constant from the shear channel and Newton's constant from the
   compression channel.
-  A corrigendum is in preparation for Section 5.1.3 of this article (Eqs. 37 and
+  A corrigendum has been submitted for Section 5.1.3 of this article (Eqs. 37 and
   39 and the status claimed for the result that follows; no numerical result
   changes). [`energy_partition.py`](energy_partition.py) derives the corrected
   transverse energy partition symbolically and shows that the coupling number is
