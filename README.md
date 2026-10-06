@@ -23,7 +23,7 @@ state fit for external review.
 - M. A. Cox, "The Peierls–Nabarro amplitude as an emergent coupling constant: an
   explicit evaluation for the FCC Cosserat lattice", *Annals of Physics* **493**,
   170613 (2026). Open access:
-  [doi.org/10.1016/j.aop.2026.170613](https://doi.org/10.1016/j.aop.2026.170613)
+  [doi.org/10.1016/j.aop.2026.170613](https://doi.org/10.1016/j.aop.2026.170613) Unfortunately, there were a few errors in the published version so I have also published a corrigendum. A clean, corrected version is available at [https://zenodo.org/records/21233640].
   → reproduced by [`pn_variational.py`](pn_variational.py), which computes the fine
   structure constant from the shear channel and Newton's constant from the
   compression channel.
