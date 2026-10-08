@@ -6,7 +6,8 @@ It distinguishes a coherent linear field from independent product amplitudes,
 and checks which intermediate channel kernel gives a single rank-one trace.
 It also tests metric inertia and source overlap on the actual FCC cluster.
 Finally it shows that the endpoint identity is the inertial (f-sum) limit of
-the channel contraction, whose static limit is one.
+the channel contraction, whose static limit is one, and that requiring
+wavelength-independent static links selects the vertex's slide-spin covector.
 The electromagnetic amplitude is an input; no gravitational datum is fitted.
 """
 
@@ -331,6 +332,66 @@ def sum_rule_checks(node_count=19):
             'one_plus_N2':1.0 + n2}
 
 
+def vertex_selection_checks():
+    """Which slide-spin covector has wavelength-independent static links.
+
+    Crystal variables (u, phi), static transverse stiffness
+    K(k) = [[mu_tot k^2, i kappa k], [-i kappa k, gamma k^2 + 2 kappa]].
+    The compliance along w = vu*u + vphi*phi equals vu^2/(mubar k^2) at every
+    k only for vphi/vu = +-N sqrt(gamma/mubar); no microinertia enters.
+    The inertial (f-sum) weight of that covector is 1 + N^2 gamma/(J c^2).
+    This names the vertex the endpoint form assumes; it is not a derivation of
+    it, and it fails once the slide is pinned by a uniform restoring force.
+    Units: mu = ell = 1, gamma = mu ell^2, rho = 1 so c^2 = mubar.
+    """
+    mu, ell = 1.0, 1.0
+    kappa = 2.0 * mu / (np.pi - 2.0)
+    gamma = mu * ell**2
+    mubar, mutot = mu + kappa/2.0, mu + kappa
+    n2 = kappa / (2.0 * mutot)
+    lever = np.sqrt(n2 * gamma / mubar)
+
+    def weight(ratio, phase, k):
+        K = np.array([[mutot*k*k, 1j*kappa*k], [-1j*kappa*k, gamma*k*k + 2*kappa]])
+        v = np.array([1.0, ratio*np.exp(1j*phase)])
+        return float((v.conj() @ np.linalg.solve(K, v)).real * mubar * k * k)
+
+    ks = (0.01, 0.3, 1.0, 3.0, 2*np.pi*np.sqrt(3))
+    selected = [weight(lever, 0.0, k) for k in ks]
+    assert max(abs(w - 1.0) for w in selected) < 1e-12
+    assert max(abs(weight(-lever, 0.0, k) - 1.0) for k in ks) < 1e-12
+    slip_only = [weight(0.0, 0.0, k) for k in ks]
+    assert abs(weight(0.0, 0.0, 1e4) - (1.0 - n2)) < 1e-6
+    longer = [weight(1.2*lever, 0.0, k) for k in ks]
+    phased = [weight(lever, 0.3, k) for k in ks]
+    # A real covector with unit weight at one k has it at every k: check one.
+    assert abs(weight(lever, 0.0, 0.5) - 1.0) < 1e-13
+    dense = np.linspace(0.01, 12.0, 4000)
+    phase_shift = [weight(lever, 0.3, k) - 1.0 for k in dense]
+    worst = int(np.argmax(phase_shift))
+    assert max(slip_only) - min(slip_only) > 0.3
+    assert max(longer) - min(longer) > 0.05 and min(longer) >= 1.0 - 1e-12
+    assert max(phased) - min(phased) > 0.05
+    rho = 1.0
+    c2 = mubar / rho
+    j_light = gamma / c2
+    j_alt = rho * ell**2
+    inertial = {name: 1.0 + lever**2 * rho / J
+                for name, J in (('J=gamma/c^2', j_light), ('J=rho*ell^2', j_alt))}
+    assert abs(inertial['J=gamma/c^2'] - (1.0 + 1.0/np.pi)) < 1e-14
+    assert abs(inertial['J=rho*ell^2'] - (1.0 + n2*mu/mubar)) < 1e-14
+    return {'lever_arm_over_ell':lever,
+            'stiffness_length_sqrt_gamma_over_mubar':float(np.sqrt(gamma/mubar)),
+            'selected_static_weights':selected,
+            'slip_only_static_weights':slip_only,
+            'longer_lever_static_weights':longer,
+            'phased_static_weights':phased,
+            'phase_0p3_max_shift':float(phase_shift[worst]),
+            'phase_0p3_max_shift_at_k_ell':float(dense[worst]),
+            'contact_radius_covector_inertial_weight':1.0 + (0.5*ell)**2*rho/j_light,
+            'inertial_weight':inertial}
+
+
 def calculate(node_count=19, alpha=1.0 / 137.035999177):
     v = np.array([1.0, 1.0 / np.sqrt(np.pi)])
     channel_norm = float(v @ v)
@@ -433,6 +494,7 @@ def calculate(node_count=19, alpha=1.0 / 137.035999177):
         'source_response_rescaling':float(scaled_response[0]/response[0]),
         'conditional_physical_response':physical_response_checks(node_count),
         'sum_rule_readout':sum_rule_checks(node_count),
+        'vertex_selection':vertex_selection_checks(),
         'microscopic_normalisation':microscopic_normalisation_checks(alpha),
     }
 
