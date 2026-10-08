@@ -5,6 +5,8 @@ This is an algebraic diagnostic, not a derivation of Newton's constant.
 It distinguishes a coherent linear field from independent product amplitudes,
 and checks which intermediate channel kernel gives a single rank-one trace.
 It also tests metric inertia and source overlap on the actual FCC cluster.
+Finally it shows that the endpoint identity is the inertial (f-sum) limit of
+the channel contraction, whose static limit is one.
 The electromagnetic amplitude is an input; no gravitational datum is fitted.
 """
 
@@ -238,6 +240,97 @@ def physical_response_checks(node_count=19):
             'core_vacuum_determinant_relative_error':determinant_error}
 
 
+def sum_rule_checks(node_count=19):
+    """The endpoint identity as the inertial limit of the channel contraction.
+
+    In kinetic coordinates Q=(sqrt(rho)*u, sqrt(J)*phi) the contraction
+    p(z,x) = v^T R(z,x) v = 1 + N^2 z^2/(z^2 + a x^2 + b) rises from 1 (static)
+    to 1+N^2 (inertial).  The inertial limit is the f-sum (Thomas-Reiche-Kuhn)
+    rule for the vertex coordinate w = v.Q: sum_n (E_n-E_0)|<n|w|0>|^2 =
+    (hbar^2/2) v.v whatever the potential.  The rule is checked on a
+    two-dimensional quantum model, with and without anharmonic and Peierls
+    terms, by finite differences that converge as the grid is refined.
+    """
+    import scipy.sparse as sparse
+    import scipy.sparse.linalg as splinalg
+    a = np.pi / (np.pi - 1.0)
+    b = 4.0 / (np.pi - 2.0)
+    t = np.sqrt(b * (a - 1.0))
+    n2 = 1.0 / np.pi
+    v = np.array([1.0, np.sqrt(n2)])
+
+    # The coupling number is the fraction of the clamped-rotation shear
+    # stiffness mu+kappa_c lost when the rotation is free: 1 - mu_bar/(mu+kappa_c).
+    mu = 1.0
+    kappa = 2.0 * mu / (np.pi - 2.0)
+    mubar = mu + kappa / 2.0
+    assert abs(kappa / (2.0 * (mu + kappa)) - n2) < 1e-15
+    assert abs(1.0 - mubar / (mu + kappa) - n2) < 1e-15
+
+    def contraction(z, x):
+        M = np.array([[z*z + a*x*x, 1j*t*x], [-1j*t*x, z*z + x*x + b]])
+        return float((v @ ((z*z + x*x) * np.linalg.inv(M)) @ v).real)
+
+    static = [contraction(0.0, x) for x in (0.01, 1.0, 2*np.pi*np.sqrt(3))]
+    inertial = [contraction(1e6, x) for x in (0.01, 1.0, 2*np.pi*np.sqrt(3))]
+    assert max(abs(s - 1.0) for s in static) < 1e-13
+    assert max(abs(s - (1.0 + n2)) for s in inertial) < 1e-9
+    # Static links and an inertial readout give alpha^19 (1+N^2) exactly.
+    sigma = np.outer(v, v)
+    R0 = (1.0) * np.linalg.inv(np.array([[a, 1j*t], [-1j*t, 1.0 + b]]))
+    chain = sigma.astype(complex)
+    for _ in range(node_count - 1):
+        chain = chain @ R0 @ sigma
+    endpoint = float(np.trace(chain).real)
+    assert abs(endpoint - (1.0 + n2)) < 1e-12
+    # Readout at one radian per light crossing (reading A's condensate rate)
+    # and at (v_p/c)^2 = 1/alpha_G (reading B's).  The continuum value at the
+    # latter is only indicative: the node's internal structure is omitted.
+    at_compton = contraction(1.0, 0.0)
+    assert abs(at_compton - (1.0 + n2/(1.0 + b))) < 1e-14
+    # The same rate read as a real frequency, z**2 -> -1 (below the optical gap b).
+    at_compton_real = 1.0 + n2*(-1.0)/(-1.0 + b)
+    assert abs(at_compton_real - (1.0 - n2/(b - 1.0))) < 1e-15
+    z_b = 3.0e40
+    reading_b_shortfall = n2 * (a * (2*np.pi*np.sqrt(3))**2 + b) / z_b**2
+
+    # f-sum rule on a two-dimensional model in kinetic coordinates (hbar = 1).
+    def ratio(m, anharmonic, half_width=6.0):
+        xs = np.linspace(-half_width, half_width, m)
+        h = xs[1] - xs[0]
+        X, Y = np.meshgrid(xs, xs, indexing='ij')
+        V = 0.5*(1.3*X**2 + 2.1*Y**2) + 0.6*X*Y
+        if anharmonic:
+            V = V + 0.08*X**4 + 0.4*np.cos(2.0*(X + np.sqrt(n2)*Y))
+        o = np.ones(m)
+        D2 = sparse.diags([-o[:-2]/12, 4*o[:-1]/3, -2.5*o, 4*o[:-1]/3, -o[:-2]/12],
+                          [-2, -1, 0, 1, 2]) / h**2
+        eye = sparse.identity(m)
+        H = (-0.5*(sparse.kron(D2, eye) + sparse.kron(eye, D2))
+             + sparse.diags(V.ravel())).tocsc()
+        E, psi = splinalg.eigsh(H, k=1, sigma=V.min() - 1.0, which='LM')
+        psi = psi[:, 0]
+
+        def first_moment(op):
+            phi = op.ravel() * psi
+            return phi @ (H @ phi) - E[0] * (phi @ phi)
+        return first_moment(X + np.sqrt(n2)*Y) / first_moment(X)
+
+    fsum = {m: (ratio(m, False), ratio(m, True)) for m in (81, 161)}
+    for m, (harm, anh) in fsum.items():
+        assert abs(harm - anh) < 2e-5
+    assert abs(fsum[161][1] - (1.0 + n2)) < 2e-6
+    return {'static_contraction':static, 'inertial_contraction':inertial,
+            'endpoint_with_static_links_over_alpha19':endpoint,
+            'contraction_at_one_radian_per_crossing':at_compton,
+            'readout_at_reading_A_over_trace':at_compton/(1.0 + n2),
+            'contraction_at_one_radian_per_crossing_real_frequency':at_compton_real,
+            'real_frequency_readout_over_trace':at_compton_real/(1.0 + n2),
+            'reading_B_shortfall_bound':reading_b_shortfall,
+            'f_sum_ratio_by_grid':{str(m):list(r) for m, r in fsum.items()},
+            'one_plus_N2':1.0 + n2}
+
+
 def calculate(node_count=19, alpha=1.0 / 137.035999177):
     v = np.array([1.0, 1.0 / np.sqrt(np.pi)])
     channel_norm = float(v @ v)
@@ -339,6 +432,7 @@ def calculate(node_count=19, alpha=1.0 / 137.035999177):
         'intermediate_kernels':kernels,
         'source_response_rescaling':float(scaled_response[0]/response[0]),
         'conditional_physical_response':physical_response_checks(node_count),
+        'sum_rule_readout':sum_rule_checks(node_count),
         'microscopic_normalisation':microscopic_normalisation_checks(alpha),
     }
 

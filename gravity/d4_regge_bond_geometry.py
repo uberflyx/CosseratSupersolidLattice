@@ -13,11 +13,23 @@ What it checks
    rotations leave one symmetric tensor invariant (delta_ab) and two elastic
    tensors (the isotropic pair).  The hypercubic group leaves three elastic
    tensors, the third being cubic anisotropy.
+   On the 24 gradients d_c phi_ab of a rotation two-form, W(F4) leaves three
+   quadratic forms (the O(4) count), its proper rotations five (the SO(4)
+   count) and the hypercubic group four.  For every one of them the
+   coefficient of a compact-axis gradient of a spatial rotation equals that
+   of a gradient along the rotation's own axis.  In the static register the
+   first is J c^2, so the point group sets the microinertia at the
+   longitudinal rotational stiffness.
 
 2. Complexes.  The Delaunay cells of D4 are regular sixteen-cells centred on
    three cosets of deep holes.  A sixteen-cell has 24 edges but only 22 shape
    coordinates (its rigidity matrix has rank 22), so a generic change of its
    edge lengths admits no flat cell and curvature must be allowed inside it.
+   Its two self-stresses are the bond-family differences: a tension constant
+   on each of the three families {12|34}, {13|24}, {14|23} balances at every
+   vertex when the three tensions sum to zero.  A cell therefore stays flat
+   exactly when its three families stretch by the same total, as every
+   metric does.
    Two simplicial divisions are built:
        'diag'     one diagonal per sixteen-cell, eight four-simplices each;
        'centred'  a cone from each cell centre, sixteen four-simplices each,
@@ -223,6 +235,87 @@ def sixteen_cell_rigidity():
     return len(E), np.linalg.matrix_rank(R)
 
 
+def sixteen_cell_self_stresses():
+    """Show that the two self-stresses of a regular sixteen-cell are the family differences.
+
+    A self-stress is a tension omega_e on the edges with sum_e omega_e (x_a - x_b) = 0 at
+    every vertex, i.e. a vector in the left null space of the rigidity matrix.  An edge-length
+    change is produced by moving the vertices (to first order) exactly when it is orthogonal to
+    every self-stress.  Returns the equilibrium residual of the family-difference patterns, their
+    distance from the left null space, and the family totals of a random metric-induced change.
+    """
+    V = [s * np.eye(4)[i] for i in range(4) for s in (1, -1)]
+    E = [(a, b) for a, b in itertools.combinations(range(8), 2) if not np.allclose(V[a], -V[b])]
+    R = np.zeros((len(E), 32))
+    for r, (a, b) in enumerate(E):
+        d = V[a] - V[b]
+        R[r, 4 * a:4 * a + 4] = d
+        R[r, 4 * b:4 * b + 4] = -d
+    U, s, _ = np.linalg.svd(R)
+    rank = int(np.sum(s > 1e-10))
+    stresses = U[:, rank:]
+    # Family of an edge: the pair of coordinate planes {12|34}, {13|24}, {14|23} its axis joins.
+    family_of_plane = {(0, 1): 0, (2, 3): 0, (0, 2): 1, (1, 3): 1, (0, 3): 2, (1, 2): 2}
+    fam = np.array([family_of_plane[tuple(sorted((int(np.argmax(np.abs(V[a]))),
+                                                   int(np.argmax(np.abs(V[b]))))))] for a, b in E])
+    D = np.stack([(fam == 0) * 1.0 - (fam == 1), (fam == 1) * 1.0 - (fam == 2)], axis=1)
+    equilibrium = float(np.abs(R.T @ D).max())
+    in_null = float(np.linalg.norm(stresses @ (stresses.T @ D) - D))
+    rng = np.random.default_rng(7)
+    h = rng.normal(size=(4, 4)); h = h + h.T
+    dl = np.array([(V[a] - V[b]) @ h @ (V[a] - V[b]) for a, b in E])
+    totals = [float(dl[fam == k].sum()) for k in range(3)]
+    return stresses.shape[1], equilibrium, in_null, totals
+
+
+def curvature_invariants(generators):
+    """Invariant quadratic forms on the gradients d_c phi_ab of a rotation two-form.
+
+    The 24 components T_(ab),c = d_c phi_ab carry the representation Lambda^2 (x) R^4.  The
+    invariant symmetric forms Q (with R^T Q R = Q for every generator R) are found as a null
+    space.  For each form the script compares three coefficients for the spatial rotation
+    phi_12 (a rotation about the third spatial axis): a gradient along the compact axis, along
+    the rotation axis (longitudinal), and across it (transverse).  In the static register the
+    first is J c^2, the microinertia read through x4 = ct.
+    """
+    pairs = list(itertools.combinations(range(4), 2))
+
+    def rep(M):
+        L = np.zeros((6, 6))
+        for j, (a, b) in enumerate(pairs):
+            Eab = np.zeros((4, 4)); Eab[a, b] = 1.0; Eab[b, a] = -1.0
+            F = M @ Eab @ M.T
+            for i, (c, d) in enumerate(pairs):
+                L[i, j] = F[c, d]
+        return np.kron(L, M)
+
+    n = 24
+    idx = [(i, j) for i in range(n) for j in range(i, n)]
+    blocks = []
+    for g in generators:
+        Rg = rep(g)
+        B = np.zeros((n * n, len(idx)))
+        for t, (i, j) in enumerate(idx):
+            Q = np.zeros((n, n)); Q[i, j] = Q[j, i] = 1.0
+            B[:, t] = (Rg.T @ Q @ Rg - Q).ravel()
+        blocks.append(B)
+    _, s, Wt = np.linalg.svd(np.vstack(blocks), full_matrices=False)
+    null = Wt[int(np.sum(s > 1e-9)):]
+
+    def grad(k, pair):
+        phi = np.zeros(6); phi[pairs.index(pair)] = 1.0
+        return np.kron(phi, np.eye(4)[k])
+
+    rows = []
+    for c in null:
+        Q = np.zeros((n, n))
+        for t, (i, j) in enumerate(idx):
+            Q[i, j] = Q[j, i] = c[t]
+        compact, longitudinal, transverse = (grad(k, (0, 1)) @ Q @ grad(k, (0, 1)) for k in (3, 2, 0))
+        rows.append((compact, longitudinal, transverse))
+    return np.array(rows)
+
+
 # =========================================================================
 # 3. Regge Hessian and Bloch transform
 # =========================================================================
@@ -398,9 +491,24 @@ def main():
     for name, grp in (("W(F4)", G), ("W(F4) proper rotations", Gp), ("hypercubic W(B4)", Gb4)):
         print(f"   {name:24s} order {len(grp):5d}:  {invariant_counts(grp)}")
 
+    print("   rotation-gradient invariants: count; max |compact - longitudinal|; transverse differs?")
+    refl = [np.eye(4) - 2 * np.outer(r, r) / (r @ r) for r in f4_roots()]
+    b4 = [np.eye(4) - 2 * np.outer(r, r) / (r @ r)
+          for r in [np.eye(4)[i] for i in range(4)]
+          + [np.eye(4)[i] - np.eye(4)[j] for i in range(4) for j in range(i + 1, 4)]]
+    for name, gens in (("W(F4)", refl), ("W(F4) proper rotations", [refl[0] @ g for g in refl]),
+                       ("hypercubic W(B4)", b4)):
+        rows = curvature_invariants(gens)
+        print(f"   {name:24s} {len(rows)} forms;  {np.abs(rows[:, 0] - rows[:, 1]).max():.1e};  "
+              f"{bool(np.abs(rows[:, 0] - rows[:, 2]).max() > 1e-6)}")
+
     ne, rank = sixteen_cell_rigidity()
     print(f"\n   sixteen-cell: {ne} edges, rigidity rank {rank} = 4*8 - 10 shape coordinates "
           f"({ne - rank} self-stresses)")
+    n_s, eq_res, null_res, totals = sixteen_cell_self_stresses()
+    print(f"   family differences: equilibrium residual {eq_res:.1e}, distance from the "
+          f"{n_s}-dimensional self-stress space {null_res:.1e}")
+    print(f"   a random metric stretches the three families by totals {np.round(totals, 10)}")
 
     basis = metric_basis()
     k_dirs = {"e4 (compact axis)": [0, 0, 0, 1], "e1": [1, 0, 0, 0], "(1,1,0,0)": [1, 1, 0, 0],
