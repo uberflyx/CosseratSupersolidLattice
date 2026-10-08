@@ -108,13 +108,14 @@ print("     squeezing moves the covariance and not the mean. Orthogonal channels
 
 print()
 print("=" * 72)
-print("[5] LOG-CORRECTION COUNT (no graviton loop)")
+print("[5] LOG-CORRECTION COUNT")
 print("=" * 72)
-photon, microrot = sp.Rational(-26, 90), sp.Rational(-26, 90)
-lattice = photon + microrot
+photon = sp.Rational(-26, 90)          # the transverse microrotation is gapped
 gr = sp.Rational(424 - 26, 90)
-print(f"  lattice: {photon} + {microrot} = {lattice} = {sp.nsimplify(lattice)}")
+print(f"  crystal alone (photon only): {photon} = {sp.nsimplify(photon)}")
+print(f"  with the bond geometry's graviton loop: {photon} + 424/90 = {gr}")
 print(f"  GR     : (424 - 26)/90 = {gr}")
 print(f"  LQG    : approximately -3/2")
-print("  Three theories, three numbers; the lattice value now rests on the")
-print("  absence of a fundamental metric field, not on a vector graviton.")
+print("  The covariance is a composite moment and runs in no loop of its own;")
+print("  a graviton loop runs only if the missing sector is a field of the")
+print("  medium, as the static crystal's bond geometry is.")

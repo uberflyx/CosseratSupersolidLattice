@@ -11,24 +11,22 @@ candidate channels, and this script prices each with the framework's own
 numbers.
 
   ROUTE 1  (static compression): hold a density slope so that a body
-           free-falls down it. The naive price, K_sf * eps ~ 1e58 Pa, comes
-           from assuming the chemical potential tracks the density one for
-           one, which is dilute-gas physics and wrong here by the medium's
-           own K_sf/mubar ~ 3e40. The correct equation of state follows
-           from Gibbs-Duhem at T = 0 (dP = n dmu, K = n dP/dn), and it
-           cancels K_sf identically: dP = n mu0 eps = rho c^2 eps. One
-           standard gravity across ten metres asks ~5.5e17 Pa, five orders
-           past a diamond anvil cell but not an absurdity. What stays shut
-           is not the pressure but the wall: a static pressure well
-           survives only while something holds it, ordinary matter is
-           transparent to the condensate below the Landau velocity, and a
-           conservative well left to itself is erased at the speed of
-           first sound (~1e20 c) before it could do any work. See the
-           monograph appendix, sec-clock-routes and sec-clock-energy-theorem.
+           free-falls down it. Gibbs-Duhem at T = 0 (dP = n dmu,
+           K = n dP/dn) gives dP = n mu0 eps whatever the bulk modulus.
+           With the chemical potential the framework adopts, reading (B),
+           mu0 = m0 v_p^2, the condensate is a stiff fluid and
+           n mu0 = rho v_p^2 = K_sf, so one standard gravity across ten
+           metres asks ~1.7e58 Pa, some 1e25 times the crystal's shear
+           modulus. Reading (A), mu0 = m0 c^2, would have given
+           rho c^2 eps ~ 5.5e17 Pa. The wall fails as well: ordinary
+           matter is transparent to the condensate below the Landau
+           velocity, and a conservative well left to itself is erased at
+           the speed of first sound (~1e20 c). See the monograph appendix,
+           sec-clock-routes and sec-clock-energy-theorem.
 
   ROUTE 2  (radiated second sound): emit momentum into the compression
-           channel at v_2 = sqrt(3) c. Wave momentum flux F = P/v_2, i.e.
-           v_2/c = sqrt(3) times WORSE thrust-per-watt than a photon
+           channel at v_2 = 1.59 c. Wave momentum flux F = P/v_2, i.e.
+           v_2/c = 1.59 times WORSE thrust-per-watt than a photon
            rocket, before the transducer efficiency is even paid. A
            signalling channel, not a thruster.
 
@@ -46,10 +44,9 @@ numbers.
            chapter's named open quantity, formalised as the closure
            identity in knot_closure_theorem.py.
 
-The point of the script is the comparison, not any one number: none of the
-three routes is an energy problem (as rocketry is). Route 1 is a containment
-problem, Route 2 is a poor figure of merit, and Route 3 is a transducer
-problem.
+The point of the script is the comparison, not any one number. Route 1 fails on price
+and containment together, Route 2 is a poor figure of merit, and Route 3 is
+a transducer problem.
 """
 
 import numpy as np
@@ -79,33 +76,30 @@ print("=" * 72)
 print("PUSHING ON THE VACUUM: three routes, priced")
 print("=" * 72)
 print(f"  rho_s = f_s m0/ell^3 = {rho_s:.3e} kg/m^3   (lead: 1.13e4; {rho_s/1.134e4:.2e}x denser)")
-print(f"  mubar = rho c^2      = {mubar:.3e} Pa   (sets Route 1's price)")
-print(f"  K_sf  = c^4/(G l^2)  = {K_sf:.3e} Pa   (does NOT set Route 1's price; see below)")
+print(f"  mubar = rho c^2      = {mubar:.3e} Pa   (Route 1's price under reading (A))")
+print(f"  K_sf  = c^4/(G l^2)  = {K_sf:.3e} Pa   (= rho v_p^2, Route 1's price under reading (B))")
 print()
 
 # ----- ROUTE 1: static compression, correctly priced -----------------------
 a_want, L_craft = 9.8, 10.0
 eps = a_want * L_craft / c**2               # fractional clock slope needed
-dP  = mubar * eps                           # correct pressure (Gibbs-Duhem EOS)
-dP_naive = K_sf * eps                       # the wrong, dilute-gas pressure
-u_dep   = dP / gamma_G                      # energy density if DEPOSITED (Mie-Grueneisen)
-u_store = dP**2 / (2.0 * K_cr)              # energy density if STORED as strain
+dP   = K_sf * eps                           # price, reading (B): n mu0 = rho v_p^2 = K_sf
+dP_A = mubar * eps                          # price, reading (A): n mu0 = rho c^2
+u_dep = dP / gamma_G                        # energy density if DEPOSITED (Mie-Grueneisen)
 print("ROUTE 1 - static compression ('warp the medium'):")
 print(f"  1 g over {L_craft:.0f} m needs a fractional clock shift eps = {eps:.2e}")
-print(f"  naive price (dmu/mu0 = dn/n assumed): K_sf * eps = {dP_naive:.1e} Pa")
-print(f"  correct price (Gibbs-Duhem EOS):      mubar * eps = {dP:.1e} Pa")
-print(f"    -> {dP_naive/dP:.1e}x smaller. K_sf cancels identically; only rho c^2 survives.")
-print(f"  energy density if deposited: P/gamma_G       = {u_dep:.1e} J/m^3")
-print(f"  energy density if held as strain: P^2/(2 K_cr) = {u_store:.1e} J/m^3")
-print(f"    -> stored is {u_dep/u_store:.1e}x cheaper, IF it could be held.")
-print("  It cannot: first sound erases an unwalled well at ~1e20 c, and the")
-print("  condensate is transparent to ordinary matter below the Landau speed,")
-print("  so nothing we are made of is a wall for this fluid. SHUT, not on price.")
+print(f"  price, Gibbs-Duhem with mu0 = m0 v_p^2 (reading B): {dP:.1e} Pa")
+print(f"  (reading A, mu0 = m0 c^2, would give {dP_A:.1e} Pa)")
+print(f"  pressure / crystal bulk modulus = {dP/K_cr:.1e}: no strain could hold it")
+print(f"  energy density if deposited: P/gamma_G = {u_dep:.1e} J/m^3")
+print("  First sound also erases an unwalled well at ~1e20 c, and the")
+print("  condensate is transparent to ordinary matter below the Landau speed.")
+print("  SHUT on price and on containment.")
 print()
 
 # ----- ROUTE 2: radiated second sound --------------------------------------
 print("ROUTE 2 - radiated second sound:")
-print(f"  wave momentum: F/P = 1/v_2 = {1/v2:.3e} N/W   (v_2 = sqrt(3) c)")
+print(f"  wave momentum: F/P = 1/v_2 = {1/v2:.3e} N/W   (v_2 = {v2/c:.2f} c)")
 print(f"  photon rocket:  F/P = 1/c  = {1/c:.3e} N/W  (2nd sound is {v2/c:.2f}x worse,")
 print("  before transducer efficiency). A signalling channel, not a thruster.")
 print()
@@ -137,7 +131,6 @@ print("  The half watt prices the jet once it exists. The price of gripping")
 print("  the condensate to make the jet is the actuation efficiency, set by")
 print("  the fluid-crystal cross-coupling: the chapter's single most")
 print("  consequential open number. The comparison's value is what it says")
-print("  about the KIND of problem each route is: Route 1 fails on")
-print("  containment, Route 2 on figure of merit, Route 3 on grip, and none")
-print("  of the three fails on energy.")
+print("  about the KIND of problem each route is: Route 1 fails on price")
+print("  and containment, Route 2 on figure of merit, Route 3 on grip.")
 print("=" * 72)

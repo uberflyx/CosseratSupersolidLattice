@@ -8,10 +8,14 @@ Reproduces the per-field coefficients for the scalar (2/90), Maxwell vector
 (-26/90), and the geometric inputs for the graviton, by explicit symbolic
 computation on the Schwarzschild metric.
 
-The framework predicts the graviton contributes -26/90 (a vector's anomaly)
-rather than the standard +424/90 (a tensor's anomaly), because its graviton
-is a microrotation vector whose curl gives the spin-2 observable. See the
-monograph's gravity chapter, "Logarithmic corrections and the vector graviton."
+The crystal's own massless content is the photon alone, -26/90 (the compact
+translation is the condensate's phase in the static register, not a further
+massless scalar).  The missing sector adds to this: its leading candidate, the
+bond geometry of the static crystal, is a gapless tensor field of the medium
+with Einstein's energy, so it contributes the standard +424/90 and the total
+is general relativity's +398/90.  See the black-hole chapter, "Logarithmic
+corrections and the graviton loop", and the gravity chapter, "The bond
+geometry of the static crystal".
 
 Requires: sympy
 Usage:    python3 hk_schwarzschild.py
@@ -358,26 +362,27 @@ print(f"    not encoded here. The geometric traces (e2={e2_grav},")
 print(f"    w2={w2_grav}) are verified.")
 
 # =========================================================================
-# 7. FRAMEWORK PREDICTION: VECTOR GRAVITON
+# 7. FRAMEWORK COUNT: CRYSTAL ALONE, AND WITH THE BOND GEOMETRY
 # =========================================================================
-# The framework's graviton is a microrotation vector phi, not a symmetric
-# tensor h. A gauge vector contributes the Maxwell value -26/90. The total
-# logarithmic coefficient is photon + graviton-as-vector.
+# The crystal's linear branches give one massless gauge vector, the photon.
+# A missing sector outside the medium would leave that alone; the bond
+# geometry of the static crystal is a gapless field of the medium with the
+# Einstein form and its gauge symmetry, so it runs in the loop with the
+# standard graviton coefficient.
 # =========================================================================
 C_photon = C_maxwell
-C_graviton_lattice = C_maxwell  # same: gauge vector
-C_total_lattice = C_photon + C_graviton_lattice
+C_crystal = C_photon
+C_graviton_std = sp.Rational(424, 90)
+C_bond_geometry = C_photon + C_graviton_std
 C_total_GR = sp.Rational(398, 90)
 
 print(f"\n{'=' * 65}")
 print(f"FRAMEWORK vs GENERAL RELATIVITY")
 print(f"{'=' * 65}")
 print(f"  Photon contribution:                  {C_photon} = {float(C_photon):.4f}")
-print(f"  Graviton-as-vector contribution:      {C_graviton_lattice} = {float(C_graviton_lattice):.4f}")
-print(f"  Framework total C_local:              {C_total_lattice} = {float(C_total_lattice):.4f}")
+print(f"  Crystal alone (photon only):          {C_crystal} = {float(C_crystal):.4f}")
+print(f"  With the bond geometry's graviton:    {C_bond_geometry} = {float(C_bond_geometry):.4f}")
 print(f"  GR total C_local:                     {C_total_GR} = {float(C_total_GR):.4f}")
-print(f"  Difference (GR - framework):          {sp.simplify(C_total_GR - C_total_lattice)}")
-print(f"\n  The framework predicts a NEGATIVE log correction (entropy")
-print(f"  slightly below A/4), opposite in sign to GR/string theory's")
-print(f"  positive correction. The sign traces to the graviton being")
-print(f"  a vector (microrotation) rather than a tensor (metric).")
+print(f"\n  With the bond geometry carrying gravity the coefficient is")
+print(f"  general relativity's; a negative coefficient would mean a")
+print(f"  missing sector outside the medium.")
