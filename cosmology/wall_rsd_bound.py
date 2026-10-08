@@ -5,87 +5,100 @@ Consistency of the pinned-wall velocity template with redshift-space
 distortions, and its (null) effect on the BAO+CMB neutrino-mass bound
 (Confrontation chapter, neutrino-mass and dark-energy discussions).
 
-Because the template is coherent within each 21 Mpc cell, nearby tracers
-share their infall and the PAIRWISE velocity (the observable RSD constrains)
-is far smaller than the point velocities: 28 km/s at 10-30 Mpc separations
-against the ~30 km/s residual window on the ~300 km/s matter infall. The
-bare order-unity coupling therefore passes. Beyond ~40 Mpc the template
-decorrelates, so its displacement at the 150 Mpc acoustic scale is < 0.06%
-of the sound horizon, below DESI precision and incoherent in sign: the
-BAO+CMB neutrino-mass bound is untouched by the framework's own template,
-and the 65.5 meV prediction is a clean test.
+The template is built by wall_template_flow.py (same directory): a
+1280 Mpc periodic Poisson-Voronoi foam carrying the full dark-energy density
+with the active weight XI_N = -2 that the fossil stress fixes, velocities
+built kinematically over a Hubble time (an upper estimate).
 
-The template adds infall of galaxies (wall residents) toward walls. Pairwise
-radial velocities of galaxies at 5-40 Mpc separations are measured via RSD
-(f sigma8) to ~8% consistency with LCDM. Compute the BARE template's mean
-pairwise velocity v12(r) for wall-resident tracers and derive the cap on the
-wall perturbation coupling epsilon (effective gravitating fraction).
+Because the template is coherent within each cell, nearby tracers share
+their motion and the PAIRWISE velocity (the observable redshift-space
+distortions constrain) is far smaller than the point velocities. For
+wall-resident tracers it is an outflow at 10-30 Mpc separations, compared
+here with a ~30 km/s residual window on the ~300 km/s matter infall. The
+estimate neglects Hubble damping and assumes the tracers stay on the walls,
+which repulsive walls themselves work against. At large separations the
+pairwise velocity falls to a few km/s, so the displacement at the 150 Mpc
+acoustic scale stays far below DESI precision and incoherent in sign: the
+BAO+CMB neutrino-mass bound is untouched by the framework's own template.
+
+The painted walls are one grid cell thick, so the pairwise velocity at
+10-15 Mpc depends on resolution; a 320 Mpc box on a 1.67 Mpc grid checks it.
+Both are averaged over N_REAL = 8 foam realisations (first argument
+overrides). Run from this directory. Memory about 3 GB.
 """
+import sys
 import numpy as np
 from scipy.spatial import cKDTree
+from wall_template_flow import wall_template, L_box, dx, Mpc, t_H, N_REAL
 
-rng = np.random.default_rng(5)
-G, Mpc = 6.674e-11, 3.086e22
-H0 = 67.4e3/Mpc; t_H = 1/H0
-rho_L = 0.685*3*H0**2/(8*np.pi*G)
-L_box, N = 320.0*Mpc, 192
-dx = L_box/N; L_cell = 21.4*Mpc
-n_seed = int(round((L_box/L_cell)**3))
-seeds = rng.uniform(0,L_box,(n_seed,3))
-tree = cKDTree(seeds, boxsize=L_box)
-ax1=(np.arange(N)+0.5)*dx
-X,Y,Z=np.meshgrid(ax1,ax1,ax1,indexing="ij")
-lab=tree.query(np.stack([X.ravel(),Y.ravel(),Z.ravel()],1),workers=-1)[1].reshape(N,N,N).astype(np.int32)
-del X,Y,Z
-wall=np.zeros((N,N,N),bool)
-for a_ in range(3): wall |= (lab!=np.roll(lab,1,axis=a_))
-del lab
-drho=np.where(wall,rho_L/wall.mean(),0.0)-rho_L
-k1=2*np.pi*np.fft.fftfreq(N,d=dx)
-KX,KY,KZ=np.meshgrid(k1,k1,k1,indexing="ij")
-K2=KX**2+KY**2+KZ**2; K2[0,0,0]=1
-phik=-4*np.pi*G*np.fft.fftn(drho)/K2; phik[0,0,0]=0
-v=[np.real(np.fft.ifftn(-1j*Ki*phik))*t_H for Ki in (KX,KY,KZ)]
-del drho,phik,KX,KY,KZ,K2
+rbins = np.array([5, 10, 15, 22, 30, 40, 60, 100]) * Mpc
 
-wi=np.argwhere(wall); del wall
-# sample wall-resident tracer pairs by separation bin
-n_tr=40000
-sel=wi[rng.integers(len(wi),size=n_tr)]
-pos=(sel+0.5)*dx
-vel=np.stack([v[0][sel[:,0],sel[:,1],sel[:,2]],
-              v[1][sel[:,0],sel[:,1],sel[:,2]],
-              v[2][sel[:,0],sel[:,1],sel[:,2]]],1)
-ptree=cKDTree(pos, boxsize=L_box)
-rbins=np.array([5,10,15,22,30,40])*Mpc
-print("BARE template pairwise radial velocity v12(r) for wall tracers:")
-print(" r [Mpc]   v12 [km/s]  (negative = infall)")
-v12=[]
-for i in range(len(rbins)-1):
-    pairs=ptree.query_pairs(rbins[i+1], output_type='ndarray')
-    d=pos[pairs[:,1]]-pos[pairs[:,0]]; d-=L_box*np.round(d/L_box)
-    rr=np.linalg.norm(d,axis=1)
-    m=(rr>=rbins[i])
-    if m.sum()>200000:  # subsample for speed
-        idx=rng.choice(np.where(m)[0],200000,replace=False); 
-    else:
-        idx=np.where(m)[0]
-    rhat=d[idx]/rr[idx,None]
-    dv=np.einsum("ij,ij->i",vel[pairs[idx,1]]-vel[pairs[idx,0]],rhat)
-    v12.append(dv.mean()/1e3)
-    print(f"  {rbins[i]/Mpc:3.0f}-{rbins[i+1]/Mpc:3.0f}   {dv.mean()/1e3:+7.1f}")
-v12=np.array(v12)
 
-# LCDM matter pairwise infall at 10-25 Mpc: ~ -(250-350) km/s; RSD/fs8 consistency ~8-10%
-v_matter=300.0; frac=0.10
-allowed=frac*v_matter
-vbare=abs(v12[1:4]).max()
-eps=allowed/vbare
-print(f"\nmax |v12_bare| (10-30 Mpc)  = {vbare:.0f} km/s")
-print(f"RSD-allowed extra infall     ~ {allowed:.0f} km/s (10% of ~300)")
-print(f"=> wall perturbation coupling epsilon <~ {eps:.2f}")
-print(f"\nconsequences (all template observables scale linearly with epsilon):")
-print(f"  SN-floor cap: 0.020 mag x eps = {0.020*eps:.4f} mag at z=0.015")
-print(f"  bulk-flow fingerprint cap: ~{87*eps:.0f} km/s at 30 Mpc spheres")
-print(f"  H0 wall-channel cap: +-{0.2*eps:.3f} km/s/Mpc (was already closed)")
-print(f"  BAO peak / Sum m_nu bound: template contribution negligible at this eps")
+def pairwise_velocity(v, face_w, rng, L_box=L_box, dx=dx, n_tr=60000, n_bins=None,
+                      max_pairs=300000):
+    """Mean radial pairwise velocity v12 [km/s] of wall-resident tracers in
+    the first n_bins separation bins (all by default); positive is outflow."""
+    wi = np.argwhere(face_w > 0)
+    sel = wi[rng.integers(len(wi), size=n_tr)]
+    pos = (sel + 0.5) * dx
+    vel = np.stack([v[c][sel[:, 0], sel[:, 1], sel[:, 2]] for c in range(3)], axis=1)
+    ptree = cKDTree(pos, boxsize=L_box)
+    v12 = []
+    for i in range(n_bins or len(rbins) - 1):
+        pairs = ptree.query_pairs(rbins[i + 1], output_type="ndarray")
+        d = pos[pairs[:, 1]] - pos[pairs[:, 0]]
+        d -= L_box * np.round(d / L_box)
+        rr = np.linalg.norm(d, axis=1)
+        idx = np.where(rr >= rbins[i])[0]
+        if len(idx) > max_pairs:
+            idx = rng.choice(idx, max_pairs, replace=False)
+        rhat = d[idx] / rr[idx, None]
+        dv = np.einsum("ij,ij->i", vel[pairs[idx, 1]] - vel[pairs[idx, 0]], rhat)
+        v12.append(dv.mean() / 1e3)
+    return np.array(v12)
+
+
+n_real = int(sys.argv[1]) if len(sys.argv) > 1 else N_REAL
+V12 = []
+for s in range(n_real):
+    rng = np.random.default_rng(5 + 100 * s)
+    v, face_w = wall_template(rng)
+    V12.append(pairwise_velocity(v, face_w, rng))
+    del v, face_w
+    print(f"  realisation {s}: v12 = {np.round(V12[-1], 1).tolist()} km/s")
+V12 = np.array(V12)
+v12, sd = V12.mean(axis=0), V12.std(axis=0)
+
+# Resolution check: the painted walls are one grid cell thick, so the
+# pairwise velocity at 10-15 Mpc depends on the grid. Repeat on a 1.67 Mpc
+# grid in a 320 Mpc box (too small for the bulk flow, adequate below 40 Mpc).
+L_f, N_f = 320.0 * Mpc, 192
+V12f = []
+for s in range(n_real):
+    rng = np.random.default_rng(7 + 100 * s)
+    v, face_w = wall_template(rng, L_box=L_f, N=N_f)
+    V12f.append(pairwise_velocity(v, face_w, rng, L_box=L_f, dx=L_f / N_f, n_tr=30000, n_bins=5))
+    del v, face_w
+V12f = np.array(V12f)
+
+print(f"\ntemplate pairwise radial velocity v12(r) for wall tracers, "
+      f"mean +- sd over {n_real} realisations:")
+print(" r [Mpc]   v12 [km/s]  (positive = outflow)")
+for i in range(len(rbins) - 1):
+    print(f"  {rbins[i]/Mpc:3.0f}-{rbins[i+1]/Mpc:3.0f}   {v12[i]:+7.1f} +- {sd[i]:4.1f}")
+
+print(f"\nresolution check, {L_f/Mpc:.0f} Mpc box on a {L_f/N_f/Mpc:.2f} Mpc grid (r < 40 Mpc):")
+for i in range(5):
+    print(f"  {rbins[i]/Mpc:3.0f}-{rbins[i+1]/Mpc:3.0f}   {V12f[:, i].mean():+7.1f} +- {V12f[:, i].std():4.1f}")
+
+# LCDM matter pairwise infall at 10-25 Mpc ~ 250-350 km/s; growth-rate data
+# allow a residual of about 10 per cent
+allowed = 0.10 * 300.0
+vmax = np.abs(v12[1:4]).max()
+vmax_f = np.abs(V12f.mean(axis=0)[1:4]).max()
+print(f"\nmax |v12| (10-30 Mpc)       = {vmax:.0f} km/s (large box), {vmax_f:.0f} km/s (fine grid)")
+print(f"RSD-allowed extra pairwise  ~ {allowed:.0f} km/s (10% of ~300)")
+print(f"=> allowed fraction of the derived coupling: {allowed/vmax_f:.2f}-{allowed/vmax:.2f}")
+disp = 0.5 * v12[-1] * 1e3 * t_H / Mpc
+print(f"\nBAO-scale displacement from the 60-100 Mpc pairwise velocity: "
+      f"{disp:.3f} Mpc = {100*disp/147:.3f}% of the sound horizon")
