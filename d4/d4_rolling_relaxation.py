@@ -33,6 +33,15 @@ slipping against their own-side contacts.  This script shows:
      potential — the partition rests on the tangential contact-
      handover law, the open axiom identified in the monograph.
 
+Correction (October 2026): the harmonic band in item 3 uses a Frenkel
+reference built from the directed bond sum, which doubles mubar relative to
+the energy count used for the wall stiffness, so both ends are half their
+energy-convention values: the frozen one-cut wall is 4 pi/(3(pi - 1)) = 1.956
+Frenkel units and the rotation-relaxed one-cut wall 1.633.  eta_0 itself is a
+ratio of tangential energies and is unaffected.  The corrected numbers, with
+the interleaved half-layer and the curvature modulus, are in
+foundations/d4_wall_curvature.py.
+
 Usage: python3 d4_rolling_relaxation.py     Requires numpy, sympy.
 
 Author: Mitchell A. Cox

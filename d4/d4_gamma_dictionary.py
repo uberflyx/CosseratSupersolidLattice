@@ -42,6 +42,17 @@ the wall softens the k_t contribution, the finite-amplitude contact
 path stiffens it; the full Morse-path computation (a*ell = 7/3) with
 contact switching decides the residual 2%.
 
+Correction (October 2026): the Frenkel references in part 3 build mubar from
+the directed bond sum, which doubles it relative to the energy count used for
+the wall stiffness, so each Gamma/Gamma_Frenkel printed below is half its
+energy-convention value.  For D4 the frozen-contact ratio is
+4 pi/(3(pi - 1)) = 1.956, not 0.978, so the frozen wall does not support the
+Frenkel convention; its internal coordinates bring it back to within a few
+per cent of it.  The slice reference here also uses the cubic-axis shear
+modulus rather than the {111}-resolved one that the wall shears.  The
+corrected D4 numbers, with the half-layer, the rotational relaxation and the
+exact harmonic partition, are in foundations/d4_wall_curvature.py.
+
 Usage:  python3 d4_gamma_dictionary.py
 Requires: numpy.
 
