@@ -7,11 +7,14 @@ c^3 omega^2 h^2 / (16 pi G)?
 Three candidate channels for a wave of measured metric strain h at frequency omega:
   (a) bare microrotation (rocking) channel: energy density ~ (1/2) rho j omega^2 phi^2
   (b) bare shear strain channel:            energy density ~ (1/2) mu h^2
-  (c) collective (19-node tunnelling) channel with stiffness c^4/(16 pi G),
-      i.e. the Einstein-Hilbert normalisation, which the lattice G-derivation
-      should supply as mu / (16 pi K alpha^19).
+  (c) the missing sector, with stiffness c^4/(16 pi G), i.e. the
+      Einstein-Hilbert normalisation, which in lattice units is
+      mu / (16 pi alpha_G), with alpha_G = G m0^2/(hbar c) the gravitational
+      coupling at the node mass taken from the measured G.  The proposed
+      nineteen-node identification alpha_G = K alpha^19 is a conjecture and is
+      evaluated alongside for comparison only.
 
-The script tests the identity  c^2 / (16 pi G rho l^2)  ==  1 / (16 pi K alpha^19)
+The script tests the identity  c^2 / (16 pi G rho l^2)  ==  1 / (16 pi alpha_G)
 which holds iff hbar/(m0 c) == l == r_e, i.e. the node Compton wavelength equals
 the classical electron radius. It then evaluates saturation of channels (a),(b)
 near a merger, and computes the Hulse-Taylor / double-pulsar GR decay numbers
@@ -37,20 +40,23 @@ ell  = r_e                     # lattice length scale
 rho  = m0 / ell**3             # lattice density
 mu   = rho * c**2              # shear modulus
 j    = ell**2                  # microinertia
-K    = (1 + 1/np.pi) * (1 - 17*alpha/18)   # prefactor in the G formula
+alpha_G = G_exp * m0**2 / (hbar * c)    # gravitational coupling at the node mass (measured)
+print(f"alpha_G(m0) = {alpha_G:.6e}  (from the measured G)")
 
-G_lat = K * (hbar * c / m0**2) * alpha**19
-print(f"lattice G   = {G_lat:.6e}   (exp {G_exp:.6e}, ratio {G_lat/G_exp:.6f})")
+# the nineteen-node conjecture, for comparison only
+K    = (1 + 1/np.pi) * (1 - 17*alpha/18)   # conjectured prefactor C_G
+print(f"conjecture K alpha^19 = {K*alpha**19:.6e}  "
+      f"(ratio to measured alpha_G {K*alpha**19/alpha_G:.7f})")
 
 # --- identity check: node Compton wavelength vs r_e --------------------------
 lam0 = hbar / (m0 * c)
 print(f"hbar/(m0 c) = {lam0:.6e} m ;  r_e = {r_e:.6e} m ;  ratio = {lam0/r_e:.8f}")
 
 # --- the stiffness identity --------------------------------------------------
-lhs = c**2 / (16*np.pi * G_lat * rho * ell**2)     # required enhancement of gradient modulus
-rhs = 1.0 / (16*np.pi * K * alpha**19)             # inverse tunnelling suppression
+lhs = c**2 / (16*np.pi * G_exp * rho * ell**2)     # required enhancement of gradient modulus
+rhs = 1.0 / (16*np.pi * alpha_G)                    # inverse gravitational coupling
 print(f"c^2/(16 pi G rho l^2) = {lhs:.6e}")
-print(f"1/(16 pi K alpha^19)  = {rhs:.6e}   ratio = {lhs/rhs:.8f}")
+print(f"1/(16 pi alpha_G)     = {rhs:.6e}   ratio = {lhs/rhs:.8f}")
 
 # --- GR flux for reference wave ----------------------------------------------
 def flux_GR(h, omega):
@@ -107,11 +113,12 @@ print(f"PSR J0737-3039A/B: Pbdot_GR = {pb0737:.4e}  (published -1.247920e-12; "
 # =============================================================================
 import sympy as sp
 
-# --- (1) Planck-force identity: c^4/G == mu l^2 / (K alpha^19) ---------------
-lhs_pf = c**4 / G_lat
-rhs_pf = mu * ell**2 / (K * alpha**19)
+# --- (1) Planck-force identity: c^4/G == mu l^2 / alpha_G ---------------------
+lhs_pf = c**4 / G_exp
+rhs_pf = mu * ell**2 / alpha_G
 print(f"\nPlanck force c^4/G      = {lhs_pf:.6e} N")
-print(f"mu l^2 / (K alpha^19)   = {rhs_pf:.6e} N   ratio = {lhs_pf/rhs_pf:.10f}")
+print(f"mu l^2 / alpha_G        = {rhs_pf:.6e} N   ratio = {lhs_pf/rhs_pf:.10f}")
+print(f"mu l^2 / (K alpha^19)   = {mu*ell**2/(K*alpha**19):.6e} N   (conjecture)")
 
 # --- (2) TT-projector sphere average on symmetric traceless tensors ----------
 # <Lambda_ij,kl A_ij A_kl> = (2/5) A_ij A_ij, verified by symbolic integration.
@@ -152,7 +159,7 @@ target = (1 + sp.Rational(73,24)*ecc**2 + sp.Rational(37,96)*ecc**4) \
 print(f"orbit-averaged f(e) - target = {sp.simplify(favg - target)} (expect 0)")
 
 # --- (4) Polarisation budget: scalar-channel suppression ----------------------
-K_sf_over_mu = 3.0e40                     # condensate bulk / shear modulus (Sec. bulk_modulus)
+K_sf_over_mu = 1.0 / alpha_G             # condensate bulk / shear modulus, K_sf = mu/alpha_G
 v_p = c * np.sqrt(K_sf_over_mu)           # pilot-wave speed
 supp_power = (c / v_p)**5                 # scalar/tensor radiated-power ratio bound
 print(f"\npilot-wave speed v_p = {v_p:.2e} m/s = {v_p/c:.2e} c")
