@@ -68,6 +68,28 @@ Three questions, each answered by a short calculation:
    nearest-neighbour model, with or without the (2,0,0) hop); an even hop breaks
    it.  Its Witten anomaly needs an even number of crossings: 1 + 25 and 1 + 13.
 
+7. An exact, local, non-quantised chiral symmetry of the Wilson-Dirac block,
+   A(k) = gamma5 [f(k) + beta alpha.G(k)] with f w + G.d = 0.  The identity is
+   solved exactly with sympy (f, G periodic, cubic-symmetric, reaching the
+   fourth neighbours); A(Gamma) = gamma5, A = 0 at X, L and W, eigenvalues
+   +-sqrt(f^2 + |G|^2); [A, H] = 0 at random k; a uniform beta or i beta gamma5
+   breaks it; a density v(k) does not.  The same identity is solvable for the
+   simple cubic Wilson fermion at degree three.  A search over generators built
+   from FCC hops finds such operators first at the third neighbours (|n|^2 = 6)
+   and none at shorter range.  The naive constituent on all 24 bonds of D4 with
+   alpha_4 = beta gives, at k4 = +-pi/2, alpha.d_slice +- 2t beta sum_i cos k_i:
+   Gamma gapped at 6t = 149 MeV, X at 2t, L and W gapless.
+8. Four neutrinos: smallest odd anomaly-free sets with no shared charge are
+   {-7,-1,1,7} vs {-5,-5,5,5} (no bare hole) and {-11,-11,-1,-1} vs {-13,-7,-5,1}
+   (one bare hole); no four-species set holds two bare holes up to |q| = 25; two
+   need five species (|q| = 35) or six (|q| = 7), three need seven (|q| = 11).  Delta N_eff per Dirac species: 0.19 above the
+   quark-hadron transition, 0.094 above the electroweak scale.
+9. A massless continuum Dirac constituent in the FCC density potential (59 plane
+   waves, two stars): Gamma stays four-fold degenerate to all orders; a handedness-
+   flipping (beta) harmonic gaps it only on both stars, at third order, mass
+   1.06 V^3 (units hbar c/s), so m_1 bounds V_odd at 36 keV; the density potential
+   slows the cone by 0.36 (V/(hbar c/s))^2, so the burst bounds V at 7 keV.
+
 All numbers quoted in the monograph are asserted here.
 """
 
@@ -459,6 +481,258 @@ def pauli_gursey():
           " crossings per zone 26 and 14, even as the Witten anomaly requires")
 
 
+def modified_chiral_symmetry():
+    """Question 7: the exact non-quantised chiral charge of the Wilson-Dirac block."""
+    import sympy as sp
+
+    r, t = 0.3, 1.0
+
+    def wilson(k):
+        return r * np.sum(1 - np.cos(NN @ k))
+
+    # --- exact solution of f w + G.d = 0 (w = 4 r wq, d = t d1) with sympy -------------
+    c1, c2, c3, s1, s2, s3 = sp.symbols('c1 c2 c3 s1 s2 s3')
+    c, sn = [c1, c2, c3], [s1, s2, s3]
+    d1 = [2 * sn[i] * (c[(i + 1) % 3] + c[(i + 2) % 3]) for i in range(3)]
+    wq = 3 - (c1 * c2 + c2 * c3 + c3 * c1)
+    f_sym = -(c1**2 * c2**2 - c1**2 * c2 * c3 + c1**2 * c3**2 - 3 * c1**2 - c1 * c2**2 * c3 - c1 * c2 * c3**2
+              - 5 * c1 * c2 - 5 * c1 * c3 + c2**2 * c3**2 - 3 * c2**2 - 5 * c2 * c3 - 3 * c3**2) / 24
+
+    def g_sym(i):
+        j, l = (i + 1) % 3, (i + 2) % 3
+        return sn[i] * (c[i] * c[j]**2 + c[i] * c[l]**2 - 6 * c[i] - c[j]**2 * c[l] - c[j] * c[l]**2 - 9 * c[j] - 9 * c[l]) / 96
+
+    ident = sp.expand(f_sym * wq + sum(g_sym(i) * d1[i] for i in range(3)))
+    for _ in range(3):
+        ident = sp.expand(ident.subs({s1**2: 1 - c1**2, s2**2: 1 - c2**2, s3**2: 1 - c3**2}))
+    assert ident == 0
+    assert f_sym.subs({c1: 1, c2: 1, c3: 1}) == 1
+
+    def f_num(k):
+        return float(f_sym.subs(dict(zip(c, np.cos(k)))))
+
+    def g_num(k):
+        sub = dict(zip(c, np.cos(k)))
+        sub.update(dict(zip(sn, np.sin(k))))
+        return np.array([float(g_sym(i).subs(sub)) for i in range(3)])
+
+    def a_matrix(k):
+        # f w + (4 r / t) G . d(t) = 0, so the vector part carries the factor 4 r / t
+        return GAMMA5 @ (f_num(k) * np.eye(4) + (4 * r / t) * BETA @ sum(a * x for a, x in zip(ALPHAS, g_num(k))))
+
+    rng = np.random.default_rng(2)
+    for k in rng.uniform(-np.pi, np.pi, (20, 3)):
+        h = hamiltonian(k, t, r)
+        assert np.allclose(h @ a_matrix(k) - a_matrix(k) @ h, 0, atol=1e-12)
+        ev = np.linalg.eigvalsh(a_matrix(k))
+        assert np.allclose(np.abs(ev), np.sqrt(f_num(k)**2 + (4 * r / t)**2 * g_num(k) @ g_num(k)))
+    assert np.allclose(a_matrix(np.zeros(3)), GAMMA5)
+    for pt in (np.array([np.pi, 0, 0]), np.full(3, np.pi / 2), np.array([np.pi, np.pi / 2, 0])):
+        assert np.allclose(a_matrix(pt), 0, atol=1e-12)
+    a0 = a_matrix(np.zeros(3))
+    assert not np.allclose(a0 @ BETA - BETA @ a0, 0)
+    assert not np.allclose(a0 @ (1j * BETA @ GAMMA5) - (1j * BETA @ GAMMA5) @ a0, 0)
+    print("7. exact chiral charge of the Wilson-Dirac block: A = gamma5 [f + beta alpha.G], f w + G.d = 0 solved exactly;"
+          " [A, H] = 0, A(Gamma) = gamma5, A = 0 at X, L, W; eigenvalues +-sqrt(f^2 + G^2); a uniform mass breaks it")
+
+    # the simple cubic Wilson fermion admits the same construction at degree three
+    def solvable(dvec, wfun, deg):
+        mons = [c1**a * c2**b * c3**e for a in range(deg + 1) for b in range(deg + 1) for e in range(deg + 1) if a + b + e <= deg]
+        fa = sp.symbols(f'f0:{len(mons)}')
+        f = sum(x * m for x, m in zip(fa, mons))
+        unknowns = list(fa)
+        gs = []
+        for i in range(3):
+            pa = sp.symbols(f'p{i}_0:{len(mons)}')
+            unknowns += list(pa)
+            gs.append(sn[i] * sum(x * m for x, m in zip(pa, mons)))
+        expr = sp.expand(f * wfun + sum(gs[i] * dvec[i] for i in range(3)))
+        for _ in range(2):
+            expr = sp.expand(expr.subs({s1**2: 1 - c1**2, s2**2: 1 - c2**2, s3**2: 1 - c3**2}))
+        eqs = sp.Poly(expr, c1, c2, c3, s1, s2, s3).coeffs()
+        mat, rhs = sp.linear_eq_to_matrix(eqs + [f.subs({c1: 1, c2: 1, c3: 1}) - 1], unknowns)
+        return len(sp.linsolve((mat, rhs), unknowns)) > 0
+
+    assert not solvable([s1, s2, s3], 3 - (c1 + c2 + c3), 2)
+    assert solvable([s1, s2, s3], 3 - (c1 + c2 + c3), 3)
+    print("   the simple cubic Wilson fermion admits the same charge with f and G of degree three (not two)")
+
+    # --- search over finite-range generators built from FCC hops --------------------------
+    def search(smax, n_pts):
+        vecs = [np.array(v) for v in itertools.product(range(-2, 3), repeat=3) if np.dot(v, v) <= smax and sum(v) % 2 == 0]
+        n_v = len(vecs)
+        n_unknown = n_v * 32
+
+        def parts(x, k):
+            phase = np.exp(1j * (np.array(vecs) @ k))
+            return np.tensordot(phase, x[n_v * 16:].reshape(n_v, 4, 4), 1), np.tensordot(phase, x[:n_v * 16].reshape(n_v, 4, 4), 1)
+
+        gram = np.zeros((2 * n_unknown, 2 * n_unknown))
+        for k in rng.uniform(-np.pi, np.pi, (n_pts, 3)):
+            hk, hm = hamiltonian(k, t, r), hamiltonian(-k, t, r)
+            rows = []
+            for jdx in range(n_unknown):
+                for unit in (1, 1j):
+                    x = np.zeros(n_unknown, complex)
+                    x[jdx] = unit
+                    a, b = parts(x, k)
+                    _, bm = parts(x, -k)
+                    rr = np.concatenate([(a - a.conj().T).ravel(), (b + bm.T).ravel(),
+                                         (hk @ a - a @ hk).ravel(), (hk @ b + b @ hm.T).ravel()])
+                    rows.append(np.concatenate([rr.real, rr.imag]))
+            cmat = np.array(rows).T
+            gram += cmat.T @ cmat
+        e, v = np.linalg.eigh(gram)
+        sols = [v[:, i][0::2] + 1j * v[:, i][1::2] for i in range(len(e)) if e[i] < 1e-10 * e.max()]
+
+        def forbids(x):
+            a, b = parts(x, np.zeros(3))
+            return np.linalg.norm(BETA @ b + b @ BETA.T) > 1e-6 or np.linalg.norm(BETA @ a - a @ BETA) > 1e-6
+
+        return len(sols), sum(forbids(x) for x in sols)
+
+    n2, f2 = search(2, 120)
+    n4, f4 = search(4, 200)
+    assert n2 > 0 and f2 == 0 and n4 > 0 and f4 == 0
+    print(f"   generators from FCC hops commuting with H: {n2} to the first neighbours and {n4} to the second,"
+          " none forbidding a uniform beta at Gamma; the first that do appear at the third neighbours")
+
+    # --- the naive constituent on all 24 bonds of D4, alpha_4 = beta --------------------
+    gammas = ALPHAS + [BETA]
+    bonds = [np.array(v) for v in itertools.product((-1, 0, 1), repeat=4) if sorted(map(abs, v)) == [0, 0, 1, 1]]
+    assert len(bonds) == 24
+
+    def h_d4(k4vec):
+        return sum((1j / 2) * sum(g * n for g, n in zip(gammas, b)) * np.exp(-1j * k4vec @ b) for b in bonds)
+
+    def closed(k, k4, tt=1.0):
+        return (sum(a * x for a, x in zip(ALPHAS, d_vec(k, tt)))
+                + 2 * tt * np.cos(k4) * sum(a * np.sin(k[i]) for i, a in enumerate(ALPHAS))
+                + 2 * tt * np.sin(k4) * np.sum(np.cos(k)) * BETA)
+
+    for _ in range(5):
+        k, k4 = rng.uniform(-np.pi, np.pi, 3), rng.uniform(-np.pi, np.pi)
+        assert np.allclose(h_d4(np.append(k, k4)), closed(k, k4))
+    t_c = HBARC / (4 * S_FM)
+    gaps = {lab: min_abs_energy(closed(k, np.pi / 2, t_c)) for lab, k in
+            (("Gamma", np.zeros(3)), ("X", np.array([np.pi, 0, 0])), ("L", np.full(3, np.pi / 2)), ("W", np.array([np.pi, np.pi / 2, 0])))}
+    assert abs(gaps["Gamma"] - 6 * t_c) < 1e-9 and abs(gaps["X"] - 2 * t_c) < 1e-9
+    assert gaps["L"] < 1e-9 and gaps["W"] < 1e-9
+    print(f"   naive D4 constituent at k4 = pi/2: Gamma gapped at 6t = {6 * t_c:.0f} MeV, X at 2t, L and W gapless")
+
+
+def four_neutrinos():
+    """Question 8: anomaly-free sets of four or more flavours, and their cost in N_eff."""
+    def power_sums(v):
+        return tuple(sum(x**n for x in v) for n in (1, 2, 3))
+
+    def smallest_sets(n_species, max_abs, min_bare):
+        odd = range(-max_abs, max_abs + 1, 2)
+        best = None
+        table = {}
+        for right in itertools.combinations_with_replacement(odd, n_species):
+            table.setdefault(power_sums(right), []).append(right)
+        for left in itertools.combinations_with_replacement(odd, n_species):
+            for right in table.get(power_sums(left), []):
+                if set(left) & set(right):
+                    continue
+                bare = min(left.count(-1), right.count(1))
+                if bare < min_bare:
+                    continue
+                span = max(map(abs, left + right))
+                if best is None or span < best[0]:
+                    best = (span, left, right)
+        return best
+
+    assert smallest_sets(4, 7, 0) == (7, (-7, -1, 1, 7), (-5, -5, 5, 5))
+    assert smallest_sets(4, 13, 1) == (13, (-11, -11, -1, -1), (-13, -7, -5, 1))
+    assert smallest_sets(4, 25, 2) is None
+
+    def with_bare_holes(n_bare, n_extra, max_abs):
+        # n_bare copies of (-1 | +1) plus n_extra composites on each side; the composites may
+        # not share a charge with the other side's set (which includes the bare holes' charges)
+        odd = range(-max_abs, max_abs + 1, 2)
+        table = {}
+        for right in itertools.combinations_with_replacement([q for q in odd if q != -1], n_extra):
+            table.setdefault(power_sums(right), []).append(right)
+        best = None
+        for left in itertools.combinations_with_replacement([q for q in odd if q != 1], n_extra):
+            p1, p2, p3 = power_sums(left)
+            for right in table.get((p1 - 2 * n_bare, p2, p3 - 2 * n_bare), []):
+                if (set(left) | {-1}) & (set(right) | {1}):
+                    continue
+                span = max(map(abs, left + right))
+                if best is None or span < best[0]:
+                    best = (span, left, right)
+        return best
+
+    assert with_bare_holes(2, 3, 41)[0] == 35          # five species, two bare holes
+    assert with_bare_holes(2, 4, 21)[0] == 7           # six species, two bare holes
+    assert with_bare_holes(3, 3, 31) is None           # six species, three bare holes: none
+    assert with_bare_holes(3, 4, 21)[0] == 11          # seven species, three bare holes
+    print("8. four species: smallest sets {-7,-1,1,7} vs {-5,-5,5,5} (no bare hole), {-11,-11,-1,-1} vs"
+          " {-13,-7,-5,1} (one); none with two bare holes up to |q| = 25; two need five species (|q| = 35)"
+          " or six (|q| = 7); three need seven (|q| = 11), none among six up to |q| = 31")
+    g_nu = 10.75
+    for label, g_star, expect in (("above the quark-hadron transition", 61.75, 0.194), ("above the electroweak scale", 106.75, 0.094)):
+        delta = 2 * (g_nu / g_star)**(4 / 3)
+        assert abs(delta - expect) < 0.002
+        print(f"   one Dirac species decoupling {label}: Delta N_eff = {delta:.3f}")
+
+
+def continuum_constituent():
+    """Question 9: a massless continuum Dirac constituent in the FCC density potential."""
+    recips = sorted([np.array(v) * np.pi for v in itertools.product(range(-4, 5), repeat=3)
+                     if (all(x % 2 for x in v) or all(x % 2 == 0 for x in v)) and np.dot(v, v) <= 12],
+                    key=lambda g: g @ g)
+    index = {tuple(np.round(g / np.pi).astype(int)): i for i, g in enumerate(recips)}
+    star1 = [g for g in recips if np.isclose(g @ g, 3 * np.pi**2)]
+    star2 = [g for g in recips if np.isclose(g @ g, 4 * np.pi**2)]
+    assert len(recips) == 59 and len(star1) == 8 and len(star2) == 6
+
+    def build(k, v1e=0.0, v2e=0.0, v1o=0.0, v2o=0.0):
+        n = len(recips)
+        h = np.zeros((4 * n, 4 * n), complex)
+        for i, g in enumerate(recips):
+            q = k + g
+            h[4 * i:4 * i + 4, 4 * i:4 * i + 4] = sum(a * x for a, x in zip(ALPHAS, q))
+            for star, ve, vo in ((star1, v1e, v1o), (star2, v2e, v2o)):
+                for g2 in star:
+                    key = tuple(np.round((g + g2) / np.pi).astype(int))
+                    if key in index:
+                        j = index[key]
+                        h[4 * j:4 * j + 4, 4 * i:4 * i + 4] += ve * np.eye(4) + vo * BETA
+        return h
+
+    def gamma_levels(**kw):
+        e = np.linalg.eigvalsh(build(np.zeros(3), **kw))
+        return np.sort(e[np.argsort(np.abs(e))[:4]])
+
+    lv = gamma_levels(v1e=0.6, v2e=0.4)
+    assert np.ptp(lv) < 1e-9                                   # density: no mass at any order
+    assert np.ptp(gamma_levels(v1o=0.3)) < 1e-9 and np.ptp(gamma_levels(v2o=0.3)) < 1e-9
+    for v in (0.05, 0.1):
+        lv = gamma_levels(v1o=v, v2o=v)
+        mass = (lv[2] - lv[1]) / 2
+        assert abs(mass / v**3 - 1.07) < 0.02                  # third order, closed triads
+
+    def slope(v1e, q=0.02):
+        e0 = gamma_levels(v1e=v1e)[0]
+        e = np.linalg.eigvalsh(build(np.array([q, 0, 0]), v1e=v1e))
+        near = np.sort(e[np.argsort(np.abs(e - e0))[:4]])
+        return (near[3] - near[0]) / (2 * q)
+
+    coef = (1 - slope(0.1)) / 0.01
+    assert abs(coef - 0.36) < 0.01
+    unit = HBARC / S_FM                                        # hbar c / s = 99 MeV
+    v_odd = unit * (M1C2 / (1.06 * unit))**(1 / 3)
+    v_den = unit * np.sqrt(2e-9 / coef)
+    assert abs(v_odd * 1e3 - 36) < 1 and abs(v_den * 1e3 - 7.4) < 0.2
+    print(f"9. continuum constituent: density potential leaves Gamma degenerate; odd part gaps it at third order"
+          f" (mass 1.06 V^3), so V_odd < {v_odd * 1e3:.0f} keV; the cone slows by {coef:.2f} (V/99 MeV)^2,"
+          f" so the burst bounds V < {v_den * 1e3:.0f} keV")
+
+
 if __name__ == "__main__":
     crossings()
     channels()
@@ -466,3 +740,6 @@ if __name__ == "__main__":
     partners()
     composites()
     pauli_gursey()
+    modified_chiral_symmetry()
+    four_neutrinos()
+    continuum_constituent()
