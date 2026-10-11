@@ -48,6 +48,19 @@ Three questions, each answered by a short calculation:
    one-site shift with a sign pattern commutes with it and reverses the
    staggered mass, which is the symmetry that forbids that mass.
 
+5. Can composites (a hole that has caught particle-hole pairs) evade the theorem
+   through larger chiral charges?  Anomaly matching for three flavours sharing
+   the constituent number requires equal sums of the first three powers of the
+   left- and right-handed charges, which forces the two sets to coincide
+   (Newton's identities): every assignment with charges -6..6 is a reordering,
+   so a Dirac mass is always allowed.  Chiral charges of a state with
+   constituent number -1 are odd (N_R - N_L and N_R + N_L share a parity).
+   Four species escape, e.g. {-1,5,7,13} against {1,1,11,11}, which contains
+   a bare hole (-1,+1).  A Z3 (treated as internal) that forbids the cyclic
+   links cancels its mixed anomalies only for charges congruent mod 3, so no
+   flavour is a bare hole; the smallest odd sets (-7,-1,5) and (-5,1,7) put a
+   chiral charge of at least 6 on every mass, against 2 for a bare hole.
+
 All numbers quoted in the monograph are asserted here.
 """
 
@@ -342,8 +355,53 @@ def partners():
           " a one-site shift commutes with H and reverses the staggered mass")
 
 
+def composites():
+    """Question 5: anomaly matching for composite flavours of larger chiral charge."""
+    def power_sums(v):
+        return tuple(sum(x**k for x in v) for k in (1, 2, 3))
+
+    charges = range(-6, 7)
+    found = 0
+    for q_left in itertools.combinations_with_replacement(charges, 3):
+        target = power_sums(q_left)
+        for q_right in itertools.combinations_with_replacement(charges, 3):
+            if power_sums(q_right) == target:
+                found += 1
+                assert sorted(q_left) == sorted(q_right)      # Newton: a reordering
+    assert found == 455
+    four_left, four_right = (-1, 5, 7, 13), (1, 1, 11, 11)
+    assert power_sums(four_left) == power_sums(four_right) and not set(four_left) & set(four_right)
+    assert all(q % 2 for q in four_left + four_right)                # odd, as N_con = -1 requires
+
+    # Z3 forbidding the cyclic links: flavour k has Z3 charge k on both halves,
+    # right-handed charges are the left-handed ones shifted by one flavour
+    def z3_ok(q_left):
+        q_right = [q_left[(k + 1) % 3] for k in range(3)]
+        zaa = sum(k * (q_left[k]**2 - q_right[k]**2) for k in range(3))
+        zva = sum(k * (q_right[k] - q_left[k]) for k in range(3))
+        zza = sum(k * k * (q_left[k] - q_right[k]) for k in range(3))
+        return zaa % 3 == 0 and zva % 3 == 0 and zza % 3 == 0, q_right
+
+    sols = []
+    for q_left in itertools.product(range(-9, 10, 2), repeat=3):
+        ok, q_right = z3_ok(q_left)
+        if len(set(q_left)) == 3 and ok:
+            sols.append((max(map(abs, q_left)), q_left, tuple(q_right)))
+    sols.sort()
+    assert all(len({q % 3 for q in s_[1]}) == 1 for s_ in sols)
+    smallest = sorted({tuple(sorted(s_[1])) for s_ in sols if s_[0] == sols[0][0]})
+    assert smallest == [(-7, -1, 5), (-5, 1, 7)]
+    assert not any((s_[1][k], s_[2][k]) in ((-1, 1), (1, -1)) for s_ in sols for k in range(3))
+    assert all(min(abs(s_[2][k] - s_[1][k]) for k in range(3)) >= 6 for s_ in sols)
+    dq = sorted(sols[0][2][k] - sols[0][1][k] for k in range(3))
+    print("5. three composite flavours: all 455 anomaly-free charge sets are reorderings (a mass is always allowed);"
+          " four species escape, e.g. {-1,5,7,13} vs {1,1,11,11}; with a Z3 the smallest odd sets are"
+          f" {smallest}, never a bare hole, every mass charge >= 6 (e.g. {dq})")
+
+
 if __name__ == "__main__":
     crossings()
     channels()
     registry_and_texture()
     partners()
+    composites()
