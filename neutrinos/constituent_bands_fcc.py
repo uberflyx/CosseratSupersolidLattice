@@ -28,12 +28,33 @@ Three questions, each answered by a short calculation:
    Keeping that below m_1 c^2 = 5 meV with M_X = m_0 c^2 bounds m_t at about
    0.6 keV.
 
+4. Can the crossing at Gamma stand alone while the chiral charge is exact?
+   No.  The charge splits the states into two sectors that never mix, and in
+   one sector Gamma is a single Weyl touching.  The touchings of every pair of
+   neighbouring bands carry zero net Berry charge (Nielsen-Ninomiya), so the
+   pair that meets at Gamma meets elsewhere with the opposite net charge.
+   An odd second-neighbour hop t2 breaks the X-W lines into points.  For
+   t2 > 0, Gamma (-1) is balanced by L (+1, four), X (+1, three), W (+1, six)
+   and twelve touchings of charge -1 on the <110> axes, 25 partners per zone;
+   for t2 < 0 by L and X (+1) and W (-1), 13 partners.  An even hop t', the
+   same for both handednesses, moves no touching in momentum, but it lifts
+   the L and X touchings 12 t' and 16 t' above Gamma's; at half filling the
+   Fermi level then sits 1.4 t above Gamma's touching for t' = 0.1 t, so the
+   sea is a metal with Gamma inside a pocket.  The partner momenta
+   hbar c |L| and hbar c |X| are 269 and 311 MeV, and holding an unprotected
+   mass at m_1 c^2 is a cancellation to one part in m_0/m_1 = 1.4e10.  A
+   one-component staggered (Kogut-Susskind) fermion on the simple cubic
+   lattice has eight zero modes, two four-component Dirac crossings, and a
+   one-site shift with a sign pattern commutes with it and reverses the
+   staggered mass, which is the symmetry that forbids that mass.
+
 All numbers quoted in the monograph are asserted here.
 """
 
 import itertools
 
 import numpy as np
+from scipy.optimize import least_squares
 
 HBARC = 197.3269804          # MeV fm
 L_FM = 2.8179403             # lattice spacing l = r_e, fm
@@ -183,7 +204,146 @@ def registry_and_texture():
           f" m_eff <= m1 c^2 the texture is bounded at m_t <= {mt_max * 1e6:.0f} eV")
 
 
+def weyl_charge(h_of_k, k0, radius=0.01, n=40):
+    """Handedness of a two-band touching: Berry flux of the lower band through a
+    small sphere around k0, in units of 2 pi (lattice-gauge plaquette sum)."""
+    theta = np.linspace(0, np.pi, n + 1)
+    phi = np.linspace(0, 2 * np.pi, 2 * n + 1)
+    vec = np.empty((n + 1, 2 * n + 1, 2), complex)
+    for i, a in enumerate(theta):
+        for j, b in enumerate(phi):
+            q = k0 + radius * np.array([np.sin(a) * np.cos(b), np.sin(a) * np.sin(b), np.cos(a)])
+            vec[i, j] = np.linalg.eigh(h_of_k(q))[1][:, 0]
+    flux = 0.0
+    for i in range(n):
+        for j in range(2 * n):
+            loop = (np.vdot(vec[i, j], vec[i + 1, j]) * np.vdot(vec[i + 1, j], vec[i + 1, j + 1])
+                    * np.vdot(vec[i + 1, j + 1], vec[i, j + 1]) * np.vdot(vec[i, j + 1], vec[i, j]))
+            flux += np.angle(loop)
+    return flux / (2 * np.pi)
+
+
+def partners():
+    """Question 4: the touchings that balance Gamma, and what an even hop does to them."""
+
+    def d_t2(k, t2):
+        # nearest-neighbour odd hop plus an odd hop along the six (2,0,0) bonds
+        return d_vec(k) + 2 * t2 * np.sin(2 * k)
+
+    def wrap(k):
+        # the cube [-pi, pi)^3 holds two copies of the zone, since (pi,pi,pi)
+        # is a reciprocal vector and d is 2 pi periodic along each axis
+        z = (k + np.pi) % (2 * np.pi) - np.pi
+        z[np.abs(z - np.pi) < 1e-7] = -np.pi
+        return z
+
+    def touchings(t2):
+        """All zeros of d in the cube, with their charges in the right-handed
+        sector, where alpha . d becomes sigma . d in the basis that
+        diagonalises gamma5 (it is -sigma . d in the other sector)."""
+        def h_right(k):
+            v = d_t2(k, t2)
+            return v[0] * SX + v[1] * SY + v[2] * SZ
+        found = []
+        for start in itertools.product(np.linspace(-np.pi, np.pi, 19)[:-1] + 0.011, repeat=3):
+            sol = least_squares(lambda z: d_t2(z, t2), np.array(start), xtol=1e-15, ftol=1e-15, gtol=1e-15)
+            if np.linalg.norm(d_t2(sol.x, t2)) < 1e-9:
+                z = wrap(sol.x)
+                if not any(np.linalg.norm(wrap(z - f)) < 1e-5 for f in found):
+                    found.append(z)
+        classes = {}
+        for z in found:
+            key = (tuple(np.sort(np.abs(np.round(z / np.pi, 3)))), int(round(weyl_charge(h_right, z))))
+            classes[key] = classes.get(key, 0) + 1
+        return classes
+
+    gamma_pts = ((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))      # Gamma and its copy in the cube
+    for t2, n_partners in ((0.15, 25), (-0.15, 13)):
+        cl = touchings(t2)
+        assert sum(q * n for (_, q), n in cl.items()) == 0           # zero net charge
+        assert cl[(gamma_pts[0], -1)] == 1 and cl[(gamma_pts[1], -1)] == 1
+        assert cl[((0.5, 0.5, 0.5), 1)] == 8                          # L, opposite to Gamma
+        assert cl[((0.0, 0.0, 1.0), 1)] + cl[((0.0, 1.0, 1.0), 1)] == 6   # X, opposite
+        partners_per_zone = (sum(cl.values()) - 2) // 2
+        assert partners_per_zone == n_partners
+        if t2 > 0:
+            assert cl[((0.0, 0.5, 1.0), 1)] == 12                     # W, opposite
+            axis = [k for k in cl if k[1] == -1 and k[0] not in gamma_pts]
+            # twelve per zone on the <110> axes, (0, a, a) with 0 < a < 1; in the
+            # cube's second copy of the zone they appear shifted by (1,1,1) pi
+            assert sum(cl[k] for k in axis) == 24
+            assert any(k[0][0] == 0 and k[0][1] == k[0][2] and 0 < k[0][1] < 1 for k in axis)
+        else:
+            assert cl[((0.0, 0.5, 1.0), -1)] == 12                    # W, same as Gamma
+    print("4. exact chiral charge, right-handed sector: net charge 0 in every case; per zone Gamma (-1)"
+          " is balanced by 25 partners for t2 > 0 (L, X, W at +1; twelve on <110> at -1)"
+          " and by 13 for t2 < 0 (L, X at +1; W at -1)")
+
+    # an even hop -t' sum cos(k.n) is the identity in each sector: it moves no
+    # touching in momentum, only in energy
+    t_prime = 0.1
+
+    def eps0(k):
+        return -t_prime * np.sum(np.cos(NN @ k))
+
+    gamma, ell, x = np.zeros(3), np.full(3, np.pi / 2), np.array([np.pi, 0, 0])
+    assert abs(eps0(ell) - eps0(gamma) - 12 * t_prime) < 1e-12
+    assert abs(eps0(x) - eps0(gamma) - 16 * t_prime) < 1e-12
+    # half filling of the sector's two bands fixes the Fermi level
+    n = 48
+    grid = (np.arange(n) + 0.5) / n * 2 * np.pi - np.pi
+    ks = np.array(list(itertools.product(grid, repeat=3)))
+    phases = ks @ NN.T
+    e0 = -t_prime * np.cos(phases).sum(axis=1)
+    dd = 0.5 * np.sin(phases) @ NN
+    dn = np.linalg.norm(dd, axis=1)
+    levels = np.sort(np.concatenate([e0 - dn, e0 + dn]))
+    e_fermi = 0.5 * (levels[len(levels) // 2 - 1] + levels[len(levels) // 2])
+    rise = e_fermi - eps0(gamma)
+    assert abs(rise - 1.4) < 0.05
+    print(f"   an even hop t' = 0.1 t lifts the L and X touchings 12 t' and 16 t' above Gamma's;"
+          f" at half filling the Fermi level sits {rise:.2f} t above Gamma's touching: a metal")
+
+    hbarc_over_s = HBARC / S_FM
+    e_l, e_x = hbarc_over_s * np.linalg.norm(ell), hbarc_over_s * np.pi
+    assert abs(e_l - 269) < 1 and abs(e_x - 311) < 1
+    assert abs(M0C2 / M1C2 / 1.39e10 - 1) < 0.01
+    print(f"   partner momenta hbar c|L| = {e_l:.0f} MeV, hbar c|X| = {e_x:.0f} MeV;"
+          f" unprotected mass held at m1: one part in m0/m1 = {M0C2 / M1C2:.2e}")
+
+    # staggered fermion: one component per site of a simple cubic lattice, with
+    # the Kogut-Susskind signs eta_1 = 1, eta_2 = (-1)^x1, eta_3 = (-1)^(x1+x2),
+    # which thread half a flux quantum through every square
+    size = 4
+    n_sites = size**3
+
+    def site(v):
+        return ((v[0] % size) * size + (v[1] % size)) * size + (v[2] % size)
+
+    h_ks = np.zeros((n_sites, n_sites), complex)
+    m_st = np.zeros((n_sites, n_sites))
+    for v in itertools.product(range(size), repeat=3):
+        eta = (1, (-1)**v[0], (-1)**(v[0] + v[1]))
+        for i in range(3):
+            w = list(v)
+            w[i] += 1
+            h_ks[site(v), site(w)] += 0.5j * eta[i]
+            h_ks[site(w), site(v)] -= 0.5j * eta[i]
+        m_st[site(v), site(v)] = (-1)**sum(v)
+    energies = np.linalg.eigvalsh(h_ks)
+    assert np.sum(np.abs(energies) < 1e-9) == 8
+    assert abs(np.min(np.abs(np.linalg.eigvalsh(h_ks + 0.3 * m_st))) - 0.3) < 1e-9
+    # one-site shift along e1 with the sign (-1)^(x2 + x3)
+    shift = np.zeros((n_sites, n_sites))
+    for v in itertools.product(range(size), repeat=3):
+        shift[site(v), site((v[0] + 1, v[1], v[2]))] = (-1)**(v[1] + v[2])
+    assert np.allclose(shift @ h_ks @ shift.T, h_ks) and np.allclose(shift @ m_st @ shift.T, -m_st)
+    print("   staggered fermion in 3D: 8 zero modes (two four-component crossings);"
+          " a one-site shift commutes with H and reverses the staggered mass")
+
+
 if __name__ == "__main__":
     crossings()
     channels()
     registry_and_texture()
+    partners()
