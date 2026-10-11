@@ -61,6 +61,13 @@ Three questions, each answered by a short calculation:
    flavour is a bare hole; the smallest odd sets (-7,-1,5) and (-5,1,7) put a
    chiral charge of at least 6 on every mass, against 2 for a bare hole.
 
+6. The symmetry a single crossing needs is the Pauli-Gursey SU(2): number plus a
+   pairing charge with an antisymmetric matrix M that commutes with the massless
+   Dirac kinetic term (there is exactly one).  It forbids both 4-component masses.
+   On the slice it is exact and on-site for purely odd hopping (the
+   nearest-neighbour model, with or without the (2,0,0) hop); an even hop breaks
+   it.  Its Witten anomaly needs an even number of crossings: 1 + 25 and 1 + 13.
+
 All numbers quoted in the monograph are asserted here.
 """
 
@@ -399,9 +406,63 @@ def composites():
           f" {smallest}, never a bare hole, every mass charge >= 6 (e.g. {dq})")
 
 
+def pauli_gursey():
+    """Question 6: the Pauli-Gursey SU(2) in Nambu form, on the slice."""
+    basis = []
+    for i, j in itertools.product(range(4), repeat=2):
+        e = np.zeros((4, 4), complex)
+        e[i, j] = 1
+        basis.append(e)
+
+    def null_space(conditions):
+        rows = np.vstack([np.array([f(e).ravel() for e in basis]).T for f in conditions])
+        _, sv, vh = np.linalg.svd(rows)
+        return [sum(c * e for c, e in zip(v.conj(), basis)) for v in vh[np.sum(sv > 1e-10):]]
+
+    # pairing matrices M with alpha_i M = M alpha_i^T (so h(k) M + M h(-k)^T = 0 for h = alpha.d, d odd)
+    kinetic = [(lambda m, a=a: a @ m - m @ a.T) for a in ALPHAS]
+    assert len(null_space(kinetic)) == 2
+    anti = null_space(kinetic + [lambda m: m + m.T])
+    assert len(anti) == 1
+    pair = anti[0] / np.linalg.norm(anti[0]) * 2
+
+    def nambu(a, b):
+        return np.block([[a, b], [b.conj().T, -a.T]])
+
+    s3 = nambu(np.eye(4) / 2, np.zeros((4, 4)))
+    s1 = nambu(np.zeros((4, 4)), pair / 2)
+    s2 = nambu(np.zeros((4, 4)), 1j * pair / 2)
+    comm = s1 @ s2 - s2 @ s1
+    assert np.allclose(comm, 1j * s3 * (np.vdot(s3.ravel(), (comm / 1j).ravel()).real / np.vdot(s3.ravel(), s3.ravel()).real))
+
+    def h_bdg(h_plus, h_minus):
+        return np.block([[h_plus, np.zeros((4, 4))], [np.zeros((4, 4)), -h_minus.T]])
+
+    def h_slice(k, t2=0.0, t_even=0.0, mass=None):
+        dv = d_vec(k) + 2 * t2 * np.sin(2 * k)
+        h = sum(a * x for a, x in zip(ALPHAS, dv)) - t_even * np.sum(np.cos(NN @ k)) * np.eye(4)
+        return h if mass is None else h + mass
+
+    def commutes(k, **kw):
+        hb = h_bdg(h_slice(k, **kw), h_slice(-k, **kw))
+        return all(np.allclose(hb @ g - g @ hb, 0) for g in (s1, s2, s3))
+
+    rng = np.random.default_rng(1)
+    for k in rng.uniform(-np.pi, np.pi, (5, 3)):
+        assert commutes(k) and commutes(k, t2=0.15) and commutes(k, t2=-0.15)
+        assert not commutes(k, t_even=0.1)
+        for m in (0.3 * BETA, 0.3j * BETA @ GAMMA5):
+            assert not commutes(k, mass=m)
+    assert (1 + 25) % 2 == 0 and (1 + 13) % 2 == 0
+    print("6. Pauli-Gursey SU(2): one antisymmetric pairing charge with number closes into su(2);"
+          " exact and on-site for odd hops (with t2 of either sign), broken by an even hop and by both masses;"
+          " crossings per zone 26 and 14, even as the Witten anomaly requires")
+
+
 if __name__ == "__main__":
     crossings()
     channels()
     registry_and_texture()
     partners()
     composites()
+    pauli_gursey()
