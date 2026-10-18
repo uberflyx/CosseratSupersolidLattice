@@ -1,166 +1,146 @@
 #!/usr/bin/env python3
 """
-cosserat_dw.py - Cosserat Supersolid Debye-Waller Analysis
-============================================================
-Companion script to "The Cosserat Supersolid" monograph (M. A. Cox, 2025).
-Reproduces all numerical results for Lorentz.
+cosserat_dw.py - zero-point displacement and Debye-Waller chain of the Cosserat vacuum
+=====================================================================================
+Companion script to "The Cosserat Supersolid" monograph (M. A. Cox).
 
+What it computes, in the framework's own parametrisation:
+
+1. The six-branch zero-point mean-square displacement <u^2> of a node.
+   Moduli in units of the relaxed shear modulus mubar = rho c^2:
+       N^2 = 1/pi,  mu_tot = mubar/(1 - N^2),  kappa_c = 2 N^2 mu_tot,
+       mu (Eringen) = mu_tot - kappa_c,  gamma = mu ell^2,  J = gamma/c^2,
+       c_L/c = sqrt((3 - 4N^2)/(1 - N^2))   (isotropic D4 constants).
+   The transverse 2x2 problem (displacement u, microrotation phi) is diagonalised
+   at each k, and each mode adds its displacement share times hbar/(2 m0 omega).
+   Two closed forms are checked against the diagonalisation:
+       <u^2>_LA = (k_D l)^2/(8 sqrt2 pi^2) (c/c_L) l^2
+       <u^2>_TA = ln(1 + j (k_D l)^2/4) / (sqrt2 pi^2 j) l^2,   j = J/(rho l^2)
+   (the acoustic transverse branch is exactly omega = c k at J = gamma/c^2, with
+   displacement share 1/(1 + j k^2 l^2/4)).
+2. The nearest-neighbour correlation C(l), the bond relative width sigma_rel, and
+   the split longitudinal/transverse bond widths.
+3. The Debye-Waller chain at the smallest in-plane D4* vector |G_min| = 2 pi sqrt2/l:
+   2W_ac, the product with the core form factor, the 10 GeV velocity anomaly, the
+   counterflow-bounded third factor exp(-2W_ac w f_s/(1-f_s)) with w = (k_c/k_D)^2,
+   the GRB 090510 time delay, and the f_s floors; plus the Leggett ceiling.
+
+Units: lengths in l (the lattice spacing), speeds in c, hbar/m0 = c l.
 Run: python3 cosserat_dw.py
 """
 import numpy as np
+from scipy.integrate import quad
 from scipy.optimize import brentq
 
-# --- Fundamental constants (SI) ---
-c, hbar, m_e = 2.99792458e8, 1.054571817e-34, 9.1093837015e-31
-eV, MeV = 1.602176634e-19, 1.602176634e-13
-alpha = 1.0/137.035999177
-
-# --- Derived lattice parameters (Monograph Sec. 2) ---
-m0 = m_e/alpha; m0_MeV = m0*c**2/MeV; ell = hbar/(m0*c)
-
-# --- Reciprocal lattices: FCC slice vs the in-plane D_4* sublattice ----------
-# The photon's elastic spatial-to-spatial Bragg vector is NOT the standalone FCC
-# minimum.  The four-momentum transfer must lie in D_4* AND stay in the spatial
-# subspace (G.e_c = 0 with e_c = (1,1,1,1)/2).  That leaves the six half-integer
-# vectors with two +1/2 and two -1/2 components, of coordinate length 1, i.e.
-#   |G_min| = 2 pi sqrt(2) / ell = 8.886/ell,
-# larger than the FCC |G_111| = pi sqrt(6)/ell = 7.695/ell by exactly 2/sqrt(3).
-# G_111 is still the right vector for the compact-integrated density the photon
-# sees (Mathieu band structure, Leggett bound); it is the wrong one for Bragg.
-G111_ell = np.pi*np.sqrt(6); G111_sq_ell2 = G111_ell**2      # =6pi^2, FCC slice
-Gmin_ell = 2*np.pi*np.sqrt(2); Gmin_sq_ell2 = Gmin_ell**2    # =8pi^2, in-plane D_4*
-
-# --- FCC primitive cell -------------------------------------------------------
-# One node per primitive cell of volume V_p = ell^3/sqrt(2) for nearest-neighbour
-# distance ell.  Omitting the sqrt(2) (i.e. assuming a simple-cubic cell) inflates
-# <u^2> by 2^(1/6) = 12%, because k_D and the mode-density weight both carry it.
-Vp = 1.0/np.sqrt(2)
-kD_ell = (6*np.pi**2/Vp)**(1/3)                              # = 4.375/ell
-
-# --- PN core half-width and its form factor ----------------------------------
-# w = (pi/4) d with d = ell/sqrt(3) the misfit period, so w = 0.4534 ell.  NOT
-# (pi/4) ell: that is w/d expressed as though d were ell, and it overstates the
-# core by sqrt(3), collapsing |F|^2 by two decades.
-w_ell = (np.pi/4)/np.sqrt(3)
-FF_G = np.exp(-2*Gmin_ell*w_ell)                             # at the Bragg vector
-
-# --- Zone boundary and bounds ---
-E_ZB = np.pi*np.sqrt(2)*m0_MeV                               # = |G_min| hbar c/2 = 311 MeV
-fermi_dv = 7e-19; grb_dt_bound = 0.86; grb_D_c = 4e17
-
-# --- Cosserat parameters (Born-Huang, Monograph Ch. 5) ---
-N2 = 1/np.pi
-mu_d = (1-N2)/(1+N2); kp_d = 1-mu_d; gm_d = mu_d; J_d = 0.1
-cL = np.sqrt(3*mu_d); omega0 = np.sqrt(2*kp_d/J_d)
-
-print("="*70)
-print("COSSERAT SUPERSOLID DEBYE-WALLER ANALYSIS")
-print("="*70)
-print(f"\nm0={m0_MeV:.2f} MeV, ell={ell:.3e} m, N2=1/pi={N2:.4f}")
-print(f"cL/c={cL:.4f}, omega0={omega0:.3f} c/ell, omegaD={kD_ell:.3f} c/ell")
-print(f"|F(G_min)|^2 = {FF_G:.2e}   (in-plane D_4*, |G_min|={Gmin_ell:.4f}/ell, w={w_ell:.4f} ell)")
-
-def transverse_dispersion(k):
-    A = (mu_d+kp_d)*k**2; B = gm_d*k**2+2*kp_d
-    disc = max((B+J_d*A)**2-4*J_d*(A*B-kp_d**2*k**2), 0)
-    w2_ac = ((B+J_d*A)-np.sqrt(disc))/(2*J_d)
-    w2_op = ((B+J_d*A)+np.sqrt(disc))/(2*J_d)
-    for w2 in [w2_ac, w2_op]:
-        if k < 1e-12: yield (w2, 1.0 if w2 < 1 else 0.0)
-        else:
-            R2 = (A-w2)**2/(kp_d**2*k**2)
-            yield (w2, 1.0/(1.0+R2*J_d))
-
-def compute_u2(f_s=0.0, n=2000):
-    ks = np.linspace(1e-8, kD_ell, n); dk = ks[1]-ks[0]
-    pf = Vp/(2*np.pi**2); h_ms = 1/(1-f_s)
-    u2_LA = u2_TA = u2_TO = 0.0
-    for k in ks:
-        u2_LA += pf*h_ms/(2*cL*k)*k**2*dk
-        br = list(transverse_dispersion(k))
-        u2_TA += 2*pf*h_ms*br[0][1]/(2*np.sqrt(max(br[0][0],1e-30)))*k**2*dk
-        u2_TO += 2*pf*h_ms*br[1][1]/(2*np.sqrt(max(br[1][0],1e-30)))*k**2*dk
-    return u2_LA, u2_TA, u2_TO
-
-# --- Simple Debye vs Cosserat ---
-u2_debye = 3*Vp**(1/3)*(6*np.pi**2)**(2/3)/(8*np.pi**2)   # = 0.514 ell^2
-u2_L, u2_Ta, u2_To = compute_u2(0)
-u2_coss = u2_L+u2_Ta+u2_To
-print(f"\nDebye (3 branch): <u^2> = {u2_debye:.4f} ell^2")
-print(f"Cosserat (6 branch): <u^2> = {u2_coss:.4f} ell^2 ({(1-u2_coss/u2_debye)*100:.1f}% reduction)")
-print(f"  LA={u2_L:.4f}, TA_ac={u2_Ta:.4f}, TO_opt={u2_To:.4f}")
-
-# --- NCRI scan ---
-ratio2 = (E_ZB/10000)**2
-print(f"\n{'='*70}\nNCRI SCAN\n{'='*70}")
-print(f"{'fs':>5} {'<u2>/l2':>8} {'Lind':>6} {'2W':>6} {'e-2W':>10} {'S_tot':>10} {'dv/c@10GeV':>12} {'stat':>5}")
-print("-"*72)
-for fs in [0,.2,.4,.5,.55,.58,.60,.62,.65,.70]:
-    u2 = sum(compute_u2(fs)); L = np.sqrt(u2)
-    tW = u2*Gmin_sq_ell2/3; DW = np.exp(-tW); S = FF_G*DW; dv = S*ratio2
-    print(f"{fs:5.2f} {u2:8.3f} {L:6.3f} {tW:6.1f} {DW:10.2e} {S:10.2e} {dv:12.2e} {'PASS' if dv<fermi_dv else 'FAIL':>5}")
-
-# --- GRB time delay -----------------------------------------------------------
-# Uses the monograph's own dispersion ansatz and cosmological delay integral
-# rather than a single-energy estimate:
-#     dv_g/c = n_shell S (E E_BZ)^2 / (E^4 + E_BZ^4)
-#     dt     = int_0^z [dv(E1(1+z')) - dv(E2(1+z'))] / [(1+z') H(z')] dz'
-# Both pieces matter.  n_shell = 6 counts the in-plane D_4* first shell, and the
-# redshift is not optional: below the zone boundary the anomaly grows as E^2, so
-# the source-frame energies (1+z = 1.903) carry several times the observed value.
-n_shell = 6
-z_grb, E1_obs, E2_obs = 0.903, 31e3, 100.0        # MeV; the Fermi-LAT photon pair
-H0_inv_s = 3.0857e19/67.4                          # 1/H0 in seconds
-Om, OL = 0.315, 0.685
+pi = np.pi
+# ---------------------------------------------------------------- medium
+N2 = 1/pi
+mu_tot = 1/(1 - N2)
+kap = 2*N2*mu_tot
+mu = mu_tot - kap
+gam = mu                      # gamma = mu l^2
+J = gam                       # J = gamma / c^2   (j = J/(rho l^2))
+cL = np.sqrt((3 - 4*N2)/(1 - N2))
+Vp = 1/np.sqrt(2)             # primitive cell of the close-packed slice
+kD = (6*pi**2/Vp)**(1/3)
+pf = Vp/(2*pi**2)             # per-node mode weight V_p k^2 dk / (2 pi^2)
 
 
-def shape(E):
-    return (E*E_ZB)**2/(E**4 + E_ZB**4)
+def transverse(k):
+    """Return [(omega, displacement share)] for the acoustic and optical roots."""
+    K = np.array([[(mu + kap)*k**2, -1j*kap*k], [1j*kap*k, gam*k**2 + 2*kap]])
+    Mh = np.diag([1.0, 1/np.sqrt(J)])           # M^(-1/2), M = diag(rho, J)
+    w2, V = np.linalg.eigh(Mh @ K @ Mh)
+    out = []
+    for i in range(2):
+        v = Mh @ V[:, i]                         # M-normalised eigenvector
+        out.append((np.sqrt(max(w2[i], 0.0)), abs(v[0])**2))
+    return out
 
 
-def grb_delay(S, n=4000):
-    zs = np.linspace(0.0, z_grb, n); dz = zs[1]-zs[0]; tot = 0.0
-    for zp in zs:
-        Hs = np.sqrt(Om*(1+zp)**3 + OL)
-        dv1 = n_shell*S*shape(E1_obs*(1+zp))
-        dv2 = n_shell*S*shape(E2_obs*(1+zp))
-        tot += (dv1-dv2)/((1+zp)*Hs)*dz
-    return abs(tot)*H0_inv_s
+def u2_branches():
+    LA = quad(lambda k: pf*k**2/(2*cL*k), 0, kD)[0]
+    TA = quad(lambda k: 2*pf*k**2*transverse(k)[0][1]/(2*max(transverse(k)[0][0], 1e-12)), 1e-6, kD, limit=200)[0]
+    TO = quad(lambda k: 2*pf*k**2*transverse(k)[1][1]/(2*transverse(k)[1][0]), 1e-6, kD, limit=200)[0]
+    return LA, TA, TO
 
 
-print(f"\n{'='*70}\nGRB 090510 TIME DELAY\n{'='*70}")
-print(f"{'fs':>5} {'S_tot':>10} {'dt(s)':>8} {'stat':>5}")
-print("-"*35)
-for fs in [.55,.58,.60,.62,.65,.70]:
-    u2 = sum(compute_u2(fs)); S = FF_G*np.exp(-u2*Gmin_sq_ell2/3)
-    dt = grb_delay(S)
-    print(f"{fs:5.2f} {S:10.2e} {dt:10.3g} {'PASS' if dt<grb_dt_bound else 'FAIL':>5}")
+def weights(k):
+    (wa, sa), (wo, so) = transverse(k)
+    gL = 1/(2*cL*k)
+    gT = sa/(2*max(wa, 1e-12)) + so/(2*wo)
+    return gL, gT
 
-# --- Critical f_s ---
-def S_of(fs): return FF_G*np.exp(-sum(compute_u2(fs))*Gmin_sq_ell2/3)
-def dv_res(fs): return n_shell*S_of(fs)*shape(1e4)-fermi_dv
-def dt_res(fs): return grb_delay(S_of(fs))-grb_dt_bound
-fs_v = brentq(dv_res,.3,.8); fs_t = brentq(dt_res,.4,.8)
-print(f"\nCritical fs (velocity): {fs_v:.4f}")
-print(f"Critical fs (GRB dt):  {fs_t:.4f} <-- binding")
 
-# --- Self-consistency ---
-print(f"\n{'='*70}\nSELF-CONSISTENCY: NN WAVEFUNCTION OVERLAP\n{'='*70}")
-for fs in [0, .5, fs_t, .65, .80]:
-    u2 = sum(compute_u2(fs)); sig2 = u2/3; S = np.exp(-1/(4*sig2))
-    print(f"  fs={fs:.3f}: <u2>={u2:.3f}, overlap={S:.3f}, Z*S={12*S:.1f}")
+def j0(z): return np.sin(z)/z
+def j1(z): return np.sin(z)/z**2 - np.cos(z)/z
 
-# --- Reference table at f_s = 0.60 ---
-fs_r = 0.60; u2_r = sum(compute_u2(fs_r))
-tW_r = u2_r*Gmin_sq_ell2/3; DW_r = np.exp(-tW_r); S_r = FF_G*DW_r
-print(f"\n{'='*70}\nREFERENCE TABLE (fs={fs_r})\n{'='*70}")
-print(f"  <u2>_eff    = {u2_r:.3f} ell^2")
-print(f"  Lindemann   = {np.sqrt(u2_r):.3f}")
-print(f"  2W          = {tW_r:.1f}")
-print(f"  e^(-2W)     = {DW_r:.2e}")
-print(f"  |F(G)|^2    = {FF_G:.2e}")
-print(f"  S_total     = {S_r:.2e}")
-print(f"  Zone gap    = {2*np.sqrt(S_r)*E_ZB*1e6:.1f} ueV")
-print(f"  dv/c(10GeV) = {n_shell*S_r*shape(1e4):.1e}  (bound: 7e-19)")
-print(f"  dv/c(100MeV)= {n_shell*S_r*shape(100.0):.1e}")
-print(f"  GRB dt      = {grb_delay(S_r):.3g} s  (bound: 0.86 s)")
+
+def correlation_and_widths(u2):
+    den = quad(lambda k: k**2*(weights(k)[0] + 2*weights(k)[1]), 1e-6, kD, limit=200)[0]
+    num = quad(lambda k: k**2*(weights(k)[0] + 2*weights(k)[1])*j0(k), 1e-6, kD, limit=200)[0]
+    C = num/den
+    srel = np.sqrt(2/3*u2*(1 - C))
+    F0 = quad(lambda k: k**2*(weights(k)[0] + 2*weights(k)[1])/3, 1e-6, kD, limit=200)[0]
+    Fpar = quad(lambda k: k**2*(weights(k)[0]*(j0(k) - 2*j1(k)/k) + weights(k)[1]*2*j1(k)/k), 1e-6, kD, limit=200)[0]
+    Fperp = quad(lambda k: k**2*(weights(k)[0]*j1(k)/k + weights(k)[1]*(j0(k) - j1(k)/k)), 1e-6, kD, limit=200)[0]
+    spar = np.sqrt(2*pf*(F0 - Fpar)); sperp = np.sqrt(2*pf*(F0 - Fperp))
+    return C, srel, spar, sperp
+
+
+# ---------------------------------------------------------------- DW chain
+m_e, alpha = 0.51099895000, 7.2973525693e-3  # MeV and fine-structure constant, CODATA 2018
+m0 = m_e/alpha                               # node mass, MeV
+E_BZ = pi*np.sqrt(2)*m0
+w_core = (pi/4)/np.sqrt(3)                   # PN core half-width, units of l
+Gmin = 2*pi*np.sqrt(2)
+F2 = np.exp(-2*Gmin*w_core)
+nshell, fermi, dt_bound = 6, 7e-19, 0.86
+z_grb, E1, E2 = 0.903, 100.0, 31000.0        # MeV, observed photon pair
+H0, Om = 67.4, 0.315
+H0_s = H0/3.0856775814913673e19
+
+
+def dv(E, S): return nshell*S*(E*E_BZ)**2/(E**4 + E_BZ**4)
+
+
+def log_S(fs, twoW, w, S12):
+    """Natural log of the total suppression, kept in log space so f_s -> 1 cannot underflow."""
+    return np.log(S12) - twoW*w*fs/(1 - fs)
+
+
+def delay(S):
+    f = lambda z: (dv(E1*(1+z), S) - dv(E2*(1+z), S))/((1+z)*H0_s*np.sqrt(Om*(1+z)**3 + 1 - Om))
+    return abs(quad(f, 0, z_grb, limit=200)[0])
+
+
+if __name__ == "__main__":
+    print(f"medium: mu={mu:.5f} kappa_c={kap:.5f} mubar={mu + kap/2:.5f} j=J/(rho l^2)={J:.5f} "
+          f"omega0={np.sqrt(2*kap/J):.4f} c/l c_L={cL:.4f} c k_D l={kD:.4f}")
+    LA, TA, TO = u2_branches(); u2 = LA + TA + TO
+    print(f"\n<u^2> six-branch: LA {LA:.4f} + TA {TA:.4f} + TO {TO:.4f} = {u2:.4f} l^2  (Lindemann {np.sqrt(u2):.3f})")
+    print(f"  closed forms: LA {(kD**2/(8*np.sqrt(2)*pi**2))/cL:.4f}, TA {np.log(1 + J*kD**2/4)/(np.sqrt(2)*pi**2*J):.4f}")
+    lin = kD**2/(8*np.sqrt(2)*pi**2)
+    print(f"  three-branch Debye value (all at c): {3*lin:.4f}; linear branches with c_L: {lin*(1/cL + 2):.4f}")
+    dev = max(abs(transverse(k)[0][0] - k) for k in np.linspace(0.01, kD, 400))
+    print(f"  check: acoustic transverse branch max |omega - c k| over the Debye sphere = {dev:.1e} c/l")
+    C, srel, spar, sperp = correlation_and_widths(u2)
+    print(f"  C(l) = {C:.4f}, sigma_rel = {srel:.4f} l, sigma_par = {spar:.4f} l, sigma_perp = {sperp:.4f} l, ratio {sperp/spar:.4f}")
+
+    u2a = 0.4045                                   # adopted value
+    twoW = Gmin**2*u2a/3
+    S12 = F2*np.exp(-twoW)
+    w = 1/kD**2
+    print(f"\nDW chain at <u^2> = {u2a}: 2W_ac = {twoW:.3f}, e^-2W = {np.exp(-twoW):.2e}, |F|^2 = {F2:.2e}, product {S12:.2e}")
+    print(f"  dv/c at 10 GeV (first two factors) = {dv(1e4, S12):.2e} against {fermi:.0e}")
+    print(f"  {'f_s':>7} {'S_total':>10} {'dv/c 10GeV':>11} {'GRB dt (s)':>11}")
+    for fs in (5/6, 0.90, 0.95, 0.96, 0.97, 0.98, 0.99):
+        S = S12*np.exp(-twoW*w*fs/(1 - fs))
+        print(f"  {fs:7.4f} {S:10.2e} {dv(1e4, S):11.2e} {delay(S):11.2e}")
+    for ww, lab in ((1/kD**2, "k_c = 1/l"), ((2/kD)**2, "k_c = 2/l")):
+        fv = brentq(lambda fs: log_S(fs, twoW, ww, S12) + np.log(dv(1e4, 1.0)/fermi), 0.5, 0.999)
+        ft = brentq(lambda fs: log_S(fs, twoW, ww, S12) + np.log(delay(1.0)/dt_bound), 0.5, 0.999)
+        print(f"  floor ({lab}): velocity f_s > {fv:.4f}, time delay f_s > {ft:.4f}")
+    G1sq = 6*pi**2                                 # |G|^2 l^2 of the first [111] harmonic
+    delta = np.exp(-G1sq*u2a/6)
+    print(f"\nLeggett ceiling: first [111] harmonic delta = {delta:.4e}, f_s <= 1 - 2 delta^2 = {1 - 2*delta**2:.5f}")
