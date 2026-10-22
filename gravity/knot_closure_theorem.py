@@ -48,10 +48,15 @@ lattice spacings across, so both of the following bite:
      2 E1 = 2.76 GeV apiece (E1 = 2 pi^2 f_s m0 c^2 at the adopted
      f_s = 0.99932) is some seventy kilograms of forged material, and the
      closure identity would still deny each of them any grip. Growing one
-     loop instead runs into the R-independent curvature pull
-     2 pi T ~ 47 kN: matter, gripping at a chemical bond per host lattice
-     spacing, cannot supply it until the loop is already hundreds of
-     metres across.
+     loop instead runs into the curvature pull 2 pi T ~ 47 kN at the core
+     scale, which then grows only as the logarithm of the loop's radius,
+     eps(R) = (rho_s kappa^2/4pi)[ln(8R/xi) - 2] per unit length. Matter
+     grips a vacuum vortex line at the anchor density f_anchor of
+     line_anchor_density.py, 0.0045 N/m (iron) to 0.019 N/m (osmium),
+     one chemical bond per pinning site, so its ceiling 2 pi R f_anchor
+     overtakes the pull only at eps(R) = R f_anchor, a loop radius of
+     3.3e4 km (osmium) to 1.5e5 km (iron): five to twenty-three Earth
+     radii.
 
   D. WHAT SURVIVES. The trapped-knot torque bound. A closed loop in a
      uniform wind feels no force but does feel a torque,
@@ -131,11 +136,21 @@ print(f"  pumping across {A_target:.0f} m^2 by number: N = {N_needed:.2e} loops"
 print(f"     = {M_needed:.1f} kg of forged {2*E1/e/1e9:.2f} GeV linked pairs,")
 print(f"       and closure still denies every one of them a net grip.")
 F_in = 2*np.pi*T_line
-d_atom, F_bond = 2.5e-10, 1e-8            # host spacing [m], bond rupture [N]
-R_cross = T_line*d_atom/F_bond
-print(f"  growing one loop instead: curvature pull 2 pi T = {F_in/1e3:.1f} kN,")
-print(f"     independent of R, against a matter ceiling (2 pi R/d) F_bond")
-print(f"     that only overtakes it at R = T d / F_bond = {R_cross:.0f} m.")
+# What matter can hold per metre of line: one chemical bond per pinning
+# site, f_anchor = F_pin / s, computed host by host in line_anchor_density.py
+# (the anchor-density table of the propulsion appendix).
+F_ANCHOR = {"osmium": 0.01904, "iron": 0.00451}  # [N/m]
+xi = ell                                  # core parameter (the ladder's premise)
+eps_line = lambda R: (rho_s*kappa**2/(4*np.pi))*(np.log(8*R/xi) - 2)  # [N] = [J/m]
+print(f"  growing one loop instead: curvature pull 2 pi T = {F_in/1e3:.1f} kN at")
+print(f"     the core scale, rising only as ln R: 2 pi eps(R) with")
+print(f"     eps(R) = (rho_s kappa^2/4pi)[ln(8R/xi) - 2]. Matter's ceiling is")
+print(f"     2 pi R f_anchor, so the two cross at eps(R) = R f_anchor:")
+for host, f_a in F_ANCHOR.items():
+    lnR = brentq(lambda x: eps_line(np.exp(x)) - np.exp(x)*f_a, 0.0, 40.0)
+    R_cross = np.exp(lnR)
+    print(f"     {host:>6}: f_anchor = {f_a:.4f} N/m -> R_x = {R_cross/1e3:.2e} km"
+          f" = {R_cross/6.371e6:.0f} Earth radii")
 print(f"     The path from the core scale is barred, not the destination.")
 print()
 

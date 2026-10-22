@@ -11,11 +11,11 @@ This is the "directional density oscillator" the superfluid_open section
 calls for: not a charged plate (pure shear, no monopole content, drives only
 the reactive pilot-wave dipole and carries NO momentum out) but a sample of
 E0-active nuclei driven to breathe in phase, radiating real momentum into
-second sound at v2 = 3.65 c.
+second sound at v2 = sqrt((3-4N^2)/(1-N^2)) c = 1.592 c (N^2 = 1/pi).
 
   THRUST. Second sound carries wave momentum: for radiated power P into a
-  mode of speed v2, the reaction thrust is F = P / v2. Being 3.65x faster
-  than light, it is 3.65x WORSE per watt than a photon rocket -- so this is
+  mode of speed v2, the reaction thrust is F = P / v2. Being 1.59x faster
+  than light, it is 1.59x WORSE per watt than a photon rocket -- so this is
   never a high-thrust engine. Its interest is that the reaction goes into the
   VACUUM, needs no propellant, and is the only momentum-bearing vacuum channel.
 
@@ -30,9 +30,12 @@ second sound at v2 = 3.65 c.
   radiated PER unit monopole content per event. Scaling that to a coherent
   driven array gives the thrust with the framework's own normalisation.
 
-  RESULT: even a mole of a strong E0 emitter (e.g. the 0+ -> 0+ breathing
-  transitions near an MeV) driven coherently at GHz yields micro-newton-scale
-  thrust while sitting orders under the stellar ceiling -- a real, aimable,
+  RESULT: the absolute thrust carries an unknown geometric and duty-cycle
+  prefactor (folded below into a 1e-30 scoping factor), so the table is a
+  scoping estimate; what is firm is the scaling F ~ (N eps_1)^2 / v2. A
+  mole of a strong E0 emitter (e.g. the 0+ -> 0+ breathing transitions near
+  an MeV) driven coherently at GHz gives ~0.1 N on that scoping factor,
+  far under the stellar ceiling -- a real, aimable,
   propellantless push, weak but not forbidden, and the strength scales with
   coherence (N eps)^2, which is the lever.
 """
@@ -44,7 +47,8 @@ theta = alpha**2/(2*np.pi)
 c     = 2.99792458e8
 hbar  = 1.054571817e-34
 e     = 1.602176634e-19
-v2    = 3.65*c
+N2    = 1/np.pi                       # Cosserat coupling number
+v2    = np.sqrt((3 - 4*N2)/(1 - N2))*c  # second sound = sqrt(C11/rho_x) = 1.592 c
 m0c2  = 0.51099895069e6/alpha*e     # node rest energy, J
 
 print("="*72)
@@ -52,7 +56,7 @@ print("MONOPOLE TRANSDUCER: E0 breathing array as a second-sound thruster")
 print("="*72)
 print(f"  second sound speed v2 = {v2/c:.2f} c")
 print(f"  wave-momentum thrust  F = P/v2 = {1/v2:.2e} N/W")
-print(f"  (photon rocket 1/c = {1/c:.2e} N/W; second sound is 3.65x worse/W,")
+print(f"  (photon rocket 1/c = {1/c:.2e} N/W; second sound is {v2/c:.2f}x worse/W,")
 print("   but the reaction goes into the vacuum with no propellant)")
 print()
 
@@ -78,9 +82,9 @@ for N, f in [(6.022e23, 1e9), (6.022e23, 1e12), (6.022e26, 1e12)]:
 print()
 print("  (The 1e-30 scoping factor folds the geometric coupling, the array")
 print("   duty cycle, and the fraction of nuclei actually phase-locked; it is")
-print("   the honest analogue of the '~6 orders below naive' the text already")
+print("   the honest analogue of the 'several orders below naive' the text")
 print("   quotes. The POINT is the scaling F ~ (N eps)^2 / v2: coherence is")
-print("   the lever, and the number is a real micro-to-milli-newton, not zero.)")
+print("   the lever, and the number is not zero.)")
 print()
 
 print("="*72)

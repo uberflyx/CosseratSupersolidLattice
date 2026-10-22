@@ -42,9 +42,12 @@ The chain has five links.
      Blatter et al., Rev. Mod. Phys. 66, 1125 (1994)]. Which regime applies
      is set by the Labusch criterion: pinning is individual (strong) when a
      single pin can deflect the line by its own range against the line's
-     elastic restoring force. Here the pin force U/R_N exceeds that
-     restoring force by some seven orders, so the pins are individually
-     strong, and the geometry rather than the pin strength sets the answer.
+     elastic restoring force. The restoring force over the span the line
+     settles on is T(s) R_N / s, with T(s) the deformation-scale tension of
+     step 4 evaluated at the converged spacing (145 nm in iron). The pin
+     force U/R_N ~ 12 kN exceeds that ~7e-3 N by a ratio of about 2e6, so
+     the pins are individually strong, and the geometry rather than the pin
+     strength sets the answer.
 
   4. THE VARIATIONAL OPTIMUM. Let the line touch a pin every s of its
      length, hopping a transverse distance delta to do so. A hop costs
@@ -56,8 +59,13 @@ The chain has five links.
 
      minimised at  s = sqrt( 3 T / (2 pi n U) ).
 
-  5. WHAT THE HOST CAN TRANSMIT. The pin force itself is nuclear, of order
-     10 kN, but a nucleus is held in its host only by chemical bonds, so
+     The tension is not the ground ring's E1/(2 pi R0) ~ 7.5 kN: the detour
+     is a bend of wavelength s, so the logarithm runs out to s,
+     T(s) = (rho_s kappa^2/4pi)[ln(s/xi) - 1] ~ 2.1e5 N, and the spacing is
+     iterated to self-consistency (iron: s = 145 nm, hop delta = 5.1 pm).
+
+  5. WHAT THE HOST CAN TRANSMIT. The pin force itself is nuclear, about
+     12 kN in iron, but a nucleus is held in its host only by chemical bonds, so
      the transmitted force necks down there (the plumbing limit). The
      single-atom ceiling is estimated as the ideal strength times the area
      per atom, with the Frenkel estimate sigma ~ E/10 calibrated against
@@ -150,16 +158,38 @@ print(f"  agreement to {abs(U_lo-U_hi)/U_lo:.1e}: the 1/4 core term is fixed by"
 print("  the GP core energy, not fitted to make the regimes meet.")
 print()
 
+# The tension that resists the detour is NOT the core-scale ring value
+# T = E1/(2 pi R0). The detour is a bend of wavelength ~s, so the line's
+# logarithm runs out to s, giving T(s) = eps_0 [ln(s/xi) - 1], about thirty
+# times larger at the hundred-nanometre scale. Because s itself depends on
+# T, the spacing is implicit and is iterated to convergence below.
+eps_0 = rho_s*kappa**2/(4*np.pi)
+T_of_s = lambda s: eps_0*(np.log(s/xi) - 1.0)     # deformation-scale tension [N]
+
+def spacing(n, U, seed=1e-7):
+    """Self-consistent pin spacing with the deformation-scale tension."""
+    s = seed
+    for _ in range(500):
+        s = 0.5*(s + np.sqrt(3*T_of_s(s)/(2*np.pi*n*U)))
+    return s
+
+# host, atomic weight, number density [m^-3], Young's modulus [Pa]
+hosts = [("iron",      55.85, 8.50e28,  211e9),
+         ("tungsten", 183.84, 6.31e28,  411e9),
+         ("osmium",   190.23, 7.15e28,  560e9),
+         ("diamond",   12.01, 1.763e29, 1050e9)]
+
 print("="*74)
 print("3. Strong or weak pinning? The Labusch check (iron)")
 print("="*74)
 U_fe, R_fe, _ = pin_depth(55.85)
+s_fe      = spacing(hosts[0][2], U_fe)  # converged iron spacing [m]
 f_p       = U_fe/R_fe                  # peak single-pin force [N]
-s_guess   = 3e-8                       # provisional pin spacing [m]
-f_elastic = T*R_fe/s_guess             # line restoring force over that span [N]
-print(f"  peak pin force       U/R_N      = {f_p:.2e} N  ({f_p/1e3:.1f} kN)")
-print(f"  line restoring force T R_N / s  = {f_elastic:.2e} N")
-print(f"  Labusch ratio                   = {f_p/f_elastic:.1e}  >> 1")
+f_elastic = T_of_s(s_fe)*R_fe/s_fe     # line restoring force over that span [N]
+print(f"  converged spacing s = {s_fe*1e9:.1f} nm, tension T(s) = {T_of_s(s_fe):.2e} N")
+print(f"  peak pin force       U/R_N        = {f_p:.2e} N  ({f_p/1e3:.1f} kN)")
+print(f"  line restoring force T(s) R_N / s = {f_elastic:.2e} N")
+print(f"  Labusch ratio                     = {f_p/f_elastic:.1e}  >> 1")
 print("  Individual (strong) pinning: geometry sets the spacing, not strength.")
 print()
 
@@ -170,28 +200,7 @@ print(f"  {'host':>9} {'A':>7} {'R_N/fm':>7} {'reg':>6} {'U/MeV':>8} "
       f"{'s/nm':>7} {'delta/pm':>9} {'F_pin/nN':>9} {'f/(N/m)':>9}")
 print("  " + "-"*72)
 
-# host, atomic weight, number density [m^-3], Young's modulus [Pa]
-hosts = [("iron",      55.85, 8.50e28,  211e9),
-         ("tungsten", 183.84, 6.31e28,  411e9),
-         ("osmium",   190.23, 7.15e28,  560e9),
-         ("diamond",   12.01, 1.763e29, 1050e9)]
-
 cal = 12.6e9/(211e9/10)   # Frenkel E/10 calibrated to iron's DFT ideal strength
-
-# The tension that resists the detour is NOT the core-scale ring value
-# T = E1/(2 pi R0). The detour is a bend of wavelength ~s, so the line's
-# logarithm runs out to s, giving T(s) = eps_0 [ln(s/xi) - 1], about thirty
-# times larger at the hundred-nanometre scale. Because s itself depends on
-# T, the spacing is implicit and is iterated to convergence below.
-eps_0 = rho_s*kappa**2/(4*np.pi)
-
-def spacing(n, U, seed=1e-7):
-    """Self-consistent pin spacing with the deformation-scale tension."""
-    s = seed
-    for _ in range(500):
-        T_s = eps_0*(np.log(s/xi) - 1.0)
-        s = 0.5*(s + np.sqrt(3*T_s/(2*np.pi*n*U)))
-    return s
 
 results = {}
 for name, A, n, E_mod in hosts:
@@ -238,10 +247,13 @@ for name in ("iron", "osmium"):
               f" line energy {E_loop/1e6:.3g} MJ"
               f"  ({eps_at(R_loop)/1e3:.0f} kJ/m)")
 print()
-print("  Thermal caveat: delta comes out near 12 pm, against a room-temperature")
-print("  nuclear displacement of about 7 pm in iron, so lattice vibration is an")
-print("  order-unity correction to which pins are in reach at a given instant.")
-print("  Treat every f_anchor above as good to a factor of about two.")
+delta_fe = 1/np.sqrt(np.pi*hosts[0][2]*results['iron'][1])   # iron hop [m]
+print(f"  Thermal caveat: the iron hop comes out at delta = {delta_fe*1e12:.1f} pm, far")
+print(f"  above the pin radius R_N = {R_fe*1e15:.1f} fm (so nuclei act as points) but")
+print("  below the room-temperature nuclear displacement of about 7 pm in iron,")
+print("  so lattice vibration moves the pins by more than the line hops to reach")
+print("  them: which pins are in reach at a given instant is an order-unity")
+print("  question. Treat every f_anchor above as good to an order-unity factor.")
 print("="*74)
 
 # ============================================================== STEP 6

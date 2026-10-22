@@ -38,13 +38,16 @@ THE ESTIMATE
     strain-plus-curvature overlap; it matches oscillation data to 0.04%. This
     script only asks whether the superclimb MECHANISM reproduces that h.
 
-    RESULT: with v2 pinned at sqrt(40/3) c = 3.65c (condensate frozen, crystal
-    carries a longitudinal wave against C11 = 8/3 mu), the mechanism predicts
-    (v2/c) m1 ~ 18 meV against the overlap's h ~ 14.4 meV: agreement to ~25%,
-    the precision of a semiclassical attempt frequency. 'v2 = 2.9c' is not an
-    independent speed -- it is just h/m1, and h is pinned by the overlap. The
-    strain channel of the overlap IS the Peach-Koehler climb force, so the two
-    are one coupling. No fitted quantity enters.
+    RESULT: with v2 pinned at sqrt((3-4N^2)/(1-N^2)) c = 1.592c (N^2 = 1/pi;
+    the condensate is too stiff to counterflow, so the crystal carries a
+    longitudinal wave against C11 = 2.533 C44 on the same inertia as its
+    transverse wave at c), the mechanism predicts (v2/c) m1 ~ 8.0 meV against
+    the overlap's h ~ 14.4 meV: agreement to ~44%, the precision of a
+    semiclassical attempt frequency. 'v2 = 2.9c' is not an independent speed
+    -- it is just h/m1, and h is pinned by the overlap; it sits a factor ~1.8
+    above the pinned 1.592c. The strain channel of the overlap IS the
+    Peach-Koehler climb force, so the two are one coupling. No fitted
+    quantity enters.
 """
 
 import numpy as np
@@ -59,7 +62,8 @@ theta_ch= alpha**2/(2*np.pi)       # chirality = strain-curvature mixing angle
 Dm21_eV2 = 7.49e-5                 # eV^2 (solar)
 Dm31_eV2 = 2.534e-3               # eV^2 (atmospheric)
 
-v2_over_c = np.sqrt(40.0/3.0)      # pinned second sound = sqrt(C11/(f_n rho)), eq:v2_value ~ 3.65c
+N2_cos    = 1/np.pi                # Cosserat coupling number
+v2_over_c = np.sqrt((3 - 4*N2_cos)/(1 - N2_cos))   # second sound sqrt(C11/rho_x)/c = 1.592
 
 # ---- the neutrino spectrum (lightest mass is parameter-free) --------------
 m1_meV = theta_ch**2 * m0_MeV * 1e9            # m1 = theta_ch^2 m0, in meV
@@ -75,7 +79,7 @@ hA      = (1 + N2)/2.0                         # = (pi+1)/(2pi), Cosserat overla
 h_meV   = hA * A_meV                           # Z3 hopping amplitude
 
 # ---- superclimb rate prediction -------------------------------------------
-#   hbar Gamma_climb = (v2/c) * m1, with v2 pinned by the two-fluid spectrum
+#   hbar Gamma_climb = (v2/c) * m1, with v2 pinned by the crystal's C11/C44
 Gam_pred   = v2_over_c*m1_meV                    # predicted hop rate [meV]
 v2_implied = h_meV/m1_meV                        # v2/c the fitted h would imply
 rel_gap    = abs(Gam_pred - h_meV)/h_meV         # fractional disagreement
@@ -109,7 +113,7 @@ print()
 print("="*70)
 print("SUPERCLIMB RATE PREDICTION:  hbar*Gamma_climb = (v2/c)*m1")
 print("="*70)
-print(f"  v2 (pinned, two-fluid)          : {v2_over_c:.3f} c")
+print(f"  v2 (pinned, sqrt(C11/C44) c)    : {v2_over_c:.3f} c")
 print(f"  predicted hop rate (v2/c)*m1    : {Gam_pred:.2f} meV")
 print(f"  Z3 hopping amplitude h          : {h_meV:.2f} meV")
 print(f"  fractional disagreement         : {100*rel_gap:.0f}%")
@@ -122,8 +126,8 @@ print("HOW TO READ THIS")
 print("="*70)
 print(f"  bare hop h0 = h/theta_ch^2          : {h_meV*1e-9/theta_ch**2:.0f} MeV")
 print(f"  as a multiple of m0                 : {h_meV*1e-9/theta_ch**2/m0_MeV:.2f} m0  (= h/m1)")
-print(f"  two-fluid second sound              : {v2_over_c:.2f} m0")
-print(f"  ratio                               : {v2_over_c/v2_implied:.2f}  (~{100*(v2_over_c/v2_implied-1):.0f}% apart)")
+print(f"  second sound (v2/c) m0              : {v2_over_c:.2f} m0")
+print(f"  factor h0 / ((v2/c) m0)             : {v2_implied/v2_over_c:.2f}")
 print()
 print("  h is NOT set by v2. It is derived from the Cosserat overlap")
 print("  h/A = (pi+1)/(2pi) (strain channel cos60 + rolling channel N^2/2),")

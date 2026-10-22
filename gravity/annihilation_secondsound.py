@@ -24,7 +24,7 @@ KEY PHYSICS (and the reason the answer is not catastrophic):
   its accumulated value. A single BARYONIC annihilation event has
   eps_event ~ 1; a single LIGHT-LEPTON event has eps_event << 1, capped by
   energy conservation (2 m_e c^2 cannot pay for a full-cell compression that
-  costs ~m_0 c^2) and pinned by the positronium searches to ~1.5e-5 per cell
+  costs ~m_0 c^2) and pinned by the positronium searches to ~1.6e-5 per cell
   (LABORATORY block below). For the bulk episodes, what a medium radiates
   coherently is set by how fast the NET node count changes compared with the
   mode frequency it can drive. The emitted power per unit volume scales as
@@ -63,7 +63,9 @@ kB     = 1.380649e-23
 e      = 1.602176634e-19
 G      = 6.67430e-11
 ell    = 2.8179403262e-15
-v2     = 3.65*c
+N2     = 1/np.pi                              # Cosserat coupling number
+C11_mu = (3 - 4*N2)/(1 - N2)                  # C11/mubar on the D4 shell = 2.533
+v2     = np.sqrt(C11_mu)*c                    # second sound = sqrt(C11/rho_x) = 1.592 c
 m0     = 0.51099895069e6/alpha*e/c**2      # node mass, kg
 F_S    = 0.99932                           # the Leggett ceiling adopted as the working superfluid fraction
 rho_L  = F_S*m0/ell**3                      # superfluid density of the lattice
@@ -72,18 +74,19 @@ K_sf   = c**4/(G*ell**2)
 print("="*72)
 print("LABORATORY: per-event e+e- second-sound branching vs positronium bounds")
 print("="*72)
-# Emission law E_2nd = (1/2) C11 (drho/rho)^2 V, C11 = (8/3) mu, over one cell
-# V = ell^3. Using mu ell^3 = m0 c^2 and m0 = m_e/alpha, the per-event branching
-# into second sound (energy over the 2 m_e c^2 released) is
-#       Br_2nd = E_2nd / (2 m_e c^2) = (2 / 3 alpha) (drho/rho)^2.
-coeff = 2.0/(3.0*alpha)                       # Br_2nd = coeff * (drho/rho)^2
-print(f"  Br_2nd = (2/3 alpha) (drho/rho)^2 = {coeff:.1f} * (drho/rho)^2")
+# Emission law E_2nd = (1/2) C11 (drho/rho)^2 V over one cell V = ell^3, with
+# the longitudinal modulus C11 = 2.533 mubar. Using mubar ell^3 = m0 c^2 and
+# m0 = m_e/alpha, the per-event branching into second sound (energy over the
+# 2 m_e c^2 released) is
+#       Br_2nd = E_2nd / (2 m_e c^2) = (C11/mubar) / (4 alpha) (drho/rho)^2.
+coeff = C11_mu/(4.0*alpha)                    # Br_2nd = coeff * (drho/rho)^2
+print(f"  Br_2nd = (C11/mubar)/(4 alpha) (drho/rho)^2 = {coeff:.1f} * (drho/rho)^2")
 # (1) Energy-conservation ceiling: Br_2nd <= 1 forbids the full-strength value.
 drho_ceiling = np.sqrt(1.0/coeff)
 print(f"  energy-conservation ceiling: Br<=1 => drho/rho <= {drho_ceiling:.3f}")
 print(f"    -> a single e+e- pair CANNOT reach drho/rho ~ 1 (full strength);")
-print(f"       full-cell compression costs (4/3) m0 c^2 = "
-      f"{4/3*0.51099895069/alpha:.1f} MeV >> 2 m_e c^2 = 1.022 MeV.")
+print(f"       full-cell compression costs (1/2) C11 ell^3 = {C11_mu/2:.2f} m0 c^2 = "
+      f"{C11_mu/2*0.51099895069/alpha:.1f} MeV >> 2 m_e c^2 = 1.022 MeV.")
 # (2) Badertscher 2007 (Phys. Rev. D 75, 032004) invisible-decay limits.
 Br_oPs    = 4.2e-7                             # Br(o-Ps -> invisible), 90% CL
 Br_direct = 2.1e-8                             # Br(e+e- -> invisible), 90% CL

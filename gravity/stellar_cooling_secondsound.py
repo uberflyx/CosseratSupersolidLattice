@@ -44,7 +44,9 @@ import numpy as np
 alpha  = 1/137.035999
 theta  = alpha**2/(2*np.pi)          # chirality, 8.5e-6
 c      = 2.99792458e8
-v2     = 3.65*c                      # second-sound group speed
+N2     = 1/np.pi                     # Cosserat coupling number
+v2     = np.sqrt((3 - 4*N2)/(1 - N2))*c   # second-sound speed, 1.592 c; it does not
+                                     # enter the ratio L_2nd/L_nu ~ epsilon^2 below
 
 # ---- solar energy budget (measured) --------------------------------------
 L_sun      = 3.828e26                # W, photon luminosity

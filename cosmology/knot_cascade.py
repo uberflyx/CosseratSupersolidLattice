@@ -168,7 +168,8 @@ print("     x O(1) geometry: inside the SIDM window, IF the rings survive.")
 mix2 = (5e-42)**2
 rho = (m0_MeV / MeV_per_g * 1e-3) / (l_m**3)       # kg/m^3
 rho_s = 0.8 * rho
-v2 = 3.65 * c
+N2 = 1.0 / np.pi                                    # Cosserat coupling number
+v2 = np.sqrt((3.0 - 4.0 * N2) / (1.0 - N2)) * c     # second sound, 1.592 c
 Rf = 1.0 * l_m
 v_ring = kappa / (4 * np.pi * Rf)
 a_ring = v_ring**2 / Rf

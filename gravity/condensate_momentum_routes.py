@@ -27,8 +27,9 @@ numbers.
            monograph appendix, sec-clock-routes and sec-clock-energy-theorem.
 
   ROUTE 2  (radiated second sound): emit momentum into the compression
-           channel at v_2 = sqrt(3) c. Wave momentum flux F = P/v_2, i.e.
-           v_2/c = sqrt(3) times WORSE thrust-per-watt than a photon
+           channel at v_2 = sqrt((3-4N^2)/(1-N^2)) c = 1.592 c (N^2 = 1/pi).
+           Wave momentum flux F = P/v_2, i.e.
+           v_2/c = 1.59 times WORSE thrust-per-watt than a photon
            rocket, before the transducer efficiency is even paid. A
            signalling channel, not a thruster.
 
@@ -105,7 +106,7 @@ print()
 
 # ----- ROUTE 2: radiated second sound --------------------------------------
 print("ROUTE 2 - radiated second sound:")
-print(f"  wave momentum: F/P = 1/v_2 = {1/v2:.3e} N/W   (v_2 = sqrt(3) c)")
+print(f"  wave momentum: F/P = 1/v_2 = {1/v2:.3e} N/W   (v_2 = {v2/c:.3f} c)")
 print(f"  photon rocket:  F/P = 1/c  = {1/c:.3e} N/W  (2nd sound is {v2/c:.2f}x worse,")
 print("  before transducer efficiency). A signalling channel, not a thruster.")
 print()
@@ -121,9 +122,9 @@ for w in [1e-3, 1e-6, 1e-9]:
     print(f"  {w:10.0e} {FP:12.1e} {A:18.3e} {P:16.2e}")
 w_ref, A_ref = 1e-6, F_want / (rho_s * (1e-6)**2)
 print(f"  At w = 1 um/s: {F_want:.0e} N of momentum flux for {0.5*F_want*w_ref:.2f} W,")
+print(f"  through {A_ref:.0f} m^2 of effective intake,")
 print("  which is why energy was never the obstacle. The grip is (see")
 print("  knot_closure_theorem.py: closure denies it entirely).")
-print(f"  through {A_ref:.0f} m^2 of effective intake.")
 print(f"  Photon rocket for the same 1 MN: {F_want*c:.1e} W (three hundred TW).")
 print(f"  Landau margin: w/v_2 = {w_ref/v2:.1e}  -> dissipationless by fifteen orders.")
 print()
