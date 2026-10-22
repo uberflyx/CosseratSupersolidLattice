@@ -23,7 +23,9 @@ Cast of objects, smallest to largest:
      the interior's "photon", with a QUADRATIC dispersion.
 
   2. THE ATOM (bead): the smallest vortex ring threaded on a wire,
-     E_1 = (8 pi^2 / 5) m0 c^2 = 1.107 GeV, radius R0 ~ 1.7 ell. Linkage
+     E_1 = 2 pi^2 f_s m0 c^2 = 1.106 GeV at the interior's lower-bound
+     fraction f_s = 4/5 (the exterior vacuum's adopted 0.99932 gives
+     1.381 GeV), radius R0 ~ 1.7 ell, which carries no f_s. Linkage
      with the wire is its conserved charge; it slides freely along the
      wire: a 1D particle. Ring dynamics gives E ~ sqrt(P): heavier rings
      move SLOWER (v = dE/dP falls with R). Anomalous dispersion is the
@@ -55,6 +57,11 @@ Cast of objects, smallest to largest:
 
 All array numbers for the fiducial hole of the reservoir script:
 M = 10 Msun near-extremal, Omega_H ~ 1e4 rad/s.
+
+The superfluid fraction of a shear-free interior is not derived; it would
+lie between 4/5 and 1. Everything here is evaluated at the lower bound
+f_s = 4/5. Every energy and impulse scales in proportion to f_s (up by 5/4
+at f_s = 1), while every radius, speed and ratio is unchanged.
 """
 
 import numpy as np
@@ -71,13 +78,13 @@ c     = 2.99792458e8                  # m/s
 ell   = 2.8179403205e-15              # lattice spacing r_e [m]
 hbar  = 1.054571817e-34
 kappa = 2.0 * np.pi * ell * c         # circulation quantum h/m0 [m^2/s]
-f_s   = 0.8                           # superfluid fraction (bootstrap)
+f_s   = 4/5                           # interior lower-bound fraction (not the exterior's adopted 0.99932)
 rho_s = f_s * m0 / ell**3             # superfluid density [kg/m^3]
 xi    = ell                           # vortex core radius [m]
 GeV   = 1.602176634e-10               # J
 m0c2  = m0 * c**2                     # node energy [J] ~ 70 MeV
 
-E1 = (8 * np.pi**2 / 5) * m0c2        # smallest free ring [J] (monograph)
+E1 = 2 * np.pi**2 * f_s * m0c2       # line tension x one lattice spacing [J]
 
 line = "-" * 76
 print(line)
@@ -234,8 +241,9 @@ for Rq in (R0, 5*R0, 20*R0):
 #    Chemistry there is kinetically frozen: encounter rate n sigma v with
 #    the intergalactic background (~1e47 rings per galaxy share, halo
 #    volume ~ (100 kpc)^3) never makes a single molecule in a Hubble time.
-#    Molecules outside exist only if forged already linked (the 2.21 GeV
-#    monophoton pair of sec:clock_actuation).
+#    Molecules outside exist only if forged already linked, and none is
+#    forged at the Upsilon(4S): at the exterior's adopted fraction the
+#    linked pair's production floor is 10.73 GeV (vortex_hadron_ladder.py).
 # ---------------------------------------------------------------------------
 n_out  = 1e47 / (3.1e21)**3          # rings per m^3 in a halo share
 rate   = n_out * np.pi*ell**2 * 0.5*c

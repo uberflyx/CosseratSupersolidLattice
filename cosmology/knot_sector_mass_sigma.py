@@ -21,17 +21,19 @@ no new input. Everything rests on three identities already in the monograph:
 
 From these the vortex line tension follows,
 
-    T = (rho_s kappa^2 / 4pi) ln(R/xi),   rho_s = (4/5) rho,  rho = m0/l^3,
+    T = (rho_s kappa^2 / 4pi) ln(R/xi),   rho_s = f_s rho,  rho = m0/l^3,
 
-which reduces to T = (4pi/5) ln(R/xi) * (m0 c^2 / l): about one node energy per
-lattice spacing of line, times a slowly varying logarithm. A knot is a length
+with f_s = 0.99932 the adopted superfluid fraction, which reduces to
+T = (pi f_s) ln(R/xi) * (m0 c^2 / l): a few node energies per lattice spacing
+of line, times a slowly varying logarithm. A knot is a length
 of this line, so its mass is the line tension times the length, and its
 self-interaction cross-section is the geometric area it presents to another
 knot. The two together give sigma/m.
 
-Cross-check built in: the same line tension must reproduce the chapter's own
-straight-vortex binding energy E_bind ~ 0.9-2.6 GeV over a length sqrt(6) l
-(Eq. eq:vortex_binding). It does, which anchors the normalisation.
+Cross-check built in: the same line tension must reproduce the straight-vortex
+binding energy E_bind = (rho_s kappa^2/2pi) L4 ln(R/xi) = 2 sqrt(2) pi f_s m0 c^2
+ln(R/xi) ~ 0.6-1.9 GeV over the compact length L4 = sqrt(2) l, for a logarithm
+between one and three. It does, which anchors the normalisation.
 
 The helicity H = n kappa^2 is, for a coreless texture, exactly the Hopf charge
 n of the order-parameter map (via the Mermin-Ho relation the framework already
@@ -51,14 +53,15 @@ r_e_cm = 2.8179403205e-13           # classical electron radius [cm]
 
 m0_MeV = m_e_MeV / alpha            # node mass [MeV/c^2]
 ell_cm = r_e_cm                     # lattice spacing = r_e
-f_s = 4.0 / 5.0                     # superfluid fraction (bootstrap, sec:mott)
+f_s = 0.99932                       # the Leggett ceiling adopted as the working superfluid fraction
 
 MeV_to_g = 1.782662e-27             # 1 MeV/c^2 in grams
 barn_cm2 = 1.0e-24                  # 1 barn in cm^2
 
-# Line tension coefficient: T = C_T * ln(R/xi) * (m0 c^2 / ell),  C_T = 4 pi / 5.
-C_T = 4.0 * np.pi / 5.0             # = (rho_s kappa^2 / 4pi) reduced, self-energy
-C_int = 8.0 * np.pi / 5.0          # interaction coefficient (rho_s kappa^2 / 2pi)
+# Line tension coefficient: T = C_T * ln(R/xi) * (m0 c^2 / ell),  C_T = pi f_s,
+# because rho_s kappa^2 = f_s (m0/l^3)(2 pi c l)^2 = 4 pi^2 f_s m0 c^2 / l.
+C_T = np.pi * f_s                   # = (rho_s kappa^2 / 4pi) reduced, self-energy
+C_int = 2.0 * np.pi * f_s           # interaction coefficient (rho_s kappa^2 / 2pi)
 
 def line_tension_per_ell(lnRxi):
     """Vortex self-energy per lattice spacing, in units of m0 c^2."""
@@ -66,9 +69,10 @@ def line_tension_per_ell(lnRxi):
 
 # ---------------------------------------------------------------------------
 # Cross-check: reproduce the chapter's straight-vortex binding energy.
-#   E_bind = (rho_s kappa^2 / 2pi) * L4 * ln(R/xi),  L4 = sqrt(6) ell.
+#   E_bind = (rho_s kappa^2 / 2pi) * L4 * ln(R/xi),  L4 = sqrt(2) ell
+#   (the compact length, L4^2 = 2 ell^2).
 # ---------------------------------------------------------------------------
-L4_over_ell = np.sqrt(6.0)
+L4_over_ell = np.sqrt(2.0)
 def E_bind_GeV(lnRxi):
     return C_int * lnRxi * L4_over_ell * m0_MeV / 1e3   # GeV
 
@@ -123,13 +127,14 @@ print("Fundamentals (from the framework):")
 print(f"  alpha = 1/{1/alpha:.3f}   m0 = m_e/alpha = {m0_MeV:.2f} MeV   "
       f"l = r_e = {ell_cm*1e13:.3f} fm   f_s = {f_s}")
 print(f"  circulation quantum kappa = 2 pi c l ;  line tension "
-      f"T = (4pi/5) ln(R/xi) (m0 c^2 / l)")
+      f"T = (pi f_s) ln(R/xi) (m0 c^2 / l) = {C_T:.3f} ln(R/xi) (m0 c^2 / l)")
 line()
-print("Cross-check against the chapter's straight-vortex binding "
-      "(Eq. eq:vortex_binding, 0.9-2.6 GeV):")
+print("Cross-check against the straight-vortex binding "
+      "2 sqrt(2) pi f_s m0 c^2 ln(R/xi) (0.6-1.9 GeV):")
 for ln in (1.0, 2.0, 3.0):
     print(f"  ln(R/xi) = {ln:.0f}:  E_bind = {E_bind_GeV(ln):.2f} GeV")
-print("  -> normalisation matches the monograph (0.9 GeV at ln=1, 2.6 GeV at ln=3).")
+print(f"  -> normalisation matches ({E_bind_GeV(1.0):.1f} GeV at ln=1, "
+      f"{E_bind_GeV(3.0):.1f} GeV at ln=3).")
 line()
 print("Mass spectrum and self-interaction of the free objects:")
 print(f"  {'object':<15s} {'R/l':>6s} {'len/l':>7s} {'ln':>4s} "

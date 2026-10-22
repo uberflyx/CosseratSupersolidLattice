@@ -14,17 +14,20 @@ subsection. Three results:
      passes through. At the ground radius R0 = 1.68 ell against core reach
      xi ~ ell, the linked geometry itself holds the strands 0.68 ell apart.
 
-  2. ENERGY LEDGER. Reconnection conserves line length minus a one-core-
-     length radiative toll (~105 MeV at the ground ring's line tension).
-     The merge channel (pair -> single loop of both circumferences, radius
-     2 R0) needs E(2R0) = 4.77 GeV against the 2 E1 + 162 MeV = 2.37 GeV
-     the pair owns: forbidden by 2.4 GeV. The exchange channel (pair -> two
-     plain unlinked rings) releases the 162 MeV packing energy and pays the
-     105 MeV toll: net +57 MeV, EXOTHERMIC. Energy does not protect the pair.
+  2. ENERGY LEDGER, at the adopted superfluid fraction f_s = 0.99932, where
+     E1 = 2 pi^2 f_s m0 c^2 = 1.381 GeV. Reconnection conserves line length
+     minus a one-core-length radiative toll (~131 MeV at the ground ring's
+     line tension E1/(2 pi R0)). The merge channel (pair -> single loop of
+     both circumferences, radius 2 R0) needs E(2R0) = 5.97 GeV against the
+     2 E1 + 203 MeV = 2.97 GeV the pair owns: forbidden by 3.0 GeV. The
+     exchange channel (pair -> two plain unlinked rings) releases the 203 MeV
+     packing energy and pays the 131 MeV toll: net +72 MeV, EXOTHERMIC.
+     Energy does not protect the pair. Every energy here scales as f_s, so
+     every sign and ratio holds at any fraction in the window.
 
   3. DEFORMATION BARRIER. Closing the 0.68 ell gap over a chord of one to
-     two core lengths adds delta^2/a of line, a tension cost of 24-48 MeV,
-     against the 162 MeV internal (leapfrog) store. Barrier/store ~ 0.15-0.3:
+     two core lengths adds delta^2/a of line, a tension cost of 30-60 MeV,
+     against the 203 MeV internal (leapfrog) store. Barrier/store ~ 0.15-0.3:
      marginal, so survival is dynamical, not energetic. A Gross-Pitaevskii
      integration at ground-scale parameters decides it; the published
      untying simulations evolved links with decades of excess scale and do
@@ -34,13 +37,28 @@ Author: M. A. Cox.
 """
 
 import numpy as np
+from scipy.optimize import brentq
+from scipy.special import ellipk, ellipe
 
 E_CH = 1.602176634e-19            # elementary charge [C]
-M0C2 = 70.03e6                    # node rest energy [eV]
-E1 = (8 * np.pi**2 / 5) * M0C2    # ground ring energy [eV]
-R0 = 1.68                         # ground ring radius [ell]
+M0C2 = 0.51099895069e6 * 137.035999177   # node rest energy m_e c^2/alpha [eV]
+F_S = 0.99932                     # the Leggett ceiling adopted as the working superfluid fraction
+E1 = 2 * np.pi**2 * F_S * M0C2    # ground ring energy: line tension x one spacing [eV]
 XI = 1.0                          # core reach [ell]
-BOND = 162e6                      # pair packing energy at s = 3 R0 [eV]
+# Ground radius: E(R0) = E1 with core xi = ell reduces to x [ln(8x) - 2] = 1.
+R0 = brentq(lambda x: x * (np.log(8 * x / XI) - 2) - 1, 1.0, 3.0)   # [ell]
+
+
+def neumann_bracket(x1, x2, s):
+    """sqrt(x1 x2) [(2/k - k) K - (2/k) E] for coaxial rings (scipy m = k^2)."""
+    m = 4 * x1 * x2 / ((x1 + x2)**2 + s**2)
+    k = np.sqrt(m)
+    return np.sqrt(x1 * x2) * ((2 / k - k) * ellipk(m) - (2 / k) * ellipe(m))
+
+
+# Pair packing energy at axial spacing 3 R0: rho_s kappa^2 ell = 2 E1 times
+# the dimensionless Neumann bracket.
+BOND = 2 * E1 * neumann_bracket(R0, R0, 3 * R0)   # [eV]
 KT_CMB = 2.35e-4                  # CMB thermal quantum [eV]
 
 
@@ -61,7 +79,7 @@ def geometric_lemma():
     d2 = ((R * np.cos(T) - R - R * np.cos(U)) ** 2
           + (R * np.sin(T)) ** 2 + (R * np.sin(U)) ** 2)
     print(f"  numerical min(d)/R = {np.sqrt(d2.min()):.8f}   (analytic: exactly 1)")
-    print(f"  at R0 = {R0} ell vs core reach xi = {XI} ell: static margin "
+    print(f"  at R0 = {R0:.2f} ell vs core reach xi = {XI} ell: static margin "
           f"{R0 - XI:.2f} ell")
     print()
 
@@ -73,7 +91,7 @@ def energy_ledger():
     print("=" * 72)
     t_line = E1 / (2 * np.pi * R0)          # line tension x ell [eV per core length]
     toll = t_line * XI                       # one core length radiated per event
-    print(f"  E1 = {E1/1e9:.3f} GeV; line tension = {t_line/1e6:.0f} MeV/core length;"
+    print(f"  f_s = {F_S}: E1 = {E1/1e9:.3f} GeV; line tension = {t_line/1e6:.0f} MeV/core length;"
           f" reconnection toll ~ {toll/1e6:.0f} MeV")
     e_merge = E1 * ring_energy_shape(2 * R0) / ring_energy_shape(R0)
     avail = 2 * E1 + BOND
@@ -96,10 +114,11 @@ def deformation_barrier(t_line):
         dl = delta**2 / a
         print(f"  chord a = {a:.0f} ell: extra line ~ delta^2/a = {dl:.2f} ell "
               f"-> barrier ~ {t_line*dl/1e6:.0f} MeV")
+    lo, hi = t_line * delta**2 / 2.0, t_line * delta**2 / 1.0
     print(f"  internal (leapfrog) store: {BOND/1e6:.0f} MeV; "
-          f"barrier/store ~ 0.15-0.3 -> MARGINAL")
-    print(f"  thermal activation: barrier/kT_CMB ~ {30e6/KT_CMB:.0e} -> never;")
-    print(f"  survival is decided by internal dynamics (GP at R0 = 1.68 xi) or")
+          f"barrier/store ~ {lo/BOND:.2f}-{hi/BOND:.2f} -> MARGINAL")
+    print(f"  thermal activation: barrier/kT_CMB ~ {lo/KT_CMB:.0e} -> never;")
+    print(f"  survival is decided by internal dynamics (GP at R0 = {R0:.2f} xi) or")
     print(f"  quantum tunnelling, not by temperature.")
     print()
 

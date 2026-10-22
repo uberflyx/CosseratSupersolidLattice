@@ -50,12 +50,13 @@ MU0_MAG = 4e-7 * np.pi           # magnetic constant [H/m]
 KB      = 1.380649e-23           # Boltzmann constant [J/K]
 T_CMB   = 2.725                  # CMB temperature [K]
 
-# Framework: node rest energy sets the master scale mu0 = m0 c^2.
-M0C2_MEV = 70.3                  # node rest energy [MeV] (E1 = 8pi^2/5 m0c2 = 1.11 GeV)
+# Framework: node rest energy sets the master scale mu0 = m0 c^2 = m_e c^2/alpha.
+ME_C2_MEV = 0.51099895069        # electron rest energy [MeV] (CODATA 2018)
+M0C2_MEV = ME_C2_MEV / ALPHA     # node rest energy [MeV], ~70.03
 M0C2     = M0C2_MEV * 1e6 * E_CH # [J]
 M0       = M0C2 / C**2           # node mass [kg]
 ELL      = HBAR * C / M0C2       # lattice scale = hbar/(m0 c) [m]
-F_S      = 4 / 5                 # superfluid fraction (bootstrap)
+F_S      = 0.99932               # the Leggett ceiling adopted as the working superfluid fraction
 RHO_S    = F_S * M0 / ELL**3     # superfluid density [kg/m^3]
 MU0_NODE = M0C2                  # condensate chemical potential per node [J]
 THETA_CH = ALPHA**2 / (2 * np.pi)      # chirality parameter
@@ -165,7 +166,8 @@ def blade2_energy_clamp():
     print(f"  shortfall factor u_flow/u_EM = {u_flow / u_em:.1e}")
     print(f"  -> back-reaction clamps tilt to phi_eq = {phi_eq:.3e} rad "
           f"({phi / phi_eq:.1e}x below pipe prediction)")
-    print(f"  clamped well depth = {well_depth(phi_eq) / E_CH:.2e} eV/node")
+    print(f"  clamped well depth = {well_depth(phi_eq) / E_CH:.2e} eV/node "
+          f"(at f_s = {F_S})")
     print(f"  (phi_eq is B-independent: both u_flow and u_EM scale as B^2)")
     print()
     return phi_eq
@@ -226,7 +228,9 @@ def rotor_exemption():
 
 if __name__ == "__main__":
     print(f"\nlattice scale ell = {ELL:.3e} m")
-    print(f"superfluid density rho_s = {RHO_S:.3e} kg/m^3")
+    print(f"superfluid fraction f_s = {F_S}")
+    print(f"superfluid density rho_s = {RHO_S:.3e} kg/m^3 "
+          f"({RHO_S / 1.134e4:.1e} x lead)")
     print(f"chirality parameter theta_ch = {THETA_CH:.3e}\n")
     boost_lemma_check()
     tilt_and_well()

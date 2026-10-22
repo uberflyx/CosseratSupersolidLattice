@@ -12,8 +12,9 @@ make this branch the sharp candidate and retire the width/shape mode:
   (i)  the gyroscopic coefficient for line translation is rho_s * kappa
        EXACTLY (Thouless-Ao-Niu): no circulation-profile convention enters,
        unlike the shape-mode overlap that plagued the earlier candidate;
-  (ii) the line tension is superfluid-dominated: rho_s kappa^2/4pi over
-       mu_bar b^2/2pi = 16 pi^2 f_s / (something) = 31.6, so the dynamics is
+  (ii) the line tension is superfluid-dominated: the condensate's field
+       energy over the crystal's for one winding is 4 pi^2 f_s = 39.5 at the
+       adopted superfluid fraction f_s = 0.99932, so the dynamics is
        standard quantised-vortex hydrodynamics with kappa = 2 pi c ell, and
        crystal elasticity is a ~3% stiffness correction;
   (iii) at k_4 = 0 the same branch is the gapless Goldstone (no sharp e*),
@@ -34,13 +35,13 @@ ell the mass is direct, no anchor freedom:
 
 THE ONE REMAINING NUMBER. Everything is fixed except the effective core
 parameter a. Derived candidates and results (MeV):
-    a_L = (2 pi f_s)^{-1/2} ell = 0.4460  ->  124.0   (circulation column)
+    a_L = (2 pi f_s)^{-1/2} ell = 0.3991  ->  137.0   (circulation column)
     w_par = 0.452 ell               ->  122.5   (PN width)
     one-site Wigner-Seitz disc, a = (sqrt(3)/2 pi)^{1/2} ell = 0.52504
                                     ->  106.48  (+0.77% on m_mu)
     a* = 0.52928 ell                ->  105.658 (exact m_mu)
 All lie below the 148.5 MeV ceiling: bound and protected for every natural
-radius. a*/a_L = 1.187, the size of the known Gross-Pitaevskii correction
+radius. a*/a_L = 1.326, of the order of the known Gross-Pitaevskii correction
 by which a healing-core vortex's effective hydrodynamic core parameter
 exceeds xi. Closure therefore needs ONE derivation: the effective core
 parameter of the lattice-condensate vortex (Bogoliubov-de Gennes kelvon on
@@ -68,6 +69,8 @@ m0    = 0.51099895069*137.035999177     # MeV, CODATA 2022 (m_e c^2 / alpha)
 m_mu  = 105.6583755                     # MeV, PDG (project file)
 k4l   = 2*np.pi/np.sqrt(6.0)            # k_4 in units of 1/ell
 E1    = 3*m0/np.sqrt(2.0)               # crystal shear rung at k_4 = 1 [MeV]
+F_S   = 0.99932                         # the Leggett ceiling adopted as the working superfluid fraction
+A_L   = (2*np.pi*F_S)**-0.5             # spin-half circulation column radius [ell]
 
 def kelvon_mass(a):
     """hbar omega_K in MeV for core parameter a in units of ell."""
@@ -77,7 +80,7 @@ if __name__ == "__main__":
     print(f"k_4 = {k4l:.4f}/ell ; ceiling E_1 = {E1:.3f} MeV ; "
           f"target m_mu = {m_mu:.4f} MeV")
     a_star = brentq(lambda a: kelvon_mass(a)-m_mu, 0.3, 1.2)
-    rows = [("a_L (circulation column)", (2*np.pi*0.8)**-0.5),
+    rows = [("a_L (circulation column)", A_L),
             ("w_par (PN width)",          0.452),
             ("one-site WS disc",          np.sqrt(np.sqrt(3)/(2*np.pi))),
             ("a* (solves m_mu)",          a_star),
@@ -86,5 +89,5 @@ if __name__ == "__main__":
         E = kelvon_mass(a)
         print(f"  {name:26s} a = {a:.5f} ell   "
               f"hbar omega_K = {E:8.3f} MeV   bound: {E < E1}")
-    print(f"a*/a_L = {a_star*(2*np.pi*0.8)**0.5:.4f} "
+    print(f"a*/a_L = {a_star/A_L:.4f} "
           f"(GP core-parameter factor scale)")

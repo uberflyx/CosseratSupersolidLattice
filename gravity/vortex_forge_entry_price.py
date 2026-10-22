@@ -21,46 +21,54 @@ This script derives what such a production event must pay and names the
 experiment that decides whether the transition runs at any rate at all.
 
   1. The fuel quantum. The smallest free object is a core-scale ring, and
-     its energy is fixed by the line tension: E_1 = (8 pi^2 / 5) m0 c^2
-     ~ 1.1 GeV. Any forge is a GeV-scale process per ring. (This is also
-     why nothing in chemistry, materials science, or tabletop physics has
-     ever stirred the vacuum: the entry ticket is a gigaelectronvolt
-     deposited into a femtometre-cubed core.)
+     its energy is fixed by the line tension over one lattice spacing:
+     E_1 = 2 pi^2 f_s m0 c^2 = 1.38 GeV at the adopted superfluid fraction
+     f_s = 0.99932, a fifth of a nanojoule. Any forge is a GeV-scale
+     process per ring. (This is also why nothing in chemistry, materials
+     science, or tabletop physics has ever stirred the vacuum: the entry
+     ticket is a gigaelectronvolt deposited into a femtometre-cubed core.)
 
   2. The lock decider. Whether circulation can leave a charged particle at
      all is the rolling-lock question: kinematic (forbidden) or energetic
      (allowed above threshold). The SAME question fixed the dark sector's
-     fate this morning. It is testable now: if shedding is allowed, then
-     e+ e- collisions above sqrt(s) = 1.1 GeV can produce a free ring,
+     fate. It is testable now: if shedding is allowed, then e+ e-
+     collisions above the ring's dispersion floor,
+     sqrt(s) = E_1 [1 + (R0/ell)^2] = 5.27 GeV, can produce a free ring,
      which is electrically dark and leaves the detector unseen. At a
      B factory this is the classic monophoton search: e+ e- -> gamma +
      invisible. A ring has no rest mass, so the observable is not a
      missing-mass peak but a monochromatic photon line fixed by the
      two-body balance on the ring dispersion: 7.57 GeV for a single ring
-     and 7.56 GeV for the linked pair, the storable product (solve in
-     cosmology/vortex_hadron_ladder.py). The
-     BaBar and Belle II single-photon programmes already bound exactly this
-     topology at the femtobarn scale, so the lock question has data waiting
-     on it either way: a peak is a forge; its absence is a coupling bound.
+     at the Upsilon(4S) (solve in cosmology/vortex_hadron_ladder.py). The
+     linked pair, the storable product, cannot be made there: its floor
+     2 E_1 + E_12 + 2 P_0 c = 10.73 GeV lies above the resonance. The
+     BaBar and Belle II single-photon programmes bound monophoton peaks at
+     the femtobarn scale, but a photon recoiling against anything with rest
+     mass cannot exceed sqrt(s)/2 = 5.29 GeV and the ring's line lies above
+     that endpoint, so whether those bounds reach the ring is unchecked. A
+     peak is a forge; its absence is a coupling bound.
 
   3. The storage problem. A plain ring dies on first contact with charged
      matter (the capture channel), so forged rings must be born protected:
-     shed as a LINKED PAIR (helicity from birth, 2 E_1 ~ 2.2 GeV) or tied
-     against the stacking-fault trap that both stores and, run in reverse
-     as a pinned partial loop driven at GeV energy density, is itself the
-     second forge candidate.
+     shed as a LINKED PAIR (helicity from birth, production floor 10.73 GeV,
+     above the Upsilon(4S)) or tied against the stacking-fault trap that
+     both stores and, run in reverse as a pinned partial loop driven at GeV
+     energy density, is itself the second forge candidate. At the
+     Upsilon(4S) only the single ring, the messenger, is within reach.
 
   4. The acoustic forge (the in-house route). A converging second-sound
      pulse nucleates a ring where its amplitude reaches order unity at the
      core scale. The focal energy must still be ~E_1 inside ~l^3, so the
      required convergence gain from a metre-scale phased annihilation
      array is enormous but finite, and it is a coherence problem, not an
-     energy problem: E_1 is a nanojoule-scale (0.18 nJ) deposit.
+     energy problem: E_1 is a nanojoule-scale (0.22 nJ) deposit.
 
 Every number below is from framework constants; model inputs are labelled.
 """
 
 import numpy as np
+from scipy.optimize import brentq
+from scipy.special import ellipk, ellipe
 
 # ---------------------------------------------------------------------------
 # Framework constants.
@@ -72,7 +80,8 @@ c       = 2.99792458e8
 l_m     = 2.8179403205e-15                 # lattice spacing r_e [m]
 kappa   = 2.0 * np.pi * l_m * c            # circulation quantum [m^2/s]
 rho     = (m0_MeV * 1.7827e-30) / l_m**3   # vacuum density [kg/m^3] (MeV->kg)
-rho_s   = 0.8 * rho                        # superfluid fraction f_s = 4/5
+F_S     = 0.99932  # the Leggett ceiling adopted as the working superfluid fraction
+rho_s   = F_S * rho                        # superfluid density [kg/m^3]
 J_per_MeV = 1.602176634e-13
 
 line = "-" * 78
@@ -81,15 +90,22 @@ print(line)
 
 # ---------------------------------------------------------------------------
 # 1. The fuel quantum: smallest free ring.
-#    E = (4 pi/5) ln(R/xi) (m0 c^2 / l) * 2 pi R,  at R = l, ln -> 1.
+#    Line tension rho_s kappa^2/(4 pi) = (pi f_s) m0 c^2 / l at ln -> 1,
+#    times one lattice spacing of circumference 2 pi l: E_1 = 2 pi^2 f_s m0 c^2.
+#    The ground ring carries that energy at R0, where x [ln(8x) - 2] = 1
+#    with x = R0/l (core xi = l), so R0 carries no f_s.
 # ---------------------------------------------------------------------------
-E1_MeV = (8.0 * np.pi**2 / 5.0) * m0_MeV
+E1_MeV = 2.0 * np.pi**2 * F_S * m0_MeV
 E1_J = E1_MeV * J_per_MeV
-I1 = rho_s * kappa * np.pi * l_m**2        # ring impulse [kg m/s]
+x0 = brentq(lambda x: x * (np.log(8.0 * x) - 2.0) - 1.0, 1.0, 3.0)
+I0 = rho_s * kappa * np.pi * (x0 * l_m)**2  # ground-ring impulse [kg m/s]
+P0c_MeV = E1_MeV * x0**2                   # the same impulse x c, = E_1 x0^2
 v1_ring = kappa / (4 * np.pi * l_m)        # self-induced speed ~ c/2 scale
-print("1. THE FUEL QUANTUM (smallest free ring, R = l)")
-print(f"   E_1 = (8 pi^2/5) m0 c^2 = {E1_MeV/1e3:.2f} GeV = {E1_J*1e9:.2f} nJ")
-print(f"   impulse I_1 = rho_s kappa pi l^2 = {I1:.2e} kg m/s")
+print("1. THE FUEL QUANTUM (smallest free ring)")
+print(f"   f_s = {F_S}")
+print(f"   E_1 = 2 pi^2 f_s m0 c^2 = {E1_MeV/1e3:.3f} GeV = {E1_J*1e9:.2f} nJ")
+print(f"   ground radius R0 = {x0:.2f} l; impulse P_0 = rho_s kappa pi R0^2 = "
+      f"{I0:.2e} kg m/s (P_0 c = E_1 x0^2 = {P0c_MeV/1e3:.2f} GeV)")
 print(f"   self-induced speed ~ kappa/(4 pi l) = {v1_ring/c:.2f} c")
 print(f"   -> the entry ticket to the vortex sector is one GeV in one core.")
 print(f"      This is why the vacuum has never been stirred by accident.")
@@ -103,25 +119,36 @@ print(line)
 #    formula E_gamma = (s - m^2 c^4)/(2 sqrt(s)) does not apply. The two-body
 #    balance (E_gamma = P_ring c and sqrt(s) = E_gamma + E_ring) still fixes
 #    one radius and one line. The solve lives in
-#    cosmology/vortex_hadron_ladder.py; the resulting floor and tags are:
-#        channel floor:  sqrt(s) >= min_R [E(R) + P(R) c] = 4.22 GeV
-#        Upsilon(4S) tags: 7.57 GeV (single ring), 7.56 GeV (linked pair)
-#    An invariant-mass reading would put the tags near 5.2 GeV; the ~2 GeV
+#    cosmology/vortex_hadron_ladder.py and is repeated here in closed form:
+#        channel floor:  sqrt(s) >= min_R [E(R) + P(R) c] = E_1 (1 + x0^2)
+#        Upsilon(4S) tag: E_gamma = P(R) c at E(R) + P(R) c = sqrt(s)
+#        linked pair floor: 2 E_1 + E_12 + 2 P_0 c (above the Upsilon(4S))
+#    An invariant-mass reading would put the tag near 5.2 GeV; the ~2 GeV
 #    gap between the readings is itself a signature no rest-mass object makes.
 # ---------------------------------------------------------------------------
 sqrt_s = 10.58   # GeV
-TAGS = ((7.57, "single ring"), (7.56, "linked pair (storable)"))
-for E_gam, tag in TAGS:
-    print(f"2. LOCK DECIDER: e+e- -> gamma + invisible ({tag})")
-    print(f"   dispersion-solved tag: monochromatic photon "
-          f"E_gamma = {E_gam:.2f} GeV in the CM "
-          f"(cosmology/vortex_hadron_ladder.py)")
-print("   Both photons sit in the clean part of the BaBar / Belle II")
-print("   single-photon window.  The existing constraint: BaBar's invisible")
-print("   dark-photon search (53/fb, arXiv:1702.03327) bounds any narrow")
-print("   monophoton line in this window at a production cross-section")
-print("   ceiling of order one femtobarn.  So today's data already says:")
-print("   sigma_shed < ~1 fb.")
+E_GeV = lambda x: E1_MeV / 1e3 * x * (np.log(8.0 * x) - 2.0)   # ring energy
+Pc_GeV = lambda x: E1_MeV / 1e3 * x**2                         # ring impulse x c
+floor = E_GeV(x0) + Pc_GeV(x0)
+x_ups = brentq(lambda x: E_GeV(x) + Pc_GeV(x) - sqrt_s, x0, 12.0)
+E_gam = Pc_GeV(x_ups)
+# coaxial pair energy at spacing 3 R0 (Neumann form), rho_s kappa^2 l = 2 E_1
+m_k = 4 * x0**2 / ((2 * x0)**2 + (3 * x0)**2)
+k_k = np.sqrt(m_k)
+E12 = 2 * E1_MeV / 1e3 * x0 * ((2 / k_k - k_k) * ellipk(m_k) - (2 / k_k) * ellipe(m_k))
+pair_floor = 2 * E_GeV(x0) + E12 + 2 * Pc_GeV(x0)
+print("2. LOCK DECIDER: e+e- -> gamma + invisible (single ring)")
+print(f"   channel floor sqrt(s) >= E_1 (1 + x0^2) = {floor:.2f} GeV")
+print(f"   dispersion-solved tag at the Upsilon(4S): monochromatic photon "
+      f"E_gamma = {E_gam:.2f} GeV in the CM")
+print(f"   linked pair: floor 2 E_1 + E_12 + 2 P_0 c = {pair_floor:.2f} GeV "
+      f"(E_12 = {E12*1e3:.0f} MeV) > {sqrt_s} GeV -> not made there")
+print("   The existing constraint: BaBar's invisible dark-photon search")
+print("   (53/fb, arXiv:1702.03327) bounds monophoton peaks at a production")
+print("   cross-section of order one femtobarn, but a photon recoiling against")
+print(f"   anything with rest mass cannot exceed sqrt(s)/2 = {sqrt_s/2:.2f} GeV, and the")
+print("   ring's line lies above that endpoint, so whether the bound reaches")
+print("   the ring is not yet checked. If it does, sigma_shed < ~1 fb.")
 # --- fuel arithmetic at the ceiling ---
 sigma_fb = 1.0                       # current ceiling [fb]
 L_belle2_ab = 50.0                   # Belle II design integrated lumi [ab^-1]
@@ -133,7 +160,7 @@ print(f"   {N_year:.0f} rings/year and {N_prog:.0f} over its 50/ab programme.")
 print(f"   So the search is limited by whether the peak exists at all, not")
 print(f"   by luminosity: even the present experimental UPPER BOUND would")
 print(f"   deliver a countable sample. That is what makes it a clean test.")
-print(f"   A dedicated line hunt at 7.57 and 7.56 GeV photon energy in the")
+print(f"   A dedicated line hunt at {E_gam:.2f} GeV photon energy in the")
 print(f"   archived and incoming monophoton samples is the single most")
 print(f"   consequential measurement this framework can request.")
 print(line)
@@ -142,7 +169,8 @@ print(line)
 # 3. Storage: born-protected products.
 # ---------------------------------------------------------------------------
 print("3. STORAGE (a plain ring dies on first charged contact)")
-print(f"   linked-pair shedding: 2 E_1 = {2*E1_MeV/1e3:.2f} GeV, helicity at birth;")
+print(f"   linked-pair shedding: floor {pair_floor:.2f} GeV, helicity at birth,")
+print(f"   out of reach at the Upsilon(4S), where only the messenger ring forms;")
 print(f"   or tie against the fabricated stacking-fault trap of")
 print(f"   sec:clock_actuation, which holds a knot without touching its")
 print(f"   circulation. The trap doubles as the second forge: a pinned")
@@ -157,7 +185,11 @@ print(line)
 #    intensity gain of a spherical converger is ~(R_a/l)^2; the array must
 #    supply E_1 within one core crossing time l/v2.
 # ---------------------------------------------------------------------------
-v2 = 3.65 * c
+# Second sound rides the crystal's longitudinal modulus over its transverse
+# one, C11/C44 = (3 - 4 N^2)/(1 - N^2) at the vacuum's N^2 = 1/pi, with the
+# inertia cancelling: v2 = 1.592 c, independent of f_s.
+N2 = 1.0 / np.pi
+v2 = np.sqrt((3.0 - 4.0 * N2) / (1.0 - N2)) * c
 t_core = l_m / v2
 for R_a in (1e-2, 1.0):
     gain = (R_a / l_m)**2
@@ -175,7 +207,7 @@ print(line)
 # ---------------------------------------------------------------------------
 print("WHAT THE MEASUREMENT DECIDES")
 print("  Q1. The lock: kinematic or energetic?  DECIDER: monophoton missing")
-print("      line at 7.57 / 7.56 GeV photon energy in existing B-factory data.")
+print(f"      line at {E_gam:.2f} GeV photon energy in existing B-factory data.")
 print("      Kinematic  -> circulation cannot be shed through a charge, and")
 print("                    the free sector is unreachable by this route.")
 print("      Energetic  -> the transition exists and Q2 becomes a number.")

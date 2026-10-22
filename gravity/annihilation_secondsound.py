@@ -65,7 +65,8 @@ G      = 6.67430e-11
 ell    = 2.8179403262e-15
 v2     = 3.65*c
 m0     = 0.51099895069e6/alpha*e/c**2      # node mass, kg
-rho_L  = 0.8*m0/ell**3                      # superfluid density of the lattice
+F_S    = 0.99932                           # the Leggett ceiling adopted as the working superfluid fraction
+rho_L  = F_S*m0/ell**3                      # superfluid density of the lattice
 K_sf   = c**4/(G*ell**2)
 
 print("="*72)

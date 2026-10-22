@@ -10,11 +10,13 @@ The chain has five links.
 
   1. THE CORE PARAMETER. The classical energy of a vortex ring of radius R
      with core parameter a is E = (rho_s kappa^2 R/2)[ln(8R/a) - 2]. The
-     framework fixes E = E_1 = (8 pi^2/5) m0 c^2 and R = R0 = 1.68 ell
-     independently, so the pair over-determines a. Solving returns
-     a ~ 1.03 ell, which is a genuine internal consistency check: the
-     ladder's ring geometry and the ring's energy agree on a core one
-     lattice spacing wide.
+     ladder fixes E = E_1 = 2 pi^2 f_s m0 c^2 (the line tension over one
+     lattice spacing, at the adopted superfluid fraction f_s = 0.99932) and
+     R = R0 = 1.68 ell, but not independently: R0 is itself solved from this
+     same energy with a core one lattice spacing wide. Since
+     rho_s kappa^2 = 4 pi^2 f_s m0 c^2/ell, solving back for the core gives
+     a = 8 R0 exp(-(2 + ell/R0)) = ell identically. That is a consistency
+     relation, not a test, and xi = ell below is the ladder's premise.
 
   2. THE PIN DEPTH. A nucleus is a region where the crystal's stacking
      order is spoiled and the condensate that coheres on it is suppressed,
@@ -64,9 +66,11 @@ The chain has five links.
      the measured rupture force of a single covalent bond, 2.0 +/- 0.3 nN
      for Si-C [Grandbois et al., Science 283, 1727 (1999)].
 
-  Result: f_anchor = F_pin / s, of order 0.02 N/m in iron and 0.1 N/m in
-  diamond or osmium. The spread is real and is driven by the host's
-  cohesion rather than by the vortex physics.
+  Result: f_anchor = F_pin / s, from 0.005 N/m in iron to 0.019 N/m in
+  osmium. The spread is real and is driven by the host's cohesion rather
+  than by the vortex physics. Because the pin depth U and the tension T
+  both scale as f_s, the spacing s and hence f_anchor carry no f_s; the
+  pin depths themselves, the wind load and the drag-speed cap do.
 
   STEP 6  Stability of the wind-forced shape.
           The equilibrium is a helix (see the monograph appendix). Two
@@ -101,27 +105,29 @@ e     = 1.602176634e-19
 ell   = 2.8179403205e-15               # lattice spacing = r_e [m]
 m0c2  = 0.51099895069e6*e/alpha        # node rest energy [J]
 m0    = m0c2/c**2
-f_s   = 5/6                            # bootstrap superfluid fraction
+f_s   = 0.99932                        # the Leggett ceiling adopted as the working superfluid fraction
 rho_s = f_s*m0/ell**3                  # superfluid density [kg/m^3]
 kappa = h/m0                           # circulation quantum [m^2/s]
 
-R0    = 1.68*ell                       # ground-state ring radius [m]
-E1    = (8*np.pi**2/5)*m0c2            # ring energy [J]
+# ground-state ring radius: x [ln(8x) - 2] = 1 with x = R0/ell (core = ell)
+R0    = brentq(lambda x: x*(np.log(8*x) - 2) - 1, 1.0, 3.0)*ell   # [m]
+E1    = 2*np.pi**2*f_s*m0c2            # line tension x one lattice spacing [J]
 T     = E1/(2*np.pi*R0)                # line tension [N]
 P     = rho_s*kappa**2/(4*np.pi)       # logarithmic prefactor [N]
 
 print("="*74)
-print("1. The core parameter, over-determined by E1 and R0")
+print("1. The core parameter: a consistency relation between E1 and R0")
 print("="*74)
+print(f"  f_s = {f_s};  E1 = 2 pi^2 f_s m0 c^2 = {E1/e/1e9:.3f} GeV;  R0 = {R0/ell:.4f} ell")
 brack  = E1/(rho_s*kappa**2*R0/2)      # = ln(8 R0/a) - 2
 a_core = 8*R0/np.exp(brack + 2)
 print(f"  prefactor rho_s kappa^2/4pi   = {P:.4e} N")
 print(f"  line tension T = E1/(2 pi R0) = {T:.1f} N  ({T/1e3:.2f} kN)")
 print(f"  bracket [ln(8 R0/a) - 2]      = {brack:.4f}")
 print(f"  core parameter a = {a_core*1e15:.3f} fm = {a_core/ell:.3f} ell")
-print("  R0 and E1 were fixed independently, so their agreement on a core")
-print("  one lattice spacing wide is a check rather than an input.")
-xi = ell                               # healing length, to 3% by the above
+print("  R0 was solved from this same energy with a core of one spacing, so")
+print("  a = 8 R0 exp(-(2 + ell/R0)) = ell identically: consistent, not a test.")
+xi = ell                               # healing length: the ladder's premise
 print()
 
 
@@ -210,7 +216,8 @@ print("="*74)
 # ring value. Both carry the logarithm out to the loop's own radius:
 #     eps(R) = (rho_s kappa^2/4pi) [ln(8R/xi) - 2]
 # which is the same thin-ring expression the ladder uses, per unit length.
-# Using the 6 kN ring tension here understates both by nearly two orders.
+# Using the core-scale ring tension T = E1/(2 pi R0) (7.5 kN at the adopted
+# fraction) here understates both by nearly two orders.
 eps0 = rho_s*kappa**2/(4*np.pi)
 eps_at = lambda R: eps0*(np.log(8*R/xi) - 2.0)
 

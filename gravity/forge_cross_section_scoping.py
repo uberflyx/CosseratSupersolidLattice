@@ -30,13 +30,20 @@ NORMALISATION (first principles).
   3. Assemble. sigma_forge ~ alpha^3 f^2 / s^2, i.e. sigma_forge/sigma0 ~ C alpha f^2/s.
 
 RESULT. sigma_forge(Upsilon(4S)) ~ 0.3 fb, a factor of a few below the ~1 fb BaBar
-monophoton ceiling. Because F ~ 1/s the rate ~ 1/s^2, so the forge is ~30x louder
-in the BESIII window (4.2-4.95 GeV), where 14.9 fb^-1 of monophoton+invisible data
-already sit. Absolute normalisation is an open coupling (f and C are O(1)); the
-SCALE and the TREND are robust. Model inputs are labelled MODEL.
+monophoton ceiling (whether that ceiling reaches the ring is unchecked: a photon
+recoiling against anything with rest mass stops at sqrt(s)/2 = 5.29 GeV, and the
+ring's line sits above it). Because F ~ 1/s the rate ~ 1/s^2, so the forge is
+loudest just above its own floor, sqrt(s) = E1 [1 + (R0/ell)^2] = 5.27 GeV at the
+adopted superfluid fraction f_s = 0.99932, where it is ~16x louder than at the
+Upsilon(4S). That floor lies above BESIII's whole range (1.84-4.95 GeV), and it
+is still 5.11 GeV at the lower window edge f_s = 0.97, so BESIII cannot make a
+ring and only the B factories clear the floor. Absolute normalisation is an
+open coupling (f and C are O(1)); the SCALE and the TREND are robust. Model
+inputs are labelled MODEL.
 """
 
 import numpy as np
+from scipy.optimize import brentq
 
 # --------------------------------------------------------------------------
 # Framework constants.
@@ -49,7 +56,9 @@ f_pi_MeV = 92.3                                    # framework pion decay consta
 l_m      = 2.8179403205e-15                        # lattice spacing = r_e [m]
 kappa    = 2.0 * np.pi * l_m * c                   # circulation quantum [m^2/s]
 rho      = (m0_MeV * 1.7826619e-30) / l_m**3       # vacuum density [kg/m^3]
-rho_s    = 0.8 * rho                               # superfluid fraction f_s = 4/5
+F_S      = 0.99932       # the Leggett ceiling adopted as the working superfluid fraction
+F_S_LOW  = 0.97          # lower edge of the superfluid-fraction window
+rho_s    = F_S * rho                               # superfluid density [kg/m^3]
 J_per_GeV  = 1.602176634e-10
 GeV2_to_nb = 3.8937966e5                            # (hbar c)^2: 1 GeV^-2 = 0.389 mb
 
@@ -71,15 +80,19 @@ def sigma0_nb(sqrt_s):
 # 1. Cross-check the ring dispersion against the framework's own numbers.
 # --------------------------------------------------------------------------
 print(line); print("1. RING DISPERSION (cross-check vs vortex_hadron_ladder.py)"); print(line)
-x0 = 1.68                                          # ground-ring radius in units of l
+# Ground radius: E(R0) = E1 = 2 pi^2 f_s m0 c^2 with core xi = l reduces to
+# x [ln(8x) - 2] = 1, so x0 = R0/l carries no f_s.
+x0 = brentq(lambda x: x * (np.log(8.0 * x) - 2.0) - 1.0, 1.0, 3.0)
 E1, P0c = E_ring_GeV(x0), Pc_ring_GeV(x0)
+floor = E1 + P0c                                   # = E1 [1 + x0^2]
+print(f"   f_s = {F_S}")
 print(f"   ground ring  R0 = {x0:.2f} l :  E_1 = {E1:.3f} GeV,  P_0 c = {P0c:.3f} GeV")
-print(f"   forge floor  sqrt(s)_min = E_1 + P_0 c = {E1 + P0c:.2f} GeV")
-xs = np.linspace(x0, 12.0, 400000)
-x_ups = xs[np.argmin(np.abs(E_ring_GeV(xs) + Pc_ring_GeV(xs) - 10.58))]
+print(f"   forge floor  sqrt(s)_min = E_1 + P_0 c = {floor:.2f} GeV")
+x_ups = brentq(lambda x: E_ring_GeV(x) + Pc_ring_GeV(x) - 10.58, x0, 12.0)
 print(f"   at Upsilon(4S) (sqrt(s)=10.58 GeV): ring R = {x_ups:.2f} l, "
       f"photon tag E_gamma = P c = {Pc_ring_GeV(x_ups):.2f} GeV")
-print("   -> reproduces the framework floor (4.22 GeV) and tag (7.57 GeV).")
+print(f"   floor at the window's lower edge f_s = {F_S_LOW}: "
+      f"{floor * F_S_LOW / F_S:.2f} GeV (the floor scales as f_s)")
 
 # --------------------------------------------------------------------------
 # 2. First-principles normalisation via the transition form factor.
@@ -99,7 +112,9 @@ for f_MeV in (m0_MeV, 80.0, f_pi_MeV):
     print(f"   f = {f_MeV:5.1f} MeV -> sigma_forge(Upsilon 4S) = {sig:.2f} fb")
 sig_central = sigma_forge_fb(10.58, 0.080)
 print(f"   central (f=80 MeV, C=1): sigma_forge ~ {sig_central:.2f} fb, "
-      f"a factor of a few below the ~1 fb BaBar ceiling.")
+      f"a factor of a few below the ~1 fb BaBar ceiling,")
+print(f"   if that ceiling applies: a rest-mass recoil caps the photon at "
+      f"sqrt(s)/2 = {10.58/2:.2f} GeV, below the ring's line.")
 print("   cross-checks (independent): the neutral-baryon-pair scaling gives ~0.7 fb;")
 print("   measured e+e- -> gamma + meson at 10.6 GeV sit at ~0.1-few fb. Consistent.")
 
@@ -107,33 +122,36 @@ print("   measured e+e- -> gamma + meson at 10.6 GeV sit at ~0.1-few fb. Consist
 # 3. Threshold enhancement: F ~ 1/s so the rate ~ 1/s^2. Run lower, not higher.
 # --------------------------------------------------------------------------
 print(line); print("3. THRESHOLD ENHANCEMENT (rate ~ 1/s^2): the forge favours its floor"); print(line)
-for E in (10.58, 4.95, 4.60, 4.30, 4.22):
+for E in (10.58, 8.00, 6.00, round(floor, 2)):
     sig = sigma_forge_fb(E, 0.080)
     r = sig / sig_central
-    tag = "Upsilon(4S)" if E == 10.58 else ("BESIII window" if E <= 4.95 else "")
+    tag = "Upsilon(4S)" if E == 10.58 else ("at the floor" if E == round(floor, 2) else "")
     print(f"   sqrt(s) = {E:5.2f} GeV : sigma_forge ~ {sig:6.2f} fb "
           f"(x{r:5.1f} vs Upsilon 4S)  {tag}")
-print("   (Right at 4.22 GeV the final-state phase space closes, so the true")
-print("    optimum sits a little above the floor, inside the BESIII range.)")
+print(f"   gain from 10.58 GeV down to the floor: (10.58/{floor:.2f})^4 = "
+      f"{(10.58/floor)**4:.1f}")
+print("   (Right at the floor the final-state phase space closes, so the true")
+print("    optimum sits a little above it.)")
 
 # --------------------------------------------------------------------------
-# 4. The hunt is at BESIII, and the data already exists.
+# 4. Which machines clear the floor.
 # --------------------------------------------------------------------------
-print(line); print("4. BESIII ALREADY HOLDS THE DATA"); print(line)
-L_besiii = 14.9                                     # fb^-1, 4.13-4.60 GeV invisible set
-sig_besiii = sigma_forge_fb(4.5, 0.080)
-print(f"   BESIII single-photon + invisible set: {L_besiii:.1f} fb^-1 at 4.13-4.60 GeV.")
-print(f"   scoping sigma_forge(~4.5 GeV) ~ {sig_besiii:.1f} fb -> "
-      f"N ~ {sig_besiii*L_besiii:.0f} events at this rate.")
-print("   CAVEAT: that search assumed a MASSIVE invisible particle and read the")
-print("   photon energy off an invariant-mass tag (window ~1.2-1.9 GeV). A ring has")
-print("   no rest mass; its dispersion puts the monophoton near 3 GeV, ABOVE the")
-print("   searched band. The line sits outside the existing analysis, so the data")
-print("   needs a reanalysis at the ring-dispersion energy, not a new machine.")
+print(line); print("4. WHICH MACHINES CLEAR THE FLOOR"); print(line)
+besiii_lo, besiii_hi = 1.84, 4.95                   # BESIII c.m. energy range [GeV]
+print(f"   BESIII runs at {besiii_lo:.2f}-{besiii_hi:.2f} GeV, wholly below the "
+      f"{floor:.2f} GeV floor")
+print(f"   (and below {floor * F_S_LOW / F_S:.2f} GeV at f_s = {F_S_LOW}): BESIII cannot")
+print("   make a ring at any energy it runs at, so its single-photon null")
+print("   (~15 fb^-1) does not bear on the forge.")
+print("   The B factories clear the floor, where the rate is at its weakest; a")
+print(f"   dedicated run between {floor:.2f} GeV and the Upsilon(4S), which no machine")
+print(f"   has scheduled, would gain up to x{(10.58/floor)**4:.0f}. At the Upsilon(4S) itself a")
+print(f"   reanalysis at the {Pc_ring_GeV(x_ups):.2f} GeV ring-dispersion line would find the")
+print("   peak or set the first bound on f.")
 print(line)
 print("VERDICT: power-law (asymptotic freedom), not exponential -> NO collapse.")
 print("First-principles normalisation via f ~ m0 lands the forge at ~0.3 fb at the")
-print("Upsilon(4S), just below the BaBar ceiling, and ~30x louder in the BESIII")
-print("window. Absolute normalisation (f, C) is an open O(1) coupling; the scale")
-print("and the run-lower trend are robust.")
+print(f"Upsilon(4S), and ~{(10.58/floor)**4:.0f}x louder just above its {floor:.2f} GeV floor, which")
+print("only the B factories reach. Absolute normalisation (f, C) is an open O(1)")
+print("coupling; the scale and the run-lower trend are robust.")
 print(line)

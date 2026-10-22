@@ -21,7 +21,7 @@ ratio, using only quantities the framework already fixes:
     ell = hbar/(m0 c)      (Mott bootstrap)      -> hbar = m0 c ell
     mu  = rho c^2,  rho = m0/ell^3               (shear modulus from c)
     kappa = h/m0 = 2 pi hbar / m0
-    rho_s = f_s rho,  f_s = 4/5                   (superfluid fraction bootstrap)
+    rho_s = f_s rho,  f_s = 0.99932               (adopted superfluid fraction)
 
 Taking the two logarithms equal (both cutoffs are the single core scale ell,
 r_c ~ xi ~ ell), the log cancels and the ratio is a pure number.
@@ -37,7 +37,7 @@ division of labour, made quantitative.
 
 import numpy as np
 
-f_s = 4.0 / 5.0          # superfluid fraction (bootstrap)
+f_s = 0.99932            # the Leggett ceiling adopted as the working superfluid fraction
 alpha = 1.0 / 137.035999 # fine-structure constant (for the mass-scale sanity line)
 
 # ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ ratio_symbolic = 4.0 * np.pi**2 * f_s
 print("=" * 70)
 print("FLUID vs CRYSTAL: energy stored in the SAME electron winding")
 print("=" * 70)
-print(f"  superfluid fraction         f_s            = {f_s:.4f}")
+print(f"  superfluid fraction         f_s            = {f_s:.5f}")
 print()
 print(f"  crystal prefactor  P_cr  [m0 c^2/ell]      = 1/(4pi)  = {P_cr:.5f}")
 print(f"  condensate prefactor P_sf [m0 c^2/ell]     = f_s*pi   = {P_sf:.5f}")
@@ -108,7 +108,7 @@ print("=" * 70)
 # COMPACT vs EXTENDED: why the electron is light but a vortex knot is heavy
 # ===========================================================================
 # A follow-on question: the electron is a vortex too, yet it weighs alpha*m0,
-# so why does a vortex KNOT weigh the full line tension (tens of TeV for the
+# so why does a vortex KNOT weigh the full line tension (of order a PeV for the
 # big frozen loops)? The answer is size, not a change of accounting.
 #
 #   * The ELECTRON is pinned to a COMPACT core ~1 lattice spacing across. Its
@@ -137,7 +137,7 @@ def electron_selfenergy_in_m0():
     """Electron self-energy at the compact core scale, in units of m0 c^2."""
     return alpha            # e^2/r_e = alpha hbar c/ell = alpha m0 c^2
 
-def knot_mass_in_m0(b, f_s=0.8):
+def knot_mass_in_m0(b, f_s=f_s):
     """Extended-loop mass in units of m0 c^2, for loop size b = R/ell."""
     return 2.0 * _np.pi**2 * f_s * b * _np.log(b)
 
@@ -163,7 +163,7 @@ print("  isolated-loop reading ln(b)~10 used here raises that tenfold and")
 print("  shifts the Omega-matching b* by ~sqrt(ln) ~ 3, inside the Zurek band.")
 print("  Under either convention the frozen loops are far too heavy and")
 print("  collisional for the SIDM window; the conclusion is unchanged.")
-print("  The big frozen loops (b ~ 1e5) land in the tens of TeV. The knots are")
+print("  The big frozen loops (b ~ 1e5) land near a PeV on this reading. The knots are")
 print("  a genuinely heavy sector; the electron's lightness is special to a")
 print("  compact, charged, Peierls-Nabarro-pinned core, not a general rule.")
 print("=" * 70)

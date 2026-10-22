@@ -60,8 +60,8 @@ m_e    = 9.1093837015e-31          # kg
 c      = 2.99792458e8              # m/s
 G      = 6.67430e-11               # m^3 kg^-1 s^-2
 ell    = 2.8179403262e-15          # m   (lattice spacing = r_e)
-f_s    = 0.9999                    # superfluid fraction, Leggett-saturated
-                                    # (sec-fs-bootstrap; f_n < 1e-4)
+f_s    = 0.99932                   # the Leggett ceiling adopted as the working superfluid fraction
+                                    # (normal fraction f_n = 6.8e-4)
 m0     = m_e / alpha               # node mass, kg
 rho    = m0 / ell**3               # node density = total mass density, kg/m^3
 rho_s  = f_s * rho                 # superfluid density, kg/m^3

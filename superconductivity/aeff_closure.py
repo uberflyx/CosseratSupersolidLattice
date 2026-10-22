@@ -5,12 +5,15 @@ The appendix claims: requiring the condensate-face dipole energy of the
 electron's winding to equal the magnetic-face dipole energy fixes an
 effective hydrodynamic ring radius
 
-    4 pi^3 f_s alpha (a/l)^4 = 1   ->   a_eff = 1.084 l.
+    4 pi^3 f_s alpha (a/l)^4 = 1   ->   a_eff = 1.025 l
+
+at the adopted superfluid fraction f_s = 0.99932 (1.084 l at the legacy 4/5;
+a_eff scales as f_s^(-1/4)).
 
 Three things must be checked before this can be called a closure rather
 than a coincidence:
 
-  (1) Is 1.084 l the right TARGET? The magnetic moment mu_B is a
+  (1) Is 1.025 l the right TARGET? The magnetic moment mu_B is a
       Compton-scale quantity (lambda_C_bar = l/alpha ~ 137 l), yet the
       target radius is core-scale. Show the alpha in the ratio is exactly
       the bridge between the two scales, so a core-scale ring reproducing
@@ -45,7 +48,7 @@ eV = e
 
 l_ = 2.8179403205e-15
 m0 = m_e / alpha
-f_s = 4.0 / 5.0
+f_s = 0.99932        # the Leggett ceiling adopted as the working superfluid fraction
 rho_s = f_s * m0 / l_**3
 kappa = h / m0
 mu_B = e * hbar / (2 * m_e)
@@ -64,7 +67,7 @@ def ratio(a_over_l):
 
 a_eff_g2 = (4 * np.pi**3 * f_s * alpha)**(-0.25)      # ratio = 1  (g=2 here)
 a_eff_g1 = (4 * (4 * np.pi**3 * f_s * alpha))**(-0.25)  # ratio = 1/4 (g=1 here)
-print("\n=== (1)/(2) target radii ===")
+print(f"\n=== (1)/(2) target radii (f_s = {f_s}) ===")
 print(f"ratio at a = l         : {ratio(1.0):.4f}")
 print(f"a_eff (ratio = 1, g=2) : {a_eff_g2:.4f} l")
 print(f"a_eff (ratio = 1/4,g=1): {a_eff_g1:.4f} l")
@@ -72,8 +75,8 @@ print(f"a_eff (ratio = 1/4,g=1): {a_eff_g1:.4f} l")
 # natural core lengths to compare against
 d_mis = 1/np.sqrt(3)                 # misfit period d = l/sqrt3
 d_111 = np.sqrt(2/3)                 # interplanar spacing
-w_core = 0.454                       # PN core half-width / l
-wd = 0.783                           # w/d
+wd = 0.783                           # w/d, the alpha-fixing core width
+w_core = wd * d_mis                  # PN core half-width / l = 0.452
 L_b_edge = 0.860                     # edge slip-patch short axis
 step_q3 = 1.4                        # slip step width (quarter-to-three-quarter)
 print("\nnatural core lengths [units l]:")
@@ -105,7 +108,7 @@ print("     bridge (a_eff ~ l while the naive loop radius ~ l/alpha).")
 # PN disregistry (slip) profile: s(r) = (1/pi) arctan(r/w) + 1/2  (0..1)
 # Its derivative ds/dr = (1/pi) w/(r^2+w^2) is the misfit (circulation) density.
 # The fraction of circulation enclosed by radius r is s(r)-s(0) normalised.
-w = 0.454                            # in units of l
+w = w_core                           # PN core half-width, in units of l
 
 def slip(r):                          # normalised 0..1 over 0..inf
     return (np.arctan(r / w)) / (np.pi / 2)   # 0 at 0, 1 at inf (half-line)
@@ -136,9 +139,9 @@ def enclosed(r):
 tot = enclosed(50.0)
 r_half = brentq(lambda R: enclosed(R) - 0.5 * tot, 1e-3, 40.0)
 print(f"\nmedian circulation radius (half closed) = {r_half:.3f} l")
-print(f"  (for arctan slip this is exactly w = {w} l)")
+print(f"  (for arctan slip this is exactly w = {w:.3f} l)")
 
 print("\n=== verdict inputs ===")
 print(f"target a_eff (g=2 reading) : {a_eff_g2:.3f} l")
-print(f"core neighbourhood         : w={w}, 2w={2*w}, step~{step_q3}")
-print(f"rms radius (cut ~1.4-3 l)  : 0.9 - 1.4 l depending on cutoff")
+print(f"core neighbourhood         : w={w:.3f}, 2w={2*w:.3f}, step~{step_q3}")
+print(f"rms radius (cut ~1.4-3 l)  : 0.55 - 0.87 l depending on cutoff")

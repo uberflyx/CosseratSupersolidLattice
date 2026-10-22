@@ -44,12 +44,14 @@ lattice spacings across, so both of the following bite:
 
   C. WHAT THAT COSTS THE HOPEFUL DESIGN. Both factors are computed below
      for the framework's ground-state ring (R0 = 1.68 ell). Beating the
-     aperture factor by number would take ~1e28 loops, tens of kilograms
-     of forged GeV objects, and the closure identity would still deny
-     each of them any grip. Growing one loop instead runs into the
-     R-independent curvature pull 2 pi T ~ 37 kN: matter, gripping at a
-     chemical bond per host lattice spacing, cannot supply it until the
-     loop is already of order 100 m across.
+     aperture factor by number would take ~1e28 loops, which at
+     2 E1 = 2.76 GeV apiece (E1 = 2 pi^2 f_s m0 c^2 at the adopted
+     f_s = 0.99932) is some seventy kilograms of forged material, and the
+     closure identity would still deny each of them any grip. Growing one
+     loop instead runs into the R-independent curvature pull
+     2 pi T ~ 47 kN: matter, gripping at a chemical bond per host lattice
+     spacing, cannot supply it until the loop is already hundreds of
+     metres across.
 
   D. WHAT SURVIVES. The trapped-knot torque bound. A closed loop in a
      uniform wind feels no force but does feel a torque,
@@ -63,6 +65,7 @@ lattice spacings across, so both of the following bite:
 """
 
 import numpy as np
+from scipy.optimize import brentq
 
 # ---------------------------------------------------------------- constants
 alpha = 1/137.035999177
@@ -73,22 +76,23 @@ e     = 1.602176634e-19
 ell   = 2.8179403205e-15          # lattice spacing = r_e [m]
 m0c2  = 0.51099895069e6*e/alpha   # node rest energy [J]  (70.03 MeV)
 m0    = m0c2/c**2                 # node mass [kg]
-f_s   = 0.9999                       # superfluid fraction, Leggett-saturated (sec-fs-bootstrap)
+f_s   = 0.99932                    # the Leggett ceiling adopted as the working superfluid fraction
 rho_s = f_s*m0/ell**3             # superfluid density [kg/m^3]
 kappa = h/m0                      # circulation quantum [m^2/s]
 V_cmb = 3.70e5                    # lab speed through the lattice frame [m/s]
 
-# ground-state ring geometry from the vortex-hadron ladder
-R0     = 1.68*ell                 # ring radius [m]
+# ground-state ring geometry from the vortex-hadron ladder: E(R0) = E1 with
+# core xi = ell reduces to x [ln(8x) - 2] = 1, x = R0/ell (no f_s)
+R0     = brentq(lambda x: x*(np.log(8*x) - 2) - 1, 1.0, 3.0)*ell   # ring radius [m]
 Lam    = 10*ell                   # minimal knot line length [m]
-E1     = (8*np.pi**2/5)*m0c2      # ring energy [J]
+E1     = 2*np.pi**2*f_s*m0c2      # line tension x one lattice spacing [J]
 T_line = E1/(2*np.pi*R0)          # line tension [N]
 
 print("="*72)
 print("Framework primitives")
 print("="*72)
 print(f"  m0 c^2      = {m0c2/e/1e6:.2f} MeV")
-print(f"  rho_s       = {rho_s:.3e} kg/m^3      (f_s = 0.9999)")
+print(f"  rho_s       = {rho_s:.3e} kg/m^3      (f_s = {f_s})")
 print(f"  kappa       = {kappa:.3e} m^2/s")
 print(f"  R0          = {R0*1e15:.2f} fm ;  E1 = {E1/e/1e9:.3f} GeV")
 print(f"  line tension T = {T_line/1e3:.2f} kN  ({T_line:.0f} J per metre of line)")
@@ -122,9 +126,9 @@ print("C. What beating either factor would cost")
 print("="*72)
 A_target = 1.0
 N_needed = A_target/loop_area
-M_needed = N_needed*2.21e9*e/c**2
+M_needed = N_needed*2*E1/c**2             # 2 E1 per forged linked pair
 print(f"  pumping across {A_target:.0f} m^2 by number: N = {N_needed:.2e} loops")
-print(f"     = {M_needed:.1f} kg of forged 2.21 GeV linked pairs,")
+print(f"     = {M_needed:.1f} kg of forged {2*E1/e/1e9:.2f} GeV linked pairs,")
 print(f"       and closure still denies every one of them a net grip.")
 F_in = 2*np.pi*T_line
 d_atom, F_bond = 2.5e-10, 1e-8            # host spacing [m], bond rupture [N]

@@ -61,7 +61,7 @@ e     = 1.602176634e-19
 ell   = 2.8179403262e-15
 m0c2J = 0.51099895069e6*e/alpha          # node rest energy, J
 m0c2  = m0c2J/e                           # eV
-f_s   = 4/5
+f_s   = 0.99932                           # the Leggett ceiling adopted as the working superfluid fraction
 
 # core energy density of a vacuum vortex ~ its line tension / core area.
 # line tension T = (f_s pi) (m0 c^2/ell) * ln(...) ; take ln~1 (core scale).

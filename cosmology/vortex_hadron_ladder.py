@@ -1,10 +1,14 @@
 """
 The vortex hadron ladder: bound states of the free circulation sector.
 
-The free sector's smallest object is the core-scale ring at E_1 = (8pi^2/5)
-m0 c^2 = 1.107 GeV (sec:clock_actuation). This script builds its composite
-spectrum, the circulation sector's copy of the hadron mass formula
-m = N m0 + bond corrections, in two families:
+The free sector's smallest object is the core-scale ring, priced by the line
+tension over one lattice spacing, E_1 = 2 pi^2 f_s m0 c^2 = 1.381 GeV at the
+adopted superfluid fraction f_s = 0.99932. Its radius solves
+x [ln(8x) - 2] = 1 with x = R0/ell (core xi = ell), so R0 = 1.68 ell carries
+no f_s, while every energy, impulse, bond and floor evaluated at R0 scales
+in proportion to f_s. This script builds its composite spectrum, the
+circulation sector's copy of the hadron mass formula m = N m0 + bond
+corrections, in two families:
 
   TRAIN: N coaxial rings in generalised leapfrog (Wacks-Baggaley-Barenghi
      2014). E_N = N E_1 + sum of exact Neumann pair energies. Nearest
@@ -21,7 +25,8 @@ m = N m0 + bond corrections, in two families:
   PRODUCTION: ring dispersion is non-Lorentzian (E and P are independent
      functions of R), so thresholds must be solved on the dispersion, not
      with invariant masses. We solve e+e- -> gamma + X and, the new
-     channel, p pbar annihilation at rest -> X + recoil (gamma or pi0).
+     channel, p pbar annihilation -> X + recoil (gamma or pi0): closed at
+     rest, open in flight above a beam threshold.
 
 All scales from m_e and alpha; conventions of interior_knot_chemistry.py.
 """
@@ -35,10 +40,14 @@ m_e, c = 9.1093837015e-31, 2.99792458e8
 m0  = m_e/alpha
 ell = 2.8179403205e-15
 kappa = 2*np.pi*ell*c
-rho_s = 0.8*m0/ell**3
+# The Leggett ceiling adopted as the working superfluid fraction.
+F_S = 0.99932
+rho_s = F_S*m0/ell**3
 xi  = ell
 GeV = 1.602176634e-10
-E1  = (8*np.pi**2/5)*m0*c**2
+# Line tension rho_s kappa^2/(4 pi) = pi f_s m0 c^2/ell, times one lattice
+# spacing of circumference 2 pi ell: E1 = 2 pi^2 f_s m0 c^2.
+E1  = 2*np.pi**2*F_S*m0*c**2
 
 def ring_E(R): return 0.5*rho_s*kappa**2*R*(np.log(8*R/xi) - 2.0)
 def ring_P(R): return rho_s*kappa*np.pi*R**2
@@ -57,6 +66,7 @@ def E12_coax(R1, R2, s):
 
 line = "-"*74
 print(line)
+print(f"f_s = {F_S}   (R0 is f_s-independent; energies at R0 scale as f_s)")
 print(f"Ground ring: E(R0) = {ring_E(R0)/GeV:.3f} GeV (= E1), R0 = {R0/ell:.2f} ell, "
       f"P0 = {P0*c/GeV:.3f} GeV/c, v0 = {min((kappa/(4*np.pi*R0))*(np.log(8*R0/xi)-1),c)/c:.2f} c")
 print(line)
@@ -143,7 +153,10 @@ print(f"  in-flight forge: pbar p >= {pth*c/GeV:.2f} GeV/c on a fixed target ope
 sig_shed, sig_ann = 1e-43, 5e-30          # fb ceiling vs ~50 mb capture
 print(f"  branching ceiling p pbar -> ring + X: "
       f"{sig_shed/sig_ann:.1e} (BaBar sigma_shed over sigma_ann)")
+print(f"  Upsilon(4S) supplies 10.58 GeV against the linked-pair floor "
+      f"{root_sqrt_s(2, 0)/GeV:.2f} GeV -> the pair cannot be forged there")
 print(line)
 print("Selection rule: shedding needs a lock in the process; photons carry")
 print("no circulation, so gamma gamma cannot forge. Annihilation is the")
-print("maximal lock-dissolution vertex; at rest it opens N = 1 only.")
+print("maximal lock-dissolution vertex; at rest it is closed by the ring's")
+print("momentum bill, and in flight it opens N = 1 above the beam threshold.")
