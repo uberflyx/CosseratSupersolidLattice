@@ -13,10 +13,12 @@ wall TRANSPORT LAW: how the wall network evolves after the vacuum
 crystallised.  Three candidate laws are compared here.
 
   A. FOSSIL.     The two chirality domains are exactly degenerate, so a
-                 wall node tunnels both ways with equal amplitude alpha.
-                 Unbiased hops are a random walk: the wall diffuses
-                 ~70 km in a Hubble time and is, on cosmological scales,
-                 frozen at fixed lattice positions.  The lattice itself
+                 wall node hops both ways at the same rate.  That rate is
+                 not derived, but a step carries the wall's screws one
+                 spacing across their lines, which takes at least r_e/c,
+                 so the unbiased random walk spreads at most ~860 km in a
+                 Hubble time and is, on cosmological scales, frozen at
+                 fixed lattice positions.  The lattice itself
                  never stretches, so the proper wall density is constant:
                  w = -1 exactly, at every epoch, with no cosmological
                  constant behind it.
@@ -126,15 +128,19 @@ def part1_transport_scales():
     print("PART 1: HOW FAR CAN A WALL MOVE IN ONE HUBBLE TIME?")
     print("=" * 72)
 
-    # (a) Unbiased tunnelling.  Both chirality wells are degenerate
+    # (a) Unbiased hopping.  Both chirality wells are degenerate
     #     (theta_ch^2 is even in theta_ch), so a wall node hops either way
-    #     with the same amplitude alpha.  Step r_e at attempt rate
-    #     alpha c / r_e gives a diffusion constant D = alpha c r_e.
-    d_wall = ALPHA * C_LIGHT * R_E
+    #     at the same rate Gamma.  Gamma is not derived (a node does not
+    #     tunnel with amplitude alpha), but each step moves the wall's
+    #     screws one spacing r_e across their lines, and a screw cannot
+    #     reach the shear-wave speed c, so Gamma <= c / r_e.  Steps r_e at
+    #     rate Gamma each way give <x^2> = 2 Gamma r_e^2 t, so
+    #     D = Gamma r_e^2 <= c r_e: an upper bound with no amplitude in it.
+    d_wall = C_LIGHT * R_E
     x_diff = np.sqrt(2.0 * d_wall * T0_FID)
-    print("\n(a) Unbiased zero-point tunnelling (degenerate wells):")
-    print(f"      D = alpha c r_e        = {d_wall:.3e} m^2/s")
-    print(f"      sqrt(2 D t0)           = {x_diff/1e3:.0f} km")
+    print("\n(a) Unbiased hopping (degenerate wells), upper bound:")
+    print(f"      D <= c r_e             = {d_wall:.3e} m^2/s")
+    print(f"      sqrt(2 D t0) <=        {x_diff/1e3:.0f} km")
 
     # (b) Curvature (capillary) bias.  The only surviving force on a wall
     #     is its own curvature, ~ gamma / L.  The monograph's parabolic
@@ -148,7 +154,7 @@ def part1_transport_scales():
     print(f"      forbids): v t0 = {v_wall * T0_FID / MPC:.1f} Mpc")
 
     print("\n  Verdict: (a) and (b) fall short of the 21 Mpc grain scale by")
-    print("  ~19 orders of magnitude.  The network is pinned: walls are")
+    print("  ~18 and ~20 orders of magnitude.  The network is pinned: walls are")
     print("  FOSSILS of the crystallisation epoch, and the proper wall")
     print("  energy density has been constant ever since -> w = -1.")
 
