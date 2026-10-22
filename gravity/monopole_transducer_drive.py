@@ -113,9 +113,11 @@ print("THE THREE LIMITS, TOGETHER")
 print("="*72)
 print("  1. NOISE FLOOR: 7Be recoil caps ambient monopole emission at eps<1e-3")
 print("     per event -- a driven coherent array rises above this as (N eps)^2.")
-margin_stellar = 0.1/theta**2         # bound L_2nd < 0.1 L_nu, L_2nd/L_nu = theta_ch^2
-print(f"  2. STELLAR CEILING: cleared by ~9 orders (margin 0.1/theta_ch^2 ="
-      f" {margin_stellar:.1e},")
+# bound L_2nd < 0.1 L_sun (8B flux, Gondolo & Raffelt 2009), L_2nd = theta_ch^2 L_nu,
+# L_nu/L_sun = 0.02425 (computed in stellar_cooling_secondsound.py)
+margin_stellar = 0.1/(theta**2*0.02425)
+print(f"  2. STELLAR CEILING: cleared by ~11 orders (margin"
+      f" 0.1/(theta_ch^2 L_nu/L_sun) = {margin_stellar:.1e},")
 print("     chiral-suppressed burning; see stellar_cooling_secondsound.py)")
 print("     -- a lab source is nowhere near.")
 print("  3. RECIPE: a charged plate drives NO second sound (pure shear, no")
