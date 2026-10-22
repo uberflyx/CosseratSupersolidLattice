@@ -34,11 +34,19 @@ Checks and outputs:
   2. SADDLES: the identity condensate gives ln Z ~ (N^2/2) ln f(x)
      (the N^2, black-hole saddle); the long-cycle phase gives Z ~ O(1)
      (the trivial saddle).  The exchange of dominance defines
-     x_c ~ 2 ln N / ((k-1) N), the S_N deconfinement point, located
-     numerically and compared with the asymptote.
-  3. GEOMETRY: with x(r) = N^{-2(xi/xi_*)^3}, the deconfinement point
-     sits at xi_c = 2^{-1/3} xi_* ~ 0.79 xi_*: inside the Hagedorn skin,
-     between first winding (xi_*) and full mixing (0.18 xi_*).
+     x_c ~ 2 ln N / N, the S_N deconfinement point, independent of k at
+     leading order because ln[(1-x^k)/(1-x)] = x + O(x^2) for every
+     k >= 2; it is located numerically for k = 2 and compared with the
+     asymptote.
+  3. GEOMETRY: with the skin profile x(r) = N^{-2 xi/xi_*} of
+     hagedorn_skin.py, the deconfinement point sits at
+     xi_c/xi_* = [ln N - ln(2 ln N)] / (2 ln N) -> 1/2, which is 0.471 for
+     a solar mass (about 38 fm of proper height): inside the Hagedorn skin,
+     between the first winding (xi_*) and full mixing (xi_*/(2 ln N)).
+     In the Schwarzschild areal chart it lies, like the whole skin, far
+     below a node one lattice spacing above the horizon (5.8 micrometres
+     for a solar mass), so on the crystal's nodes from that height up the
+     tangle stays in the confined phase.
 """
 
 from math import log, exp, lgamma, gcd
@@ -134,16 +142,16 @@ if __name__ == "__main__":
         print(f"   N={N} k={k}: worst rel. err. {worst:.2e}  {status}")
         assert worst < 1e-9
 
-    print("\n2. Deconfinement point x_c vs asymptote 2 ln N / ((k-1) N), k=2:")
+    print("\n2. Deconfinement point x_c vs asymptote 2 ln N / N, k=2:")
     print(f"   {'N':>8} {'x_c (numeric)':>14} {'2lnN/N':>10} {'ratio':>7}")
     for N in (10, 30, 100, 300, 1000, 10000):
         xc = x_deconfine(N, 2)
         asym = 2 * log(N) / N
         print(f"   {N:>8} {xc:>14.6g} {asym:>10.4g} {xc/asym:>7.4f}")
 
-    print("\n3. Geometric location: x(xi) = N^(-2(xi/xi_*)^3) crosses x_c at")
-    print("   (xi_c/xi_*)^3 = [ln N - ln(2 ln N)] / (2 ln N)  ->  1/2 at large N")
+    print("\n3. Geometric location: x(xi) = N^(-2 xi/xi_*) crosses x_c at")
+    print("   xi_c/xi_* = [ln N - ln(2 ln N)] / (2 ln N)  ->  1/2 at large N")
     for lnN in (45, 89.2, 200):     # ln N for PBH-ish, solar, SMBH scales
-        cube = (lnN - log(2 * lnN)) / (2 * lnN)
-        print(f"   ln N = {lnN:>6}: xi_c/xi_* = {cube ** (1/3):.4f}"
-              f"   (2^(-1/3) = {2 ** (-1/3):.4f})")
+        frac = (lnN - log(2 * lnN)) / (2 * lnN)
+        print(f"   ln N = {lnN:>6}: xi_c/xi_* = {frac:.4f}"
+              f"   (full mixing at xi_*/(2 ln N) = {1 / (2 * lnN):.4f} xi_*)")

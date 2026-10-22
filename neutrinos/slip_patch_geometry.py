@@ -1,11 +1,12 @@
-"""Slip-patch geometry of the neutrino's edge dislocation, from FCC periods.
+"""Slip-patch geometry of a full edge dislocation, from FCC periods.
 
-The neutrino is a full edge dislocation on a close-packed {111} plane: Burgers
-vector b along <110> with |b| = ell, line direction xi along the in-plane
-<112>.  Two lengths fix the patch.  The width L_b is the plane-strain
-Peierls-Nabarro core half-width, solved in edge_core_width.py.  The length
-L_xi is what this script establishes, two independent ways, and then
-propagates into the coherent form factor.
+The edge lies on a close-packed {111} plane: Burgers vector b along <110> with
+|b| = ell, line direction xi along the in-plane <112>.  (The neutrino carries
+no Burgers vector, so this is the edge's own patch, not the neutrino's.)  Two
+lengths fix the patch.  The width L_b is the plane-strain Peierls-Nabarro core
+half-width, solved in edge_core_width.py.  The length L_xi is what this script
+establishes, two independent ways, and then propagates into the coherent form
+factor.
 
 Route 1, lattice commensurability.  A segment periodic along its own line must
 be periodic under a lattice translation along that line, so L_xi is a whole
@@ -35,8 +36,10 @@ from scipy.special import j1
 # --------------------------------------------------------------------------
 ELL_FM = 2.8179403205          # classical electron radius r_e [fm], CODATA 2022
 HBARC = 197.3269804            # hbar c [MeV fm]
-W_EDGE = 0.5902556948955939    # plane-strain PN core half-width [ell]
-                               # (edge_core_width.solve_width(4/3))
+W_EDGE = 0.53098                # plane-strain PN core half-width [ell]:
+                               # the Cosserat balance's edge-to-screw ratio
+                               # 1.17445 times the adopted screw width
+                               # 0.45211 ell (edge_core_width.py)
 
 A = sp.sqrt(2)                 # cubic cell edge, in units of ell
 

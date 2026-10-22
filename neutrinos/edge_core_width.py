@@ -1,128 +1,223 @@
-"""Core half-width of the edge dislocation from the Cosserat Peierls-Nabarro balance.
+"""Core half-widths of the screw and edge dislocation from the Cosserat
+Peierls-Nabarro balance.
 
-The screw (electron) core half-width follows from the canonical PN equilibrium
+Both characters of one glide system solve the same variational balance,
 
-    integral_0^inf  (K(k)/k) exp(-2 k w) dk  =  mu_bar / (2 d_111),
+    integral_0^inf (K(k)/k) exp(-2 k w) dk  =  mu_bar / (2 d_111),
 
-with K(k) the anti-plane Cosserat surface kernel.  The neutrino is built from
-edge-dislocation modes, and in plane strain the elastic kernel of the slip
-plane carries the classical Poisson enhancement 1/(1 - nu).  The Poisson ratio
-is the crystalline skeleton's own, nu = 0.1739, which is NOT 1/4: the tangential
-contact stiffness that generates kappa_c also breaks the Cauchy relation, by
-C_12 - C_44 = -kappa_c/2, and drags the Poisson ratio down from the central-force
-1/4 to (1-2N2)/(4-6N2) = 0.1739.  The condensate's near-incompressible value
-decouples by counterflow and is not the one a skeleton defect answers to.  So the
-edge kernel is 1/(1-nu) = 1.2104 times the screw kernel, not 4/3.  The Frenkel misfit stiffness on the right is a property of the glide
-plane and is common to both characters.
+with the Frenkel misfit, whose pinning on the right belongs to the glide plane
+and is common to both.  Only the elastic line kernel K(k) differs.
 
-The script verifies the two known limits before producing the new number:
-  (i)  Cauchy screw limit (N^2 = 0): w/d = 1/sqrt(2) analytically;
-  (ii) Cosserat screw at the vacuum point N^2 = 1/pi: w = 0.454 ell
-       (w/d = 0.78616 with d = ell/sqrt(3) the partial period),
-       the value quoted in the alpha chapter.
-It then solves the same equilibrium with the 1.2104-enhanced kernel for the
-edge, returning w_edge = 0.540 ell = 0.936 d.  The screw is untouched, because
-anti-plane shear never meets the Poisson factor at all.
+Screw (anti-plane).  The exact projection of the Cosserat bulk stiffness onto
+the glide line,
 
-Units: lengths in ell (nearest-neighbour spacing), moduli in the Eringen
-shear modulus mu.
+    K_s(k) = (mu_bar/2)|k| + (kappa_c/4) k^2 / sqrt(k^2 + q^2),
+    q^2 = 2 kappa_c / gamma.
+
+Edge (plane strain).  The same energy, with the slip written as a plastic
+distortion and the displacement split along and across each bulk wavevector K.
+The longitudinal channel carries the dilatation and gives the classical Poisson
+factor; the transverse channel carries the slip's rotation, where the shear
+stiffness 2 mu_bar and the relaxed rotational stiffness
+g(K) = kappa_c K^2/(K^2 + q^2) act in series.  Per bulk mode,
+
+    E(K)/B^2 = mu_bar kx^2 ky^2 / ((1-nu) K^4)
+             + [2 mu_bar g/(2 mu_bar + g)] kx^4 / K^4,
+
+and integrating over ky gives
+
+    K_e(k) = mu_bar |k| / (2(1-nu)) + (gamma/2) |k|^3 (1 - |k|/sqrt(k^2 + p^2)),
+    p^2 = (mu_bar/mu_tot) q^2.
+
+At long wavelength K_e is 1/(1-nu) times the screw's long-range kernel, the
+classical Poisson factor; at the core's wavelengths it is NOT 1/(1-nu) times
+K_s, because the rotational piece carries no Poisson factor and switches on as
+|k|^3.  The Poisson ratio is the crystalline skeleton's, nu = lambda/(2(lambda
++ mu_bar)) = (1-2N^2)/(4-6N^2) = 0.17385, with lambda = C_12.
+
+Checks, in order:
+  (1) both closed-form kernels against a direct minimisation of the Cosserat
+      energy mode by mode, followed by the ky quadrature;
+  (2) the Cauchy limits (kappa_c = 0, nu = 1/4) analytically:
+      screw w = d_111/2 = d/sqrt(2), edge w = d_111/(2(1-nu));
+  (3) the screw width at the vacuum point, w/d = 0.83664;
+then the edge width, the edge-to-screw ratio, the result of scaling the whole
+screw kernel by 1/(1-nu) for comparison, and the edge width carried to the
+adopted screw width w = d ln(1/alpha)/(2 pi) by two different ways of closing
+the screw's residual.
+
+Units: lengths in ell (nearest-neighbour spacing), moduli in the Eringen shear
+modulus mu = 1.  d = ell/sqrt(3) is the partial (misfit) period.
 """
 
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import brentq
+from scipy.special import struve, y1
 
 # Vacuum-point Cosserat constants (Eringen units, mu = 1)
 N2 = 1.0 / np.pi                       # Cosserat coupling number
 KAPPA_C = 2.0 * N2 / (1.0 - 2.0 * N2)  # = 2/(pi-2) = 1.752
 MU = 1.0
-MU_TOT = MU + KAPPA_C                  # short-wavelength shear modulus, 2.752
-MU_BAR = MU + KAPPA_C / 2.0            # long-wavelength shear modulus, 1.876
+MU_TOT = MU + KAPPA_C                  # lattice-scale shear modulus, 2.752
+MU_BAR = MU + KAPPA_C / 2.0            # true (long-range) shear modulus, 1.876
 GAMMA = MU * 1.0                       # curvature modulus, gamma = mu ell^2
-P2 = KAPPA_C * (2 * MU + KAPPA_C) / ((MU + KAPPA_C) * GAMMA)  # 2.389 / ell^2
-Q2 = (MU_TOT / MU_BAR) * P2                                   # 3.504 / ell^2
+LAMBDA = (1.0 - 2.0 * N2) * MU_TOT     # C_12 = mu at the vacuum point
+NU = LAMBDA / (2.0 * (LAMBDA + MU_BAR))  # 0.17385
+Q2 = 2.0 * KAPPA_C / GAMMA             # 3.504 / ell^2
+P2 = (MU_BAR / MU_TOT) * Q2            # 2.389 / ell^2
 
-D111 = np.sqrt(2.0 / 3.0)              # {111} interplanar spacing, 0.8165 ell
-D_PARTIAL = 1.0 / np.sqrt(3.0)         # Shockley partial period, 0.5774 ell
-RHS = MU_BAR / (2.0 * D111)            # Frenkel misfit stiffness, 1.149 mu/ell
+D111 = np.sqrt(2.0 / 3.0)              # {111} interplanar spacing
+D_PARTIAL = 1.0 / np.sqrt(3.0)         # Shockley partial period
+RHS = MU_BAR / (2.0 * D111)            # Frenkel misfit pinning, 1.149 mu/ell
+
+ALPHA = 1.0 / 137.035999177            # CODATA 2022
+W_ADOPTED = np.log(1.0 / ALPHA) / (2.0 * np.pi)   # adopted screw w/d = 0.78308
 
 
-def kernel(k, factor=1.0):
-    """Cosserat surface kernel K(k); factor=1/(1-nu) gives the edge."""
-    return factor * 0.5 * MU_TOT * k * (k * k + P2) / (k * k + Q2)
+# --------------------------------------------------------------------------
+# Closed-form kernels
+# --------------------------------------------------------------------------
+def kernel_screw(k):
+    return 0.5 * MU_BAR * k + 0.25 * KAPPA_C * k * k / np.sqrt(k * k + Q2)
 
 
-def lhs(w, factor=1.0):
-    """Elastic restoring integral of the PN equilibrium at core half-width w."""
-    val, _ = quad(lambda k: kernel(k, factor) / k * np.exp(-2.0 * k * w),
-                  0.0, np.inf, limit=200)
+def kernel_edge(k):
+    return (MU_BAR * k / (2.0 * (1.0 - NU))
+            + 0.5 * GAMMA * k**3 * (1.0 - k / np.sqrt(k * k + P2)))
+
+
+# --------------------------------------------------------------------------
+# Check (1): direct minimisation of the Cosserat energy, mode by mode
+# --------------------------------------------------------------------------
+def _mode_energy(kx, ky, disp, rot, B, character, lam=LAMBDA, mubar=MU_BAR,
+                 kc=KAPPA_C, gam=GAMMA):
+    """Energy of one bulk mode for the centrosymmetric energy
+    W = (lam/2) tr(e)^2 + mubar e_(ij) e_(ij) + (kc/2) e_[ij] e_[ij]
+        + (gam/2) |grad phi|^2,
+    e_ij = d_j u_i - eps_ijk phi_k - beta*_ij, with the Fourier convention
+    d_j u_i -> k_j v_i (real amplitudes).  The slip B sits in beta*_xy (edge)
+    or beta*_zy (screw)."""
+    kv = np.array([kx, ky, 0.0])
+    eps = np.zeros((3, 3, 3))
+    eps[0, 1, 2] = eps[1, 2, 0] = eps[2, 0, 1] = 1.0
+    eps[0, 2, 1] = eps[2, 1, 0] = eps[1, 0, 2] = -1.0
+    e = np.outer(disp, kv) - np.einsum("ijk,k->ij", eps, rot)
+    if character == "edge":
+        e[0, 1] -= B
+    else:
+        e[2, 1] -= B
+    sym = 0.5 * (e + e.T)
+    asym = 0.5 * (e - e.T)
+    return (0.5 * lam * np.trace(e)**2 + mubar * np.sum(sym * sym)
+            + 0.5 * kc * np.sum(asym * asym)
+            + 0.5 * gam * (kx * kx + ky * ky) * np.sum(rot * rot))
+
+
+def mode_energy_min(kx, ky, character, **moduli):
+    """Minimum over displacement and microrotation at unit slip, as 2E/B^2."""
+    if character == "edge":
+        def pack(x, B):
+            return np.array([x[0], x[1], 0.0]), np.array([0.0, 0.0, x[2]]), B
+    else:
+        def pack(x, B):
+            return np.array([0.0, 0.0, x[0]]), np.array([x[1], x[2], 0.0]), B
+    # quadratic form in (x1, x2, x3, B) by polarisation
+    n = 4
+    Qm = np.zeros((n, n))
+    def f(z):
+        d_, r_, B = pack(z[:3], z[3])
+        return _mode_energy(kx, ky, d_, r_, B, character, **moduli)
+    I = np.eye(n)
+    for i in range(n):
+        for j in range(n):
+            Qm[i, j] = 0.5 * (f(I[i] + I[j]) - f(I[i]) - f(I[j]))
+    Axx, AxB, ABB = Qm[:3, :3], Qm[:3, 3], Qm[3, 3]
+    Emin = ABB - AxB @ np.linalg.solve(Axx, AxB)
+    return 2.0 * Emin
+
+
+def kernel_direct(k, character, **moduli):
+    """K(k) = int dky/(2 pi) 2E/B^2, with ky = k tan(t) mapping [0, inf) to [0, pi/2)."""
+    def integrand(t):
+        ky = k * np.tan(t)
+        return mode_energy_min(k, ky, character, **moduli) * k / np.cos(t)**2
+    val, _ = quad(integrand, 0.0, 0.5 * np.pi, limit=200, epsabs=1e-11, epsrel=1e-9)
+    return 2.0 * val / (2.0 * np.pi)       # even in ky
+
+
+# --------------------------------------------------------------------------
+# The balance
+# --------------------------------------------------------------------------
+def lhs_screw(w):
+    """Closed form: mu_bar/(4w) + (kappa_c/4) q [(pi/2)(H_1(2qw) - Y_1(2qw)) - 1]."""
+    q = np.sqrt(Q2)
+    a = 2.0 * q * w
+    return MU_BAR / (4.0 * w) + 0.25 * KAPPA_C * q * ((np.pi / 2.0) * (struve(1, a) - y1(a)) - 1.0)
+
+
+def lhs(kernel, w, scale=1.0):
+    val, _ = quad(lambda k: scale * kernel(k) / k * np.exp(-2.0 * k * w),
+                  0.0, np.inf, limit=400, epsabs=1e-14, epsrel=1e-12)
     return val
 
 
-def solve_width(factor=1.0, rhs=RHS):
-    """Core half-width w (in ell) balancing elastic pull against misfit pinning."""
-    return brentq(lambda w: lhs(w, factor) - rhs, 0.05, 5.0, xtol=1e-12)
+def solve(f, rhs=RHS):
+    return brentq(lambda w: f(w) - rhs, 0.05, 5.0, xtol=1e-14)
 
 
 if __name__ == "__main__":
-    # Check (i): Cauchy screw limit, kernel k/2, analytic w = mu/(4 RHS_c)
-    rhs_cauchy = 1.0 / (2.0 * D111)
-    w_c = brentq(lambda w: 0.25 / w - rhs_cauchy, 0.05, 5.0, xtol=1e-14)
-    print(f"Cauchy screw:  w = {w_c:.5f} ell = {w_c / D_PARTIAL:.5f} d "
-          f"(analytic 1/sqrt2 = {1/np.sqrt(2):.5f})")
+    print(f"kappa_c = {KAPPA_C:.5f}, mu_bar = {MU_BAR:.5f}, mu_tot = {MU_TOT:.5f}, "
+          f"lambda = {LAMBDA:.5f}")
+    print(f"nu = {NU:.5f}, 1/(1-nu) = {1/(1-NU):.5f}, q = {np.sqrt(Q2):.5f}, "
+          f"p = {np.sqrt(P2):.5f}  [1/ell]")
 
-    # Check (ii): Cosserat screw at the vacuum point
-    w_s = solve_width(factor=1.0)
-    print(f"Cosserat screw: w = {w_s:.5f} ell = {w_s / D_PARTIAL:.5f} d "
-          f"(alpha chapter: 0.454 ell, 0.78616 d)")
+    print("\n(1) closed-form kernels against direct mode-by-mode minimisation")
+    for k in (0.05, 0.5, 1.0, 3.0, 10.0):
+        ks, ke = kernel_direct(k, "screw"), kernel_direct(k, "edge")
+        print(f"  k = {k:5.2f}: screw {kernel_screw(k)/ks - 1:+.1e}   "
+              f"edge {kernel_edge(k)/ke - 1:+.1e}   "
+              f"edge/[screw/(1-nu)] = {kernel_edge(k)/(kernel_screw(k)/(1-NU)):.4f}")
 
-    # New number: Cosserat edge (nu = 0.1739, kernel enhanced by 1/(1-nu))
-    NU_SKEL = (1 - 2*N2)/(4 - 6*N2)          # 0.17385, from the D_4 Born sums
-    w_e = solve_width(factor=1.0/(1.0 - NU_SKEL))
-    print(f"Cosserat edge:  w = {w_e:.5f} ell = {w_e / D_PARTIAL:.5f} d")
-    print(f"edge/screw ratio = {w_e / w_s:.5f} "
-          f"(kernel factor 1/(1-nu) = {1/(1-NU_SKEL):.5f} at nu = {NU_SKEL:.5f})")
+    print("\n(2) Cauchy limit (kappa_c = 0, lambda = mu_bar = 1, so nu = 1/4)")
+    cauchy = dict(lam=1.0, mubar=1.0, kc=0.0, gam=GAMMA)
+    for k in (0.3, 2.0):
+        print(f"  k = {k}: direct screw / (|k|/2) = {kernel_direct(k, 'screw', **cauchy)/(k/2):.8f}, "
+              f"direct edge / (|k|/(2(1-1/4))) = {kernel_direct(k, 'edge', **cauchy)/(k/1.5):.8f}")
+    # with K = |k|/2 or |k|/(2(1-nu)), the balance reads 1/(4w) [/(1-nu)] = 1/(2 d_111)
+    print(f"  so screw w = d_111/2 = {D111/2:.5f} ell = {D111/2/D_PARTIAL:.5f} d "
+          f"(1/sqrt2 = {1/np.sqrt(2):.5f}), "
+          f"edge w = d_111/(2(1-nu)) = {D111/1.5:.5f} ell, the classical Peierls widths")
+
+    w_s = solve(lhs_screw)
+    print(f"\n(3) Cosserat screw:  w = {w_s:.5f} ell = {w_s / D_PARTIAL:.5f} d "
+          f"(alpha chapter: 0.83664 d)")
+    print(f"    quadrature check: {solve(lambda w: lhs(kernel_screw, w)):.5f} ell")
+
+    w_e = solve(lambda w: lhs(kernel_edge, w))
+    print(f"\nCosserat edge:   w = {w_e:.5f} ell = {w_e / D_PARTIAL:.5f} d")
+    print(f"edge/screw ratio = {w_e / w_s:.5f} (long-wave factor 1/(1-nu) = {1/(1-NU):.5f})")
+    w_u = solve(lambda w: lhs(kernel_screw, w, 1.0 / (1.0 - NU)))
+    print(f"for comparison, screw kernel x 1/(1-nu) at every k: w = {w_u:.5f} ell, "
+          f"ratio {w_u / w_s:.5f}")
+
+    # Carry the ratio to the adopted screw width.
+    ws_adopt = W_ADOPTED * D_PARTIAL
+    print(f"\nadopted screw width w = {W_ADOPTED:.5f} d = {ws_adopt:.5f} ell")
+    print(f"ratio x adopted: w_edge = {w_e / w_s * ws_adopt:.5f} ell "
+          f"= {w_e / w_s * W_ADOPTED:.5f} d")
+    # closure A: a stiffer misfit S (equivalently a uniformly softer kernel)
+    S = brentq(lambda S: solve(lhs_screw, S * RHS) - ws_adopt, 0.9, 1.3, xtol=1e-12)
+    wA = solve(lambda w: lhs(kernel_edge, w), S * RHS)
+    print(f"closure A, misfit stiffened by S = {S:.5f}: edge w = {wA:.5f} ell")
+    # closure B: soften only the rotational stiffening of both kernels by s
+    def ks_s(k, s): return 0.5 * MU_BAR * k + s * 0.25 * KAPPA_C * k * k / np.sqrt(k * k + Q2)
+    def ke_s(k, s): return (MU_BAR * k / (2.0 * (1.0 - NU))
+                            + s * 0.5 * GAMMA * k**3 * (1.0 - k / np.sqrt(k * k + P2)))
+    s = brentq(lambda s: solve(lambda w: lhs(lambda k: ks_s(k, s), w)) - ws_adopt,
+               0.0, 1.0, xtol=1e-10)
+    wB = solve(lambda w: lhs(lambda k: ke_s(k, s), w))
+    print(f"closure B, rotational stiffening scaled by s = {s:.4f}: edge w = {wB:.5f} ell")
 
     ELL_FM = 2.8179403205                      # lattice spacing = r_e [fm]
-    print(f"\nneutrino transverse half-width L_b = {w_e * ELL_FM:.3f} fm "
-          f"(was quoted 0.78 ell = {0.78 * ELL_FM:.2f} fm)")
-
-
-def make_figure(path="edge_core_balance.pdf"):
-    """Plot the PN balance: elastic restoring integrals against the misfit line."""
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    w_grid = np.linspace(0.12, 1.6, 300)
-    lhs_screw = np.array([lhs(w, 1.0) for w in w_grid])
-    lhs_edge = np.array([lhs(w, 4.0/3.0) for w in w_grid])
-    w_s, w_e = solve_width(1.0), solve_width(4.0/3.0)
-
-    fig, ax = plt.subplots(figsize=(6.4, 4.0))
-    ax.plot(w_grid, lhs_screw, color="#1f77b4", lw=1.8,
-            label=r"screw kernel $\hat K(k)$")
-    ax.plot(w_grid, lhs_edge, color="#922b21", lw=1.8,
-            label=r"edge kernel $1.21\,\hat K(k)$  ($\nu = 0.174$)")
-    ax.axhline(RHS, color="0.25", lw=1.2, ls="--",
-               label=r"misfit pinning $\bar\mu/(2d_{111})$")
-    for w0, c in [(w_s, "#1f77b4"), (w_e, "#922b21")]:
-        ax.plot([w0], [RHS], "o", color=c, ms=6, zorder=5)
-        ax.vlines(w0, 0, RHS, color=c, lw=0.8, ls=":")
-    ax.annotate(r"$w_{\rm screw} = 0.454\,\ell$", (w_s, RHS),
-                xytext=(w_s + 0.05, RHS + 0.55), fontsize=10, color="#1f77b4")
-    ax.annotate(r"$w_{\rm edge} = 0.590\,\ell$", (w_e, RHS),
-                xytext=(w_e + 0.05, RHS + 0.55), fontsize=10, color="#922b21")
-    ax.set_xlabel(r"core half-width $w$  [$\ell$]")
-    ax.set_ylabel(r"elastic restoring integral  [$\mu/\ell$]")
-    ax.set_xlim(0.12, 1.6); ax.set_ylim(0, 5.2)
-    ax.legend(frameon=False, fontsize=9.5)
-    fig.tight_layout()
-    fig.savefig(path)
-    if path.endswith(".pdf"):                     # Quarto consumes SVG
-        fig.savefig(path[:-4] + ".svg")
-    print(f"wrote {path}")
-
-
-if __name__ == "__main__":
-    make_figure()
+    print(f"\nedge transverse half-width L_b = {w_e / w_s * ws_adopt * ELL_FM:.3f} fm")
