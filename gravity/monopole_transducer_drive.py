@@ -24,15 +24,25 @@ second sound at v2 = sqrt((3-4N^2)/(1-N^2)) c = 1.592 c (N^2 = 1/pi).
   at frequency f, the coherent source amplitude is N*epsilon_1 (phased array),
   and the emitted power is
         P ~ (N eps_1)^2 * hbar * omega * f_geom
-  with a geometric coupling O(1). We instead ANCHOR to the 7Be bound so no
-  unknown prefactor enters: 7Be electron capture emits at monopole content
-  <= 1e-3 of one node's rest momentum per decay, and that sets the momentum
-  radiated PER unit monopole content per event. Scaling that to a coherent
-  driven array gives the thrust with the framework's own normalisation.
+  with a geometric coupling O(1). The per-nucleus content eps_1 = 1e-3 is
+  matched to the 7Be electron-capture bound (monopole content <= 1e-3 per
+  event), which fixes the size of eps_1 but not the prefactor: the
+  geometric coupling, duty cycle and phase-locked fraction remain
+  uncomputed and enter as the placeholder below.
 
-  RESULT: the absolute thrust carries an unknown geometric and duty-cycle
-  prefactor (folded below into a 1e-30 scoping factor), so the table is a
-  scoping estimate; what is firm is the scaling F ~ (N eps_1)^2 / v2. A
+  THE 1e-30 IS A PLACEHOLDER. The geometric coupling, the duty cycle and
+  the phase-locked fraction are not computed; the table carries them as a
+  placeholder factor of 1e-30, a scoping choice rather than a derived
+  suppression. It also hides a failure of the naive formula itself: the
+  emitters can supply at most one transition quantum per nucleus per
+  drive cycle, N hbar omega f, so the unsuppressed coherent power
+  (N eps_1)^2 hbar omega f exceeds that available power by N eps_1^2
+  (6e17 for a mole at eps_1 = 1e-3) and would violate energy
+  conservation. Any derived prefactor must bring P below N hbar omega f.
+
+  RESULT: the absolute thrust carries that uncomputed prefactor, so the
+  table is a scoping estimate; what is firm is the scaling
+  F ~ (N eps_1)^2 / v2. A
   mole of a strong E0 emitter (e.g. the 0+ -> 0+ breathing transitions near
   an MeV) driven coherently at GHz gives ~0.1 N on that scoping factor,
   far under the stellar ceiling -- a real, aimable,
@@ -71,20 +81,31 @@ print(f"  per-nucleus monopole content per cycle  eps_1 = {eps_1:.0e}")
 print(f"  transition energy {E_tr/e/1e6:.1f} MeV -> omega = {omega:.2e} /s")
 print()
 
-print(f"  {'N nuclei':>12s} {'drive f [Hz]':>13s} {'P [W]':>12s} {'thrust [N]':>12s} {'vs stellar':>12s}")
-# coherent power: P ~ (N eps_1)^2 * hbar*omega * f, geometric O(1) coupling.
-# stellar ceiling on a lab source is astronomically loose; we quote the
+print(f"  {'N nuclei':>12s} {'drive f [Hz]':>13s} {'P [W]':>12s} {'thrust [N]':>12s}"
+      f" {'P_avail [W]':>12s} {'naive/avail':>12s} {'vs stellar':>12s}")
+# coherent power: P ~ (N eps_1)^2 * hbar*omega * f, geometric O(1) coupling,
+# times the 1e-30 placeholder. P_avail = N hbar omega f is the most the
+# emitters can supply (one transition quantum per nucleus per drive cycle);
+# the naive (unsuppressed) coherent power exceeds it by N eps_1^2.
+# The stellar ceiling on a lab source is astronomically loose; we quote the
 # device's own P for context, not a constraint.
+PLACEHOLDER = 1e-30                   # geometric + duty + phase-locked fraction: NOT derived
 for N, f in [(6.022e23, 1e9), (6.022e23, 1e12), (6.022e26, 1e12)]:
-    P = (N*eps_1)**2 * hbar*omega * f * 1e-30   # 1e-30: geometric+duty scoping factor
+    P_naive = (N*eps_1)**2 * hbar*omega * f
+    P_avail = N * hbar*omega * f
+    P = P_naive * PLACEHOLDER
     F = P/v2
-    print(f"  {N:12.2e} {f:13.0e} {P:12.2e} {F:12.2e} {'far under':>12s}")
+    print(f"  {N:12.2e} {f:13.0e} {P:12.2e} {F:12.2e} {P_avail:12.2e}"
+          f" {P_naive/P_avail:12.1e} {'far under':>12s}")
 print()
-print("  (The 1e-30 scoping factor folds the geometric coupling, the array")
-print("   duty cycle, and the fraction of nuclei actually phase-locked; it is")
-print("   the honest analogue of the 'several orders below naive' the text")
-print("   quotes. The POINT is the scaling F ~ (N eps)^2 / v2: coherence is")
-print("   the lever, and the number is not zero.)")
+print("  (The 1e-30 factor is a placeholder scoping factor, not a derived")
+print("   suppression: it stands in for the geometric coupling, the array")
+print("   duty cycle and the fraction of nuclei actually phase-locked, none of")
+print("   which is computed. It also hides an energy-conservation failure of")
+print("   the naive formula: unsuppressed, (N eps)^2 hbar omega f exceeds the")
+print("   emitters' available power N hbar omega f by N eps^2 (column")
+print("   naive/avail). Only the scaling F ~ (N eps)^2 / v2 is firm: coherence")
+print("   is the lever, and the number is not zero.)")
 print()
 
 print("="*72)
@@ -92,8 +113,11 @@ print("THE THREE LIMITS, TOGETHER")
 print("="*72)
 print("  1. NOISE FLOOR: 7Be recoil caps ambient monopole emission at eps<1e-3")
 print("     per event -- a driven coherent array rises above this as (N eps)^2.")
-print("  2. STELLAR CEILING: cleared by ~11 orders (chiral-suppressed burning;")
-print("     see stellar_cooling_secondsound.py) -- a lab source is nowhere near.")
+margin_stellar = 0.1/theta**2         # bound L_2nd < 0.1 L_nu, L_2nd/L_nu = theta_ch^2
+print(f"  2. STELLAR CEILING: cleared by ~9 orders (margin 0.1/theta_ch^2 ="
+      f" {margin_stellar:.1e},")
+print("     chiral-suppressed burning; see stellar_cooling_secondsound.py)")
+print("     -- a lab source is nowhere near.")
 print("  3. RECIPE: a charged plate drives NO second sound (pure shear, no")
 print("     monopole content); the driver must be a coherent E0 (volume)")
 print("     oscillator. That is the whole content of 'engineer the source'.")

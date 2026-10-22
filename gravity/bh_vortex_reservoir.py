@@ -31,9 +31,19 @@ constants, model inputs labelled.
      A quiescent (Schwarzschild) interior therefore relaxes to empty on
      ~Myr timescales, consistent with the chapter's mass-outside
      bookkeeping; an accreting hole sustains a steady-state tangle set by
-     feed rate against Vinen decay. Its stored energy is bracketed over
-     the interior fraction and over two cuts of the line-tension logarithm
-     (a fixed 10, or its value at the inter-vortex spacing, ~21).
+     feed against Vinen decay. The feed is capped by energy, not by the
+     count of quanta: one loop of radius 3 ell per accreted pair would
+     carry 6 pi^2 f_s m0c^2 ln = 33 to 87 GeV, some 30 to 80 times the
+     rest energy the pair brings in, so unless the interior's own heat
+     sustains the loops the injected line power is at most
+     P = (1 - eta) Mdot c^2, with eta = 0.1 the radiative efficiency.
+     A Vinen tangle fed at power P and decaying at chi kappa L^2 per unit
+     volume (chi = 0.1) settles at L* = sqrt(P/(V T chi kappa)) and holds
+     E = T L* V = sqrt(P T V/(chi kappa)), with T = pi f_s m0c^2 ln/ell the
+     line tension and V = (4/3) pi r_s^3. With ln taken self-consistently
+     at the inter-vortex spacing (~22), and a fixed 10 as the low cut, the
+     stock of a 10 Msun hole at the Eddington rate is 0.8 to 1.4e-19 of
+     its mass-energy.
 
   3. THE KERR ARRAY: a superfluid can only co-rotate by quantised vortices
      (Feynman rule n_v = 2 Omega / kappa), so a spinning interior holds a
@@ -92,7 +102,9 @@ print(line)
 #    Cascade/self-induction clock: t(R) ~ 4 pi R^2 / (kappa ln), as in
 #    knot_cascade.py, now at horizon scale. Vinen steady state under feed:
 #    dL/dt = S - chi kappa L^2, chi ~ 0.1 (MODEL INPUT, superfluid
-#    turbulence value), L = line length per volume.
+#    turbulence value), L = line length per volume. A feed of line power P
+#    into volume V is S = P/(V T), so L* = sqrt(P/(V T chi kappa)) and the
+#    stock is E = T L* V = sqrt(P T V/(chi kappa)).
 # ---------------------------------------------------------------------------
 M_bh   = 10 * Msun
 r_s    = 2*G*M_bh/c**2
@@ -108,28 +120,67 @@ print(f"   -> a quiescent interior relaxes to empty in ~Myr: Schwarzschild")
 print(f"      holes hold no standing tangle, as the chapter's mass-outside")
 print(f"      bookkeeping requires. The relaxation energy leaves in first")
 print(f"      sound and is absorbed at the boundary shell.")
-# steady state under Eddington feed
+# Steady state under Eddington feed.
 L_Edd  = 1.26e31 * (M_bh/Msun)        # W
-Mdot   = L_Edd / (0.1 * c**2)         # kg/s (10% efficiency; MODEL INPUT)
-S_feed = (f_charge * Mdot/m_p) * (2*np.pi*l_m*3) / ((4/3)*np.pi*r_s**3)
-# each pair injects ~ one small loop of length ~ 2 pi * few l per quantum
+eta    = 0.1                          # radiative efficiency (MODEL INPUT)
+Mdot   = L_Edd / (eta * c**2)         # kg/s
 chi    = 0.1                          # MODEL INPUT (Vinen)
-L_star = np.sqrt(S_feed/(chi*kappa))
-# line tension rho_s kappa^2/(4 pi) x ln = (pi f_s) ln m0 c^2 / l, per metre.
-# Two natural cuts of the tension logarithm (MODEL INPUT): a fixed 10, or its
-# value at the inter-vortex spacing L*^(-1/2) of the steady tangle.
-ln_fixed   = 10.0
-ln_spacing = np.log(1/np.sqrt(L_star)/l_m)   # ~ 21
-E_line = lambda fs, ln: np.pi*fs*ln*(m0*c**2)/l_m
-E_tangle = lambda fs, ln: E_line(fs, ln) * L_star * (4/3)*np.pi*r_s**3
-frac_lo = E_tangle(F_S_INT_LOW, ln_fixed)/(M_bh*c**2)
-frac_hi = E_tangle(F_S, ln_spacing)/(M_bh*c**2)
-print(f"   Eddington-fed steady state: L* = {L_star:.1e} m/m^3,"
-      f" inter-vortex log ln(L*^-1/2 / l) = {ln_spacing:.1f}")
-print(f"   stored tangle energy ~ {E_tangle(F_S_INT_LOW, ln_fixed):.1e} to"
-      f" {E_tangle(F_S, ln_spacing):.1e} J = {frac_lo:.1e} to {frac_hi:.1e}")
-print(f"   of the hole's mass-energy (f_s = {F_S_INT_LOW} to {F_S}, tension log"
-      f" {ln_fixed:.0f} to {ln_spacing:.0f}): of order 1e-18, a trace.")
+V_int  = (4/3)*np.pi*r_s**3           # interior volume [m^3]
+Mc2    = M_bh*c**2
+GeV    = 1.602176634e-10              # J
+# Line tension rho_s kappa^2/(4 pi) x ln = pi f_s ln m0 c^2 / l  [J/m = N].
+T_line = lambda fs, ln: np.pi*fs*ln*(m0*c**2)/l_m
+ln_fixed = 10.0                       # low cut of the tension logarithm (MODEL INPUT)
+
+# (a) Why the feed is capped by energy. Counting quanta, each accreted pair
+#     would leave one loop of radius 3 l, length 6 pi l, carrying
+#     T x 6 pi l = 6 pi^2 f_s m0c^2 ln. The upper logarithm is the one that
+#     uncapped tangle would itself sit at: its spacing L^(-1/2) with the
+#     count-fed source S = (pairs/s) x 6 pi l / V.
+m_pair  = m_p / f_charge              # accreted rest mass per charge pair [kg]
+S_count = (f_charge*Mdot/m_p) * (6*np.pi*l_m) / V_int
+L_count = np.sqrt(S_count/(chi*kappa))
+ln_count = np.log(1/np.sqrt(L_count)/l_m)    # ~ 21 ("about twenty")
+E_pair = lambda fs, ln: T_line(fs, ln) * 6*np.pi*l_m
+Ep_lo, Ep_hi = E_pair(F_S_INT_LOW, ln_fixed), E_pair(F_S, ln_count)
+print(f"   uncapped feed, one 3-ell loop per accreted pair: 6 pi^2 f_s m0c^2 ln"
+      f" = {Ep_lo/GeV:.0f} to {Ep_hi/GeV:.0f} GeV")
+print(f"     (f_s = {F_S_INT_LOW} to {F_S}, ln = {ln_fixed:.0f} to {ln_count:.1f}),"
+      f" {Ep_lo/(m_pair*c**2):.0f} to {Ep_hi/(m_pair*c**2):.0f} times the rest energy")
+print(f"     the pair brings in (m_p/{f_charge} c^2 = {m_pair*c**2/GeV:.3f} GeV):"
+      f" the count overdraws the feed, so cap it by energy.")
+
+# (b) Energy cap: the injected line power is at most the accreted rest power
+#     not radiated away, P = (1 - eta) Mdot c^2 (unless the interior's own
+#     heat sustains the loops, which this estimate does not assume).
+P_line = (1 - eta)*Mdot*c**2
+def vinen(fs, ln):
+    """Vinen steady state at power P_line: (L*, stock E = T L* V)."""
+    T = T_line(fs, ln)
+    L = np.sqrt(P_line/(V_int*T*chi*kappa))
+    return L, T*L*V_int
+def self_consistent_ln(fs, ln=20.0):
+    """Iterate ln = ln(L*^(-1/2)/l) to its fixed point (the spacing log)."""
+    for _ in range(60):
+        L, _E = vinen(fs, ln)
+        ln = np.log(1/np.sqrt(L)/l_m)
+    return ln
+ln_sc = {fs: self_consistent_ln(fs) for fs in (F_S_INT_LOW, F_S)}
+frac  = {(fs, ln): vinen(fs, ln)[1]/Mc2
+         for fs in (F_S_INT_LOW, F_S) for ln in (ln_fixed, ln_sc[fs])}
+frac_lo = frac[(F_S_INT_LOW, ln_fixed)]
+frac_hi = frac[(F_S, ln_sc[F_S])]
+print(f"   energy cap: P = (1 - eta) Mdot c^2 = {P_line:.2e} W (eta = {eta})")
+print(f"   Vinen stock E = sqrt(P T V/(chi kappa)), T = pi f_s m0c^2 ln/l:")
+for fs in (F_S_INT_LOW, F_S):
+    L_sc, _E = vinen(fs, ln_sc[fs])
+    print(f"     f_s = {fs}: self-consistent spacing log ln = {ln_sc[fs]:.1f}"
+          f" (L* = {L_sc:.1e} m/m^3), E/Mc^2 = {frac[(fs, ln_sc[fs])]:.2e};"
+          f" at ln = {ln_fixed:.0f}, {frac[(fs, ln_fixed)]:.2e}")
+print(f"   standing tangle: {frac_lo/1e-19:.1f} to {frac_hi/1e-19:.1f} x 1e-19 of the"
+      f" hole's mass-energy, a trace.")
+print(f"   E/Mc^2 grows in proportion to M (E ~ sqrt(M x M^3)), so it stays a trace"
+      f" for the heaviest holes.")
 print(line)
 
 # ---------------------------------------------------------------------------
@@ -191,7 +242,8 @@ print("  cascade + capture). Inside, the melt breaks the rolling lock for")
 print(f"  free: Schwarzschild interiors relax to empty in ~{t_casc/Myr:.1f} Myr; Kerr")
 print("  interiors permanently hold a ~1e19-line quantised Feynman array")
 print("  carrying under a thousandth of the spin; accreting holes add a live tangle of")
-print(f"  {frac_lo:.0e} to {frac_hi:.1e} of the mass-energy at the Eddington rate.")
+print(f"  {frac_lo/1e-19:.1f} to {frac_hi/1e-19:.1f} x 1e-19 of the mass-energy at the"
+      f" Eddington rate, capped by energy.")
 print("  The universe's free vortices exist,")
 print("  and they are all inside or beside black holes -- fuel that only")
 print("  a forge, not a harvest, can practically replace.")

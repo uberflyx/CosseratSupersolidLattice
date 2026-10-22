@@ -105,20 +105,29 @@ print("  Note: the annihilation monopole content is not yet derived from first")
 print("  principles; theta_ch is a plausible identification, flagged not asserted.")
 print()
 
-print("="*72)
-print("EPISODE 1: cosmological e+e- annihilation (t ~ 1 s, T ~ m_e c^2)")
-print("="*72)
-# standard-cosmology anchors at T = m_e
+# standard-cosmology anchors at k_B T = m_e c^2
 T_MeV   = 0.511
 T_K     = T_MeV*1e6*e/kB
-t_epoch = 1.0                               # s, ~ age at T ~ m_e
-H       = 1/(2*t_epoch)                      # radiation era H ~ 1/(2t)
-# radiation energy density at this T (g* ~ 10.75)
+# radiation energy density at this T, g* = 10.75 (photons, e+e- pairs, three
+# neutrino species): u = g* (pi^2/30) (k_B T)^4/(hbar c)^3
 gstar   = 10.75
-a_rad   = np.pi**2/30 * (kB**4)/(hbar**3 * c**3)   # radiation constant (natural)
+a_rad   = np.pi**2/30 * (kB**4)/(hbar**3 * c**3)   # pi^2/30 k_B^4/(hbar c)^3, per dof
 rho_rad = gstar * a_rad * T_K**4 / c**2      # kg/m^3 equivalent
-print(f"  T = {T_MeV} MeV = {T_K:.2e} K,  age ~ {t_epoch} s,  H ~ {H:.2e} /s")
-print(f"  radiation density rho_rad ~ {rho_rad:.2e} kg/m^3")
+# Friedmann, radiation era: H = sqrt(8 pi G rho_rad/3), a ~ t^(1/2) so
+# H = 1/(2t) and H t = 1/2 at every epoch. Equivalently
+# t = 2.42/sqrt(g*) (T/MeV)^-2 s.
+H       = np.sqrt(8*np.pi*G*rho_rad/3)
+t_epoch = 1/(2*H)                            # s, age at k_B T = m_e c^2
+t_std   = 2.42/np.sqrt(gstar) * T_MeV**-2    # s, the standard closed form
+print("="*72)
+print(f"EPISODE 1: cosmological e+e- annihilation (k_B T = m_e c^2,"
+      f" t = {t_epoch:.1f} s)")
+print("="*72)
+print(f"  T = {T_MeV} MeV = {T_K:.2e} K,  g* = {gstar}")
+print(f"  age t = 1/(2H) = {t_epoch:.2f} s  (2.42/sqrt(g*) (T/MeV)^-2 s = {t_std:.2f} s),"
+      f"  H = {H:.2f} /s,  H t = {H*t_epoch:.1f}")
+print(f"  radiation density rho_rad = {rho_rad:.2e} kg/m^3"
+      f"  vs rho_s = {rho_L:.2e} kg/m^3")
 print()
 # monopole rate: near-equilibrium annihilation tracks the expansion, so the
 # fractional node-count change per unit time is ~ H (the slowest possible).
@@ -126,11 +135,13 @@ mono_rate = H                                # d/dt (delta-rho/rho) ~ H
 # second-sound power density ~ K_sf (mono_rate/omega_ref)^2 ... but the honest
 # comparison is the DIMENSIONLESS drain per Hubble time relative to radiation.
 # Emitted 2nd-sound energy density over a Hubble time, as a fraction of rho_rad,
-# scales as (v2/c) * (rho_L-coupling) * (mono_rate * t)^2 with the monopole
-# coupling entering as the fraction of the plasma that is annihilating baryons/leptons.
+# scales as (H t)^2 (rho_rad/rho_s) (c/v2), every order-one prefactor set to
+# one, with rho_s = f_s m0/ell^3 the condensate density (rho_L here).
 # The leptons annihilating are a fraction ~1 of the plasma, but the RATE is Hubble-slow:
 frac_drain = (mono_rate*t_epoch)**2 * (rho_rad/rho_L) * (c/v2)
 print(f"  monopole rate ~ H (equilibrium): (H t)^2 = {(mono_rate*t_epoch)**2:.2f}")
+print(f"  (H t)^2 (rho_rad/rho_s) (c/v2) = {(mono_rate*t_epoch)**2:.2f} x"
+      f" {rho_rad/rho_L:.1e} x {c/v2:.2f}")
 print(f"  2nd-sound energy drain / radiation ~ {frac_drain:.2e}")
 print(f"  BBN / N_eff bound on exotic sink at this T: ~few percent (dNeff<0.2)")
 verdict1 = "PASS" if frac_drain < 0.03 else "FAIL"

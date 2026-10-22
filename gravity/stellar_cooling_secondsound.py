@@ -31,11 +31,18 @@ same second-order-protected amplitude that gives the neutrino its mass.
 So epsilon_solar ~ theta_ch, NOT ~1. This is the physical input; the rest
 is bookkeeping.
 
-RESULT: with epsilon ~ theta_ch, the second-sound luminosity is ~10^-11 of
-the solar neutrino luminosity: the bound is cleared by ~11 orders. Even the
-conservative epsilon ~ theta_ch (not theta_ch^2) reading passes handily,
-and an epsilon ~ 1 reading would FAIL by ~9 orders, which is why the
-question was worth computing rather than asserting.
+NORMALISATION: the second-sound luminosity is scaled from the neutrino
+luminosity, L_2nd/L_nu = epsilon^2, with the order-unity coupling and the
+phase-space/velocity factor set to one, and the exclusion is taken as
+L_2nd < 0.1 L_nu (a tenth of the neutrino luminosity).
+
+RESULT: with epsilon ~ theta_ch, the second-sound luminosity is
+theta_ch^2 = 7.2e-11 of the solar neutrino luminosity, so the margin against
+the bound is 0.1/7.2e-11 = 1.4e9: the bound is cleared by ~9 orders. Even
+the conservative epsilon ~ theta_ch (not theta_ch^2) reading passes
+handily, while an epsilon ~ 1 reading gives L_2nd = L_nu and overshoots the
+bound tenfold, which is why the question was worth computing rather than
+asserting.
 """
 
 import numpy as np
@@ -53,8 +60,8 @@ L_sun      = 3.828e26                # W, photon luminosity
 # solar neutrino luminosity ~ 2% of photon luminosity (pp-chain, standard)
 L_nu_sun   = 0.02*L_sun              # W carried by neutrinos
 # the neutrino channel is the tight one: any exotic drain rivalling it is
-# excluded by combined helioseismology + neutrino-flux fits at roughly the
-# few-percent level. Use a conservative bound L_exotic/L_nu < 0.1.
+# excluded by combined helioseismology + neutrino-flux fits to the
+# ten-percent level. The bound used is L_exotic/L_nu < 0.1.
 bound_frac = 0.1
 
 print("="*72)
@@ -94,7 +101,10 @@ print("  ties the weak vertex to compression (the same amplitude that makes the"
 print("  neutrino massive). So the star's monopole content is chiral-suppressed,")
 print("  which is exactly what lets the framework clear its own gatekeeper.")
 print()
-print("  BASELINE FLIPPED: the worry (epsilon~1) fails by ~9 orders; the")
-print("  physics (epsilon~theta_ch) passes by ~11. The gate turns on whether")
-print("  burning is chiral-suppressed, and the framework says it is.")
+margin = bound_frac/theta**2
+print(f"  BASELINE FLIPPED (L_2nd/L_nu = epsilon^2, bound L_2nd < {bound_frac} L_nu):")
+print(f"  the worry (epsilon~1) overshoots the bound {1.0/bound_frac:.0f}-fold; the physics")
+print(f"  (epsilon~theta_ch) clears it with margin {bound_frac}/{theta**2:.1e} = {margin:.1e},")
+print(f"  ~{int(np.floor(np.log10(margin)))} orders. The gate turns on whether burning is")
+print("  chiral-suppressed, and the framework says it is.")
 print("="*72)
