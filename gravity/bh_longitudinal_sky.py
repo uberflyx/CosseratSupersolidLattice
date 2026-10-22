@@ -18,12 +18,14 @@ adopted exterior value f_s = 0.99932.
      (the crystal is at rest in the static frame), so these radii are the
      river-picture numbers the chapter sets aside, kept for comparison.
   2. The standing tangle of a fed hole: the Eddington-fed Vinen steady
-     state of bh_vortex_reservoir.py, priced over the interior fractions
-     4/5 to 0.99932 and the two natural cuts of the line-tension logarithm
-     (a fixed ten, or its value at the inter-vortex spacing, about 21).
-     The stock is of order 1e-18 of Mc^2 for a ten-solar-mass hole.  This
-     stock bounds what the interior's spectroscopy could carry out; no
-     luminosity is estimated here.
+     state of bh_vortex_reservoir.py, with the injected line power capped
+     by the accreted energy, P <= (1 - eta) Mdot c^2 (one loop of radius
+     3 ell per accreted pair would cost 30 to 80 times the pair's rest
+     energy).  Priced over the interior fractions 4/5 to 0.99932 and the
+     line-tension logarithm cut at ten or at the inter-vortex spacing
+     (about 22), the stock is 0.8 to 1.4e-19 of Mc^2 for a ten-solar-mass
+     hole.  This stock bounds what the interior's spectroscopy could carry
+     out; no luminosity is estimated here.
   3. The merger burst, on the rigid-array model: the remnant's Feynman
      array rotating rigidly at Omega_H = a* c / (2 r_+) holds
      J_array = (2/5) M_s r_+^2 Omega_H, with
@@ -75,34 +77,48 @@ for name, v in [("shear (light, matter)", c), ("second sound", v2),
     print(f"  {name:22s}: r_h = {rh:9.3e} m = r_s/{rs/rh:9.3g}{note}")
 
 # ----------------------------------------- 2. the standing tangle (stock)
-# Vinen steady state under Eddington feed, the model of bh_vortex_reservoir.py:
-#   dL/dt = S - chi kappa L^2  ->  L* = sqrt(S / (chi kappa)),
-# with S the line length injected per unit volume per second (each accreted
-# charge pair leaves a loop ~ 2 pi (3 ell) long) and chi ~ 0.1 the
-# superfluid-turbulence Vinen constant.  MODEL INPUTS: f_charge, the 10%
-# accretion efficiency, chi, and the injected loop length.
+# Vinen steady state under Eddington feed, the model of bh_vortex_reservoir.py,
+# with the feed capped by energy.  A loop of radius 3 ell per accreted charge
+# pair would cost 6 pi^2 f_s ln m0 c^2, 30 to 80 times the pair's rest energy,
+# so the injected line power is capped at P = (1 - eta) Mdot c^2.  Then
+#   dL/dt = P/(V T) - chi kappa L^2  ->  L* = sqrt(P / (V T chi kappa)),
+#   E = T L* V = sqrt(P T V / (chi kappa)),
+# with T = pi f_s ln m0 c^2 / ell the line tension and chi ~ 0.1 the
+# superfluid-turbulence Vinen constant.  MODEL INPUTS: eta, chi, the cap.
 print("\n=== 2. the standing tangle of a fed hole (10 Msun at Eddington) ===")
-f_charge = 0.87                      # charge pairs per nucleon (solar composition)
+eta      = 0.1                       # radiative efficiency of accretion
 L_Edd    = 1.26e31 * (M / Msun)      # Eddington luminosity [W]
-Mdot     = L_Edd / (0.1 * c**2)      # accretion rate [kg/s]
+Mdot     = L_Edd / (eta * c**2)      # accretion rate [kg/s]
+P_cap    = (1 - eta) * Mdot * c**2   # injected line power at the cap [W]
 V_int    = (4 / 3) * np.pi * rs**3   # interior volume [m^3]
-S_feed   = (f_charge * Mdot / m_p) * (2 * np.pi * ell * 3) / V_int
 chi      = 0.1
-L_star   = np.sqrt(S_feed / (chi * kappa))       # line length per volume [m^-2]
-b_vort   = 1 / np.sqrt(L_star)                   # mean inter-vortex spacing [m]
-ln_cuts  = (10.0, np.log(b_vort / ell))          # fixed ten, or ln(b/ell)
-# line tension rho_s kappa^2/(4 pi) x ln = pi f_s ln m0 c^2 / ell  [J/m]
-E_line   = lambda fs, ln: np.pi * fs * ln * m0 * c**2 / ell
-share    = lambda fs, ln: E_line(fs, ln) * L_star * V_int / (M * c**2)
-print(f"  L* = {L_star:.2e} m^-2, inter-vortex spacing b = {b_vort:.2e} m,"
-      f" ln(b/ell) = {ln_cuts[1]:.1f}")
-for ln in ln_cuts:
-    print(f"  log cut {ln:5.1f}: tangle share of Mc^2 = "
-          f"{share(FS_BRACKET[0], ln):.2e} (f_s = 4/5) to "
-          f"{share(FS_BRACKET[1], ln):.2e} (f_s = {F_S_ADOPTED})")
-lo = min(share(fs, ln) for fs in FS_BRACKET for ln in ln_cuts)
-hi = max(share(fs, ln) for fs in FS_BRACKET for ln in ln_cuts)
-print(f"  -> standing stock {lo:.1e} to {hi:.1e} of Mc^2: of order 1e-18,")
+T_line   = lambda fs, ln: np.pi * fs * ln * m0 * c**2 / ell   # [J/m]
+
+
+def stock(fs, ln):
+    """Capped Vinen stock as a share of Mc^2, with its line density."""
+    L_star = np.sqrt(P_cap / (V_int * T_line(fs, ln) * chi * kappa))
+    return T_line(fs, ln) * L_star * V_int / (M * c**2), L_star
+
+
+def ln_self_consistent(fs):
+    """Iterate the tension logarithm to its value at the inter-vortex spacing."""
+    ln = 20.0
+    for _ in range(50):
+        _, L_star = stock(fs, ln)
+        ln = np.log(1 / np.sqrt(L_star) / ell)
+    return ln
+
+
+shares = []
+for fs in FS_BRACKET:
+    for ln in (10.0, ln_self_consistent(fs)):
+        s, L_star = stock(fs, ln)
+        shares.append(s)
+        print(f"  f_s = {fs:7.5f}, log cut {ln:5.2f}: L* = {L_star:.2e} m^-2,"
+              f" tangle share of Mc^2 = {s:.2e}")
+print(f"  -> standing stock {min(shares):.1e} to {max(shares):.1e} of Mc^2,"
+      f" about 1e-19,")
 print("     the bound on what the interior's spectroscopy could carry out.")
 
 # ------------------------------------------------------ 3. merger burst
