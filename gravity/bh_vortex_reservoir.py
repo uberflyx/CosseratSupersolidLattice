@@ -26,10 +26,14 @@ constants, model inputs labelled.
   adopted value.
 
   2. TANGLE DYNAMICS: the interior cascade clock scales as R^2/kappa, which
-     at horizon radius is ~10^13 s. A quiescent (Schwarzschild) interior
-     therefore relaxes to empty on ~Myr timescales, consistent with the
-     chapter's mass-outside bookkeeping; an accreting hole sustains a
-     steady-state tangle set by feed rate against Vinen decay.
+     at horizon radius, with the self-induction logarithm taken at that
+     scale (ln(r_s/ell) ~ 44), is ~5e13 s, about 1.5 Myr for 10 Msun.
+     A quiescent (Schwarzschild) interior therefore relaxes to empty on
+     ~Myr timescales, consistent with the chapter's mass-outside
+     bookkeeping; an accreting hole sustains a steady-state tangle set by
+     feed rate against Vinen decay. Its stored energy is bracketed over
+     the interior fraction and over two cuts of the line-tension logarithm
+     (a fixed 10, or its value at the inter-vortex spacing, ~21).
 
   3. THE KERR ARRAY: a superfluid can only co-rotate by quantised vortices
      (Feynman rule n_v = 2 Omega / kappa), so a spinning interior holds a
@@ -92,11 +96,14 @@ print(line)
 # ---------------------------------------------------------------------------
 M_bh   = 10 * Msun
 r_s    = 2*G*M_bh/c**2
-lnfac  = 10.0                         # MODEL INPUT: tension/induction log
-t_casc = 4*np.pi*r_s**2/(kappa*lnfac)
+# Self-induction logarithm of a loop of size R is ln(R/core); for the
+# horizon-scale clock the loop size is r_s and the core is the spacing ell.
+ln_clock = np.log(r_s/l_m)            # ~ 43.8 at 10 Msun
+t_casc = 4*np.pi*r_s**2/(kappa*ln_clock)
+Myr    = 3.156e13                     # s
 print("2. TANGLE DYNAMICS (10 Msun, r_s = %.1f km)" % (r_s/1e3))
-print(f"   horizon-scale cascade clock: t ~ 4 pi r_s^2/(kappa ln) = "
-      f"{t_casc:.1e} s ~ {t_casc/3.15e13:.0f} Myr")
+print(f"   horizon-scale cascade clock: t ~ 4 pi r_s^2/(kappa ln(r_s/l)) = "
+      f"{t_casc:.1e} s ~ {t_casc/Myr:.1f} Myr  (ln(r_s/l) = {ln_clock:.1f})")
 print(f"   -> a quiescent interior relaxes to empty in ~Myr: Schwarzschild")
 print(f"      holes hold no standing tangle, as the chapter's mass-outside")
 print(f"      bookkeeping requires. The relaxation energy leaves in first")
@@ -108,13 +115,21 @@ S_feed = (f_charge * Mdot/m_p) * (2*np.pi*l_m*3) / ((4/3)*np.pi*r_s**3)
 # each pair injects ~ one small loop of length ~ 2 pi * few l per quantum
 chi    = 0.1                          # MODEL INPUT (Vinen)
 L_star = np.sqrt(S_feed/(chi*kappa))
-# line tension rho_s kappa^2/(4 pi) x ln = (pi f_s) ln m0 c^2 / l, per metre
-E_line = lambda fs: np.pi*fs*lnfac*(m0*c**2)/l_m
-E_tangle = lambda fs: E_line(fs) * L_star * (4/3)*np.pi*r_s**3
-print(f"   Eddington-fed steady state: L* = {L_star:.1e} m/m^3,")
-print(f"   stored tangle energy ~ {E_tangle(F_S_INT_LOW):.1e} to {E_tangle(F_S):.1e} J"
-      f" = {E_tangle(F_S_INT_LOW)/(M_bh*c**2):.1e} to {E_tangle(F_S)/(M_bh*c**2):.1e}")
-print(f"   of the hole's mass-energy (f_s = {F_S_INT_LOW} to {F_S}): a trace.")
+# line tension rho_s kappa^2/(4 pi) x ln = (pi f_s) ln m0 c^2 / l, per metre.
+# Two natural cuts of the tension logarithm (MODEL INPUT): a fixed 10, or its
+# value at the inter-vortex spacing L*^(-1/2) of the steady tangle.
+ln_fixed   = 10.0
+ln_spacing = np.log(1/np.sqrt(L_star)/l_m)   # ~ 21
+E_line = lambda fs, ln: np.pi*fs*ln*(m0*c**2)/l_m
+E_tangle = lambda fs, ln: E_line(fs, ln) * L_star * (4/3)*np.pi*r_s**3
+frac_lo = E_tangle(F_S_INT_LOW, ln_fixed)/(M_bh*c**2)
+frac_hi = E_tangle(F_S, ln_spacing)/(M_bh*c**2)
+print(f"   Eddington-fed steady state: L* = {L_star:.1e} m/m^3,"
+      f" inter-vortex log ln(L*^-1/2 / l) = {ln_spacing:.1f}")
+print(f"   stored tangle energy ~ {E_tangle(F_S_INT_LOW, ln_fixed):.1e} to"
+      f" {E_tangle(F_S, ln_spacing):.1e} J = {frac_lo:.1e} to {frac_hi:.1e}")
+print(f"   of the hole's mass-energy (f_s = {F_S_INT_LOW} to {F_S}, tension log"
+      f" {ln_fixed:.0f} to {ln_spacing:.0f}): of order 1e-18, a trace.")
 print(line)
 
 # ---------------------------------------------------------------------------
@@ -173,10 +188,11 @@ print(line)
 print("VERDICT")
 print("  Outside horizons the free vortex sector is empty (the primordial")
 print("  cascade + capture). Inside, the melt breaks the rolling lock for")
-print("  free: Schwarzschild interiors relax to empty in ~Myr; Kerr")
+print(f"  free: Schwarzschild interiors relax to empty in ~{t_casc/Myr:.1f} Myr; Kerr")
 print("  interiors permanently hold a ~1e19-line quantised Feynman array")
 print("  carrying under a thousandth of the spin; accreting holes add a live tangle of")
-print("  ~1e-19 of the mass-energy. The universe's free vortices exist,")
+print(f"  {frac_lo:.0e} to {frac_hi:.1e} of the mass-energy at the Eddington rate.")
+print("  The universe's free vortices exist,")
 print("  and they are all inside or beside black holes -- fuel that only")
 print("  a forge, not a harvest, can practically replace.")
 
